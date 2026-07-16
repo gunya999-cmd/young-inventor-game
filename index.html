@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#efe2ca" />
+    <meta name="description" content="Юный изобретатель — браузерная инженерная головоломка." />
+    <title>Юный изобретатель — Разбуди Луми</title>
+  </head>
+  <body>
+    <main id="app">
+      <header class="topbar" aria-label="Панель уровня">
+        <div class="location-block">
+          <div class="location-mark">⌂</div>
+          <div>
+            <div class="eyebrow">Легомастерская · Квест 1</div>
+            <div class="location-subtitle">Дом в городе</div>
+          </div>
+        </div>
+        <div class="quest-title">
+          <strong>Разбуди Луми</strong>
+          <span>Соедини дорожку и доставь энергию роботу</span>
+        </div>
+        <div class="controls">
+          <button id="hint-button" class="button button-secondary" type="button">Подсказка</button>
+          <button id="run-button" class="button button-primary" type="button">▶ Запуск</button>
+          <button id="reset-button" class="button button-secondary button-icon" type="button" aria-label="Сбросить уровень">↻</button>
+        </div>
+      </header>
+
+      <section id="game-shell" class="game-shell" aria-label="Игровое поле">
+        <div id="game-container"></div>
+        <div id="message-bubble" class="message-bubble">Мне не хватает одной детали…</div>
+        <div id="result-card" class="result-card" hidden>
+          <div class="result-icon">✓</div>
+          <div>
+            <strong id="result-title">Луми снова в сети!</strong>
+            <span id="result-copy">Отлично! Шар прошёл по наклонной дорожке.</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="inventory-bar">
+        <div class="mode-copy">
+          <span class="status-dot"></span>
+          <div>
+            <strong id="mode-title">Режим сборки</strong>
+            <span id="mode-copy">Перетащи красную пластину в светящийся разрыв</span>
+          </div>
+        </div>
+        <div class="part-card">
+          <span class="part-preview" aria-hidden="true"></span>
+          <div><strong>Пластина 6×2</strong><span>Перетаскивай · поворачивай Q / E</span></div>
+        </div>
+        <div class="progress" aria-label="Прогресс главы"><i class="active"></i><i></i><i></i><i></i></div>
+      </footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
