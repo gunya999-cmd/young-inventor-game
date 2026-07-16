@@ -1,0 +1,137 @@
+:root {
+  font-family: Inter, ui-rounded, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #17243d;
+  background: #e7edf3;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: radial-gradient(circle at 50% 10%, #f8fbff 0, #e9eef4 55%, #dce4ec 100%); }
+button { font: inherit; }
+
+#app {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: 82px minmax(0, 1fr) 84px;
+  gap: 12px;
+  padding: 14px;
+}
+
+.topbar,
+.inventory-bar {
+  display: grid;
+  align-items: center;
+  border: 1px solid rgba(46, 64, 86, 0.12);
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 14px 34px rgba(49,67,86,0.11);
+  backdrop-filter: blur(18px);
+}
+
+.topbar {
+  grid-template-columns: minmax(250px, 1fr) minmax(340px, 1.3fr) minmax(330px, 1fr);
+  border-radius: 24px;
+  padding: 10px 14px;
+}
+
+.location-block { display: flex; align-items: center; gap: 12px; }
+.location-mark {
+  width: 52px; height: 52px; border-radius: 17px; display: grid; place-items: center;
+  color: white; font-size: 24px; font-weight: 900;
+  background: linear-gradient(145deg, #7b62db, #5536bd);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 8px 18px rgba(83,54,189,.25);
+}
+.eyebrow { font-size: 16px; font-weight: 850; letter-spacing: .01em; }
+.location-subtitle { margin-top: 2px; color: #8290a5; font-size: 13px; }
+.quest-title { text-align: center; display: flex; flex-direction: column; line-height: 1.12; }
+.quest-title strong { font-size: clamp(20px, 2vw, 30px); }
+.quest-title span { margin-top: 5px; color: #7d899b; font-size: 13px; }
+.controls { display: flex; justify-content: flex-end; gap: 10px; }
+.button {
+  border: 0; min-height: 48px; padding: 0 18px; border-radius: 15px; cursor: pointer;
+  font-weight: 850; transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+.button:hover:not(:disabled) { transform: translateY(-1px); }
+.button:active:not(:disabled) { transform: translateY(1px); }
+.button-primary {
+  color: white; background: linear-gradient(145deg, #35b85a, #15933c);
+  box-shadow: 0 10px 22px rgba(28,158,68,.25), inset 0 1px rgba(255,255,255,.35);
+}
+.button-secondary { color: #25344c; background: #f3f6f8; border: 1px solid #dce3ea; }
+.button-icon { min-width: 50px; padding: 0; font-size: 24px; }
+.button:disabled { opacity: .48; cursor: default; }
+
+.game-shell {
+  position: relative; min-height: 0; overflow: hidden; border-radius: 28px;
+  border: 1px solid rgba(91,71,44,.14);
+  background: #ead9bd;
+  box-shadow: 0 22px 50px rgba(47,63,82,.16);
+}
+#game-container, #game-container canvas { width: 100% !important; height: 100% !important; display: block; }
+
+.message-bubble {
+  position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+  background: rgba(255,255,255,.94); border: 1px solid rgba(37,52,76,.12); color: #34425a;
+  border-radius: 16px; padding: 10px 16px; font-size: 14px; font-weight: 750;
+  box-shadow: 0 10px 24px rgba(41,52,69,.12); pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.message-bubble::after {
+  content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px;
+  background: inherit; border-right: inherit; border-bottom: inherit; transform: translateX(-50%) rotate(45deg);
+}
+.message-bubble.is-muted { opacity: .65; transform: translateX(-50%) translateY(-5px); }
+
+.result-card {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  min-width: 390px; display: flex; align-items: center; gap: 16px; padding: 20px 24px;
+  border-radius: 22px; background: rgba(255,255,255,.96); border: 1px solid rgba(45,134,77,.22);
+  box-shadow: 0 24px 60px rgba(24,59,37,.24); animation: pop .35s ease both;
+}
+.result-card[hidden] { display: none; }
+.result-icon { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; color: white; font-size: 30px; font-weight: 900; background: #2eaf56; }
+.result-card strong, .result-card span { display: block; }
+.result-card strong { font-size: 21px; }
+.result-card span { margin-top: 4px; color: #758198; font-size: 14px; }
+@keyframes pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.94); } }
+
+.inventory-bar {
+  grid-template-columns: 1fr auto 1fr;
+  border-radius: 22px;
+  padding: 10px 18px;
+}
+.mode-copy { display: flex; align-items: center; gap: 11px; }
+.status-dot { width: 13px; height: 13px; border-radius: 50%; background: #5fc782; box-shadow: 0 0 0 7px rgba(95,199,130,.14); }
+.mode-copy strong, .mode-copy span, .part-card strong, .part-card span { display: block; }
+.mode-copy strong { font-size: 14px; }
+.mode-copy span, .part-card span { margin-top: 2px; color: #8290a5; font-size: 12px; }
+.part-card {
+  min-width: 270px; display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+  border: 1px solid #dfe5eb; border-radius: 16px; background: linear-gradient(180deg,#fbfcfd,#f3f6f8);
+}
+.part-preview {
+  position: relative; width: 62px; height: 18px; border-radius: 7px; transform: rotate(-10deg);
+  background: linear-gradient(180deg,#ff6b62,#d93331); box-shadow: 0 6px 10px rgba(155,31,29,.2), inset 0 2px rgba(255,255,255,.45);
+}
+.part-preview::after { content: "••••"; position: absolute; left: 9px; top: -3px; color: rgba(255,255,255,.68); letter-spacing: 6px; font-size: 12px; }
+.progress { justify-self: end; display: flex; gap: 7px; }
+.progress i { width: 28px; height: 6px; border-radius: 4px; background: #dbe2e9; }
+.progress i.active { background: #7558d6; }
+
+@media (max-width: 1050px) {
+  #app { padding: 8px; gap: 8px; grid-template-rows: 72px minmax(0,1fr) 72px; }
+  .topbar { grid-template-columns: 1fr auto; }
+  .quest-title { display: none; }
+  .inventory-bar { grid-template-columns: 1fr auto; }
+  .progress { display: none; }
+}
+@media (max-width: 720px) {
+  .topbar { border-radius: 18px; padding: 8px; }
+  .location-subtitle, .button-secondary#hint-button { display: none; }
+  .button { min-height: 44px; padding-inline: 13px; }
+  .inventory-bar { border-radius: 18px; }
+  .mode-copy { display: none; }
+  .part-card { min-width: 0; width: 100%; }
+  .result-card { min-width: min(90vw, 390px); }
+}
