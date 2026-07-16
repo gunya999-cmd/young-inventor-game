@@ -2,18 +2,20 @@ import Phaser from 'phaser';
 import './style.css';
 
 const WORLD_WIDTH = 1600;
-const WORLD_HEIGHT = 780;
-const BRIDGE_WIDTH = 250;
-const BRIDGE_HEIGHT = 38;
-const SNAP_TARGET = { x: 785, y: 394, rotation: Phaser.Math.DegToRad(12) };
+const WORLD_HEIGHT = 800;
+const BRIDGE_WIDTH = 274;
+const BRIDGE_HEIGHT = 46;
+const TARGET = { x: 790, y: 392, rotation: Phaser.Math.DegToRad(12) };
+const START_BRIDGE = { x: 790, y: 688, rotation: Phaser.Math.DegToRad(-6) };
+const START_BALL = { x: 286, y: 250 };
 
 type GameMode = 'build' | 'running' | 'success';
 
-interface GameApi {
+type GameApi = {
   run: () => void;
   reset: () => void;
   toggleHint: () => void;
-}
+};
 
 declare global {
   interface Window {
@@ -22,22 +24,25 @@ declare global {
 }
 
 class WorkshopScene extends Phaser.Scene {
-  private bridge!: Phaser.GameObjects.Image;
-  private bridgeShadow!: Phaser.GameObjects.Ellipse;
-  private bridgeHandle!: Phaser.GameObjects.Arc;
-  private bridgeHandleLine!: Phaser.GameObjects.Line;
-  private ball?: Phaser.Physics.Matter.Image;
-  private bridgeBody?: MatterJS.BodyType;
-  private receiverGlow!: Phaser.GameObjects.Arc;
-  private robotEyes: Phaser.GameObjects.Arc[] = [];
-  private hintGroup!: Phaser.GameObjects.Container;
-  private snapZone!: Phaser.GameObjects.Arc;
+  private bridge!: any;
+  private bridgeShadow!: any;
+  private handle!: any;
+  private handleLine!: any;
+  private ballPreview!: any;
+  private ball?: any;
+  private bridgeBody?: any;
+  private receiverGlow!: any;
+  private receiverCore!: any;
+  private robotHead!: any;
+  private robotEyes: any[] = [];
+  private hintGroup!: any;
+  private targetGhost!: any;
+  private connectorGlows: any[] = [];
   private mode: GameMode = 'build';
   private dragging = false;
   private rotating = false;
   private dragOffset = new Phaser.Math.Vector2();
-  private runTimeout?: number;
-  private startBall = { x: 285, y: 244 };
+  private runTimer?: number;
 
   constructor() {
     super('Workshop');
@@ -46,12 +51,12 @@ class WorkshopScene extends Phaser.Scene {
   create(): void {
     this.createTextures();
     this.createRoom();
+    this.createWorkBoard();
     this.createMachine();
     this.createInteraction();
     this.createCollisions();
     this.createKeyboard();
-    this.updateHandle();
-    this.runDevGeometryChecks();
+    this.updateBridgeUi();
 
     window.youngInventorGame = {
       run: () => this.runSimulation(),
@@ -62,319 +67,447 @@ class WorkshopScene extends Phaser.Scene {
 
   update(): void {
     if (!this.ball || this.mode !== 'running') return;
-    if (this.ball.y > WORLD_HEIGHT + 100 || this.ball.x > WORLD_WIDTH + 100 || this.ball.x < -100) {
-      this.failAttempt('Пластина почти на месте. Попробуй немного изменить угол.');
+    if (this.ball.y > WORLD_HEIGHT + 100 || this.ball.x < -100 || this.ball.x > WORLD_WIDTH + 100) {
+      this.failAttempt('Шар ушёл с дорожки. Чуть поправь положение пластины.');
     }
   }
 
   private createTextures(): void {
-    this.makeRailTexture('rail-blue', 410, 44, '#3f8ce7', '#1f5fb6');
-    this.makeRailTexture('bridge-red', BRIDGE_WIDTH, 48, '#ff6a61', '#d72f31');
+    this.makeBeamTexture('beam-blue', 402, 54, '#58a6ff', '#1867c7', '#0f4b99');
+    this.makeBeamTexture('beam-red', BRIDGE_WIDTH, 58, '#ff726a', '#df2f35', '#a91f28');
     this.makeBallTexture();
     this.makeReceiverTexture();
     this.makeRobotTexture();
   }
 
-  private makeRailTexture(key: string, width: number, height: number, top: string, bottom: string): void {
+  private makeBeamTexture(key: string, width: number, height: number, top: string, middle: string, side: string): void {
     const texture = this.textures.createCanvas(key, width, height);
-    const context = texture?.getContext();
-    if (!texture || !context) return;
+    const ctx = texture?.getContext();
+    if (!texture || !ctx) return;
 
-    context.clearRect(0, 0, width, height);
-    context.shadowColor = 'rgba(23, 35, 51, 0.28)';
-    context.shadowBlur = 12;
-    context.shadowOffsetY = 7;
-    const gradient = context.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, top);
-    gradient.addColorStop(0.5, top);
-    gradient.addColorStop(1, bottom);
-    this.roundedRect(context, 7, 4, width - 14, height - 13, 13);
-    context.fillStyle = gradient;
-    context.fill();
-    context.shadowColor = 'transparent';
+    ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    ctx.shadowColor = 'rgba(20, 31, 48, .32)';
+    ctx.shadowBlur = 15;
+    ctx.shadowOffsetY = 9;
 
-    const gloss = context.createLinearGradient(0, 4, 0, 22);
-    gloss.addColorStop(0, 'rgba(255,255,255,.66)');
+    const body = ctx.createLinearGradient(0, 5, 0, height - 6);
+    body.addColorStop(0, top);
+    body.addColorStop(.42, middle);
+    body.addColorStop(1, side);
+    this.roundedRect(ctx, 9, 5, width - 18, height - 16, 13);
+    ctx.fillStyle = body;
+    ctx.fill();
+    ctx.restore();
+
+    const edge = ctx.createLinearGradient(0, height - 24, 0, height - 8);
+    edge.addColorStop(0, 'rgba(0,0,0,0)');
+    edge.addColorStop(1, 'rgba(0,0,0,.28)');
+    this.roundedRect(ctx, 12, 11, width - 24, height - 24, 11);
+    ctx.fillStyle = edge;
+    ctx.fill();
+
+    const gloss = ctx.createLinearGradient(0, 7, 0, 29);
+    gloss.addColorStop(0, 'rgba(255,255,255,.78)');
+    gloss.addColorStop(.55, 'rgba(255,255,255,.18)');
     gloss.addColorStop(1, 'rgba(255,255,255,0)');
-    this.roundedRect(context, 13, 8, width - 26, 14, 8);
-    context.fillStyle = gloss;
-    context.fill();
+    this.roundedRect(ctx, 15, 9, width - 30, 18, 9);
+    ctx.fillStyle = gloss;
+    ctx.fill();
 
-    const studCount = Math.max(3, Math.floor(width / 54));
-    for (let index = 0; index < studCount; index += 1) {
-      const x = 28 + index * ((width - 56) / Math.max(1, studCount - 1));
-      const stud = context.createRadialGradient(x - 2, 16, 1, x, 18, 7);
-      stud.addColorStop(0, 'rgba(255,255,255,.86)');
-      stud.addColorStop(0.45, 'rgba(255,255,255,.38)');
-      stud.addColorStop(1, 'rgba(0,0,0,.15)');
-      context.beginPath();
-      context.arc(x, 18, 6.2, 0, Math.PI * 2);
-      context.fillStyle = stud;
-      context.fill();
+    const holeCount = Math.max(4, Math.round(width / 52));
+    for (let i = 0; i < holeCount; i += 1) {
+      const x = 31 + i * ((width - 62) / Math.max(1, holeCount - 1));
+      const ring = ctx.createRadialGradient(x - 2, 22, 1, x, 24, 9);
+      ring.addColorStop(0, 'rgba(255,255,255,.92)');
+      ring.addColorStop(.32, 'rgba(255,255,255,.45)');
+      ring.addColorStop(.54, 'rgba(20,35,52,.45)');
+      ring.addColorStop(1, 'rgba(6,18,33,.72)');
+      ctx.beginPath();
+      ctx.arc(x, 24, 8.2, 0, Math.PI * 2);
+      ctx.fillStyle = ring;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, 24, 3.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(228,245,255,.7)';
+      ctx.fill();
     }
+
+    ctx.strokeStyle = 'rgba(255,255,255,.34)';
+    ctx.lineWidth = 1.5;
+    this.roundedRect(ctx, 10, 6, width - 20, height - 18, 12);
+    ctx.stroke();
     texture.refresh();
   }
 
   private makeBallTexture(): void {
-    const size = 76;
+    const size = 88;
     const texture = this.textures.createCanvas('energy-ball', size, size);
-    const context = texture?.getContext();
-    if (!texture || !context) return;
-    context.shadowColor = 'rgba(20, 85, 162, .45)';
-    context.shadowBlur = 13;
-    context.shadowOffsetY = 7;
-    const gradient = context.createRadialGradient(24, 18, 4, 38, 38, 34);
-    gradient.addColorStop(0, '#d9f8ff');
-    gradient.addColorStop(0.18, '#78d6ff');
-    gradient.addColorStop(0.55, '#2489dc');
-    gradient.addColorStop(1, '#0b438e');
-    context.beginPath();
-    context.arc(38, 34, 30, 0, Math.PI * 2);
-    context.fillStyle = gradient;
-    context.fill();
-    context.shadowColor = 'transparent';
-    context.strokeStyle = 'rgba(255,255,255,.78)';
-    context.lineWidth = 2;
-    context.stroke();
+    const ctx = texture?.getContext();
+    if (!texture || !ctx) return;
+
+    ctx.clearRect(0, 0, size, size);
+    ctx.shadowColor = 'rgba(38, 160, 255, .55)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 7;
+    const orb = ctx.createRadialGradient(27, 20, 3, 44, 43, 38);
+    orb.addColorStop(0, '#ffffff');
+    orb.addColorStop(.12, '#bdf2ff');
+    orb.addColorStop(.38, '#42b8ff');
+    orb.addColorStop(.72, '#146fc8');
+    orb.addColorStop(1, '#07366f');
+    ctx.beginPath();
+    ctx.arc(44, 40, 34, 0, Math.PI * 2);
+    ctx.fillStyle = orb;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = 'rgba(230,250,255,.86)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(34, 28, 9, Math.PI * 1.05, Math.PI * 1.8);
+    ctx.strokeStyle = 'rgba(255,255,255,.82)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
     texture.refresh();
   }
 
   private makeReceiverTexture(): void {
-    const texture = this.textures.createCanvas('receiver', 184, 196);
-    const context = texture?.getContext();
-    if (!texture || !context) return;
-    context.shadowColor = 'rgba(35,48,66,.28)';
-    context.shadowBlur = 16;
-    context.shadowOffsetY = 10;
-    const shell = context.createLinearGradient(0, 0, 0, 196);
-    shell.addColorStop(0, '#f8fbff');
-    shell.addColorStop(1, '#b8c6d5');
-    this.roundedRect(context, 20, 22, 144, 154, 42);
-    context.fillStyle = shell;
-    context.fill();
-    context.shadowColor = 'transparent';
-    context.lineWidth = 7;
-    context.strokeStyle = '#31445f';
-    context.stroke();
-    const ring = context.createRadialGradient(91, 91, 20, 91, 91, 61);
-    ring.addColorStop(0, '#0d2540');
-    ring.addColorStop(0.55, '#183b64');
-    ring.addColorStop(0.71, '#58c9ff');
-    ring.addColorStop(0.82, '#d9f7ff');
-    ring.addColorStop(1, '#3b506a');
-    context.beginPath();
-    context.arc(92, 91, 61, 0, Math.PI * 2);
-    context.fillStyle = ring;
-    context.fill();
-    context.fillStyle = '#10243f';
-    context.beginPath();
-    context.arc(92, 91, 41, 0, Math.PI * 2);
-    context.fill();
-    context.fillStyle = '#8ba0b4';
-    this.roundedRect(context, 62, 151, 60, 14, 7);
-    context.fill();
+    const texture = this.textures.createCanvas('receiver', 214, 214);
+    const ctx = texture?.getContext();
+    if (!texture || !ctx) return;
+
+    ctx.clearRect(0, 0, 214, 214);
+    ctx.shadowColor = 'rgba(25,38,58,.34)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 11;
+    const shell = ctx.createLinearGradient(20, 10, 190, 205);
+    shell.addColorStop(0, '#ffffff');
+    shell.addColorStop(.5, '#d8e3ef');
+    shell.addColorStop(1, '#91a6ba');
+    this.roundedRect(ctx, 22, 24, 170, 164, 48);
+    ctx.fillStyle = shell;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#263c58';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+
+    const bezel = ctx.createRadialGradient(107, 103, 34, 107, 103, 78);
+    bezel.addColorStop(0, '#071b33');
+    bezel.addColorStop(.53, '#0c294b');
+    bezel.addColorStop(.67, '#1c87ca');
+    bezel.addColorStop(.78, '#9feaff');
+    bezel.addColorStop(.86, '#e6fbff');
+    bezel.addColorStop(1, '#536d86');
+    ctx.beginPath();
+    ctx.arc(107, 102, 75, 0, Math.PI * 2);
+    ctx.fillStyle = bezel;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(107, 102, 48, 0, Math.PI * 2);
+    ctx.fillStyle = '#07182d';
+    ctx.fill();
+
+    ctx.fillStyle = '#70879c';
+    this.roundedRect(ctx, 70, 171, 74, 11, 6);
+    ctx.fill();
     texture.refresh();
   }
 
   private makeRobotTexture(): void {
-    const texture = this.textures.createCanvas('robot', 176, 226);
-    const context = texture?.getContext();
-    if (!texture || !context) return;
-    context.shadowColor = 'rgba(37,47,65,.24)';
-    context.shadowBlur = 16;
-    context.shadowOffsetY = 10;
-    const metal = context.createLinearGradient(0, 0, 176, 226);
+    const texture = this.textures.createCanvas('robot', 210, 250);
+    const ctx = texture?.getContext();
+    if (!texture || !ctx) return;
+
+    ctx.clearRect(0, 0, 210, 250);
+    ctx.shadowColor = 'rgba(24,36,55,.28)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 10;
+    const metal = ctx.createLinearGradient(22, 18, 185, 230);
     metal.addColorStop(0, '#ffffff');
-    metal.addColorStop(.48, '#dde5ed');
-    metal.addColorStop(1, '#aab9c8');
-    this.roundedRect(context, 27, 28, 122, 92, 31);
-    context.fillStyle = metal;
-    context.fill();
-    context.shadowColor = 'transparent';
-    context.lineWidth = 7;
-    context.strokeStyle = '#2d405c';
-    context.stroke();
-    context.fillStyle = '#263a58';
-    this.roundedRect(context, 48, 50, 80, 47, 17);
-    context.fill();
-    this.roundedRect(context, 43, 130, 90, 69, 22);
-    context.fillStyle = metal;
-    context.fill();
-    context.strokeStyle = '#2d405c';
-    context.lineWidth = 7;
-    context.stroke();
-    context.fillStyle = '#6379d6';
-    this.roundedRect(context, 57, 147, 62, 31, 12);
-    context.fill();
-    context.fillStyle = '#2d405c';
-    context.fillRect(18, 143, 29, 18);
-    context.fillRect(129, 143, 29, 18);
-    context.fillRect(50, 193, 24, 25);
-    context.fillRect(102, 193, 24, 25);
+    metal.addColorStop(.46, '#dbe5ef');
+    metal.addColorStop(1, '#93a7ba');
+
+    this.roundedRect(ctx, 40, 25, 130, 95, 34);
+    ctx.fillStyle = metal;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#2a3e59';
+    ctx.lineWidth = 7;
+    ctx.stroke();
+
+    ctx.fillStyle = '#203651';
+    this.roundedRect(ctx, 60, 49, 90, 46, 18);
+    ctx.fill();
+
+    this.roundedRect(ctx, 52, 132, 106, 77, 25);
+    ctx.fillStyle = metal;
+    ctx.fill();
+    ctx.strokeStyle = '#2a3e59';
+    ctx.lineWidth = 7;
+    ctx.stroke();
+
+    const chest = ctx.createLinearGradient(0, 142, 0, 188);
+    chest.addColorStop(0, '#7388ec');
+    chest.addColorStop(1, '#435ab6');
+    this.roundedRect(ctx, 69, 151, 72, 37, 13);
+    ctx.fillStyle = chest;
+    ctx.fill();
+    ctx.fillStyle = '#2a3e59';
+    ctx.fillRect(25, 151, 34, 19);
+    ctx.fillRect(151, 151, 34, 19);
+    ctx.fillRect(61, 205, 29, 31);
+    ctx.fillRect(120, 205, 29, 31);
+
+    ctx.strokeStyle = '#2a3e59';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(105, 25);
+    ctx.lineTo(105, 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(105, 7, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#f1b83f';
+    ctx.fill();
     texture.refresh();
   }
 
-  private roundedRect(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
+  private roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
     const r = Math.min(radius, width / 2, height / 2);
-    context.beginPath();
-    context.moveTo(x + r, y);
-    context.arcTo(x + width, y, x + width, y + height, r);
-    context.arcTo(x + width, y + height, x, y + height, r);
-    context.arcTo(x, y + height, x, y, r);
-    context.arcTo(x, y, x + width, y, r);
-    context.closePath();
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
   }
 
   private createRoom(): void {
-    this.add.rectangle(800, 390, WORLD_WIDTH, WORLD_HEIGHT, 0xf1e5cf);
+    const wall = this.add.graphics();
+    wall.fillGradientStyle(0xfff9ed, 0xf5e6cb, 0xe9d1ac, 0xd8b987, 1);
+    wall.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    const wallShade = this.add.graphics();
-    wallShade.fillGradientStyle(0xfffbf2, 0xf4ead8, 0xe3cfad, 0xd5bb91, 1);
-    wallShade.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT - 95);
-
-    for (let x = 0; x <= WORLD_WIDTH; x += 64) {
-      this.add.line(0, 0, x, 84, x, WORLD_HEIGHT - 98, 0xbda984, 0.12).setOrigin(0);
-    }
-    for (let y = 84; y <= WORLD_HEIGHT - 96; y += 64) {
-      this.add.line(0, 0, 0, y, WORLD_WIDTH, y, 0xbda984, 0.12).setOrigin(0);
+    this.add.rectangle(800, 744, WORLD_WIDTH, 112, 0xb97b42);
+    const floor = this.add.graphics();
+    floor.fillGradientStyle(0xd59b5f, 0xc68a50, 0xb8753e, 0xa96533, 1);
+    floor.fillRect(0, 690, WORLD_WIDTH, 110);
+    for (let x = -80; x < WORLD_WIDTH + 100; x += 170) {
+      this.add.line(0, 0, x, 690, x + 44, 800, 0x75401f, .22).setOrigin(0);
     }
 
     this.createWindow();
     this.createShelves();
-    this.createDeskAndFloor();
-    this.createDecor();
+    this.createRoomProps();
+
+    const light = this.add.graphics();
+    light.fillStyle(0xfff4c7, .11);
+    light.fillTriangle(82, 78, 485, 690, 180, 690);
   }
 
   private createWindow(): void {
-    const frame = this.add.rectangle(177, 199, 244, 265, 0xf8f3e8).setStrokeStyle(13, 0xd7b788);
+    const x = 76;
+    const y = 84;
+    const w = 235;
+    const h = 220;
+
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0xc8efff, 0xdff7ff, 0xa8d69c, 0x7aae70, 1);
-    sky.fillRect(69, 75, 216, 238);
-    this.add.rectangle(177, 194, 10, 238, 0xf9f4e9);
-    this.add.rectangle(177, 194, 216, 10, 0xf9f4e9);
-    this.add.ellipse(118, 256, 145, 86, 0x76a768, 0.85);
-    this.add.ellipse(238, 266, 160, 94, 0x60925a, 0.84);
-    this.add.rectangle(177, 325, 286, 24, 0xb7824f).setStrokeStyle(4, 0x8d5b32);
-    frame.setDepth(1);
+    sky.fillGradientStyle(0xbfeaff, 0xe9f9ff, 0x92c98d, 0x6fa665, 1);
+    sky.fillRoundedRect(x, y, w, h, 10);
+    this.add.ellipse(x + 54, y + 177, 155, 85, 0x6f9f62, .95);
+    this.add.ellipse(x + 174, y + 183, 180, 95, 0x588e55, .95);
+    this.add.rectangle(x + w / 2, y + h / 2, 10, h, 0xf9f1df);
+    this.add.rectangle(x + w / 2, y + h / 2, w, 10, 0xf9f1df);
+
+    const frame = this.add.graphics();
+    frame.lineStyle(14, 0xc49a68, 1);
+    frame.strokeRoundedRect(x - 7, y - 7, w + 14, h + 14, 16);
+    frame.lineStyle(4, 0x8d6139, .45);
+    frame.strokeRoundedRect(x - 7, y - 7, w + 14, h + 14, 16);
+    this.add.rectangle(x + w / 2, y + h + 16, w + 44, 24, 0x9f6738).setStrokeStyle(3, 0x75451f);
   }
 
   private createShelves(): void {
     const shelf = (x: number, y: number, width: number): void => {
-      this.add.rectangle(x, y, width, 18, 0x9e6739).setStrokeStyle(3, 0x744524);
-      this.add.rectangle(x - width / 2 + 22, y + 25, 10, 45, 0x70442a);
-      this.add.rectangle(x + width / 2 - 22, y + 25, 10, 45, 0x70442a);
+      this.add.rectangle(x, y, width, 18, 0x9a6033).setStrokeStyle(3, 0x693b1c);
+      this.add.rectangle(x - width / 2 + 20, y + 23, 9, 40, 0x68401f);
+      this.add.rectangle(x + width / 2 - 20, y + 23, 9, 40, 0x68401f);
     };
-    shelf(1400, 145, 285);
-    shelf(1400, 275, 285);
-    const colors = [0xe74b3c, 0xf1bd37, 0x3e88d5, 0x49a86b];
-    colors.forEach((color, index) => {
-      this.add.rectangle(1322 + index * 57, 112, 45, 39, color).setStrokeStyle(3, 0x25364e, .4);
-      this.add.circle(1310 + index * 57, 91, 6, 0xffffff, .42);
-      this.add.circle(1332 + index * 57, 91, 6, 0xffffff, .42);
+
+    shelf(1410, 140, 275);
+    shelf(1410, 260, 275);
+    const colors = [0xe74b45, 0xf1bd3c, 0x3989d8, 0x4ca86c];
+    colors.forEach((color, i) => {
+      const x = 1332 + i * 55;
+      this.add.rectangle(x, 108, 44, 36, color).setStrokeStyle(3, 0x30415a, .36);
+      this.add.circle(x - 11, 85, 5.5, 0xffffff, .55);
+      this.add.circle(x + 11, 85, 5.5, 0xffffff, .55);
     });
-    this.add.rectangle(1327, 237, 94, 58, 0x6075cf).setStrokeStyle(4, 0x2f4265);
-    this.add.circle(1303, 207, 8, 0xc4f4ff);
-    this.add.circle(1351, 207, 8, 0xc4f4ff);
-    this.add.rectangle(1440, 236, 70, 57, 0xe6aa3d).setStrokeStyle(4, 0x7e5525);
-    this.add.circle(1419, 207, 7, 0xffffff, .45);
-    this.add.circle(1461, 207, 7, 0xffffff, .45);
+    this.add.rectangle(1358, 225, 95, 56, 0x6075ce).setStrokeStyle(4, 0x344665);
+    this.add.circle(1335, 195, 7, 0xd8f6ff);
+    this.add.circle(1381, 195, 7, 0xd8f6ff);
+    this.add.rectangle(1468, 226, 72, 55, 0xe3aa38).setStrokeStyle(4, 0x7e5522);
+    this.add.circle(1451, 196, 7, 0xfff1b0);
+    this.add.circle(1485, 196, 7, 0xfff1b0);
   }
 
-  private createDeskAndFloor(): void {
-    this.add.rectangle(800, 720, WORLD_WIDTH, 120, 0xc59057).setStrokeStyle(4, 0x9a6735);
-    for (let x = 0; x < WORLD_WIDTH; x += 160) {
-      this.add.line(0, 0, x, 662, x + 42, 780, 0x7c512e, .23).setOrigin(0);
+  private createRoomProps(): void {
+    this.add.rectangle(110, 622, 142, 30, 0x4b9b69).setStrokeStyle(4, 0x2e6e49);
+    this.add.circle(110, 582, 42, 0xf2bb43).setStrokeStyle(5, 0xb87922);
+    this.add.rectangle(1490, 612, 165, 118, 0xc85a43).setStrokeStyle(7, 0x71382e);
+    for (let i = 0; i < 3; i += 1) {
+      this.add.rectangle(1490, 578 + i * 36, 137, 23, 0xe4765b).setStrokeStyle(2, 0x914839);
+      this.add.rectangle(1490, 578 + i * 36, 26, 5, 0xf4bd96);
     }
-    this.add.rectangle(800, 666, WORLD_WIDTH, 22, 0x8e5b31).setStrokeStyle(3, 0x69401f);
   }
 
-  private createDecor(): void {
-    this.add.circle(92, 600, 42, 0xf1b83f).setStrokeStyle(5, 0xb77722);
-    this.add.rectangle(92, 648, 118, 30, 0x4b9a68).setStrokeStyle(4, 0x2a6a45);
-    this.add.rectangle(1490, 570, 150, 110, 0xd45f46).setStrokeStyle(7, 0x713b2f);
-    for (let index = 0; index < 3; index += 1) {
-      this.add.rectangle(1490, 541 + index * 34, 125, 22, 0xe4775e).setStrokeStyle(2, 0x8d4939);
-      this.add.rectangle(1490, 541 + index * 34, 24, 5, 0xf1bc94);
+  private createWorkBoard(): void {
+    this.add.rectangle(800, 395, 1180, 548, 0xede6d6, .92)
+      .setStrokeStyle(12, 0x9c754a, .95);
+    this.add.rectangle(800, 395, 1150, 518, 0xf7f2e8, .93)
+      .setStrokeStyle(2, 0xffffff, .8);
+
+    for (let x = 260; x <= 1340; x += 58) {
+      for (let y = 160; y <= 620; y += 58) {
+        this.add.circle(x, y, 2.1, 0x9d8d73, .18);
+      }
     }
+
+    this.add.rectangle(800, 663, 1135, 26, 0x9a6033).setStrokeStyle(4, 0x673a1d);
   }
 
   private createMachine(): void {
-    const railOne = { x: 420, y: 309, rotation: Phaser.Math.DegToRad(8), width: 410 };
-    const railTwo = { x: 1052, y: 500, rotation: Phaser.Math.DegToRad(15), width: 410 };
+    const left = { x: 476, y: 326, rotation: Phaser.Math.DegToRad(12), width: 402 };
+    const right = { x: 1104, y: 458, rotation: Phaser.Math.DegToRad(12), width: 402 };
 
-    this.add.image(railOne.x, railOne.y, 'rail-blue').setRotation(railOne.rotation);
-    this.add.image(railTwo.x, railTwo.y, 'rail-blue').setRotation(railTwo.rotation);
-    this.matter.add.rectangle(railOne.x, railOne.y + 4, railOne.width - 18, 28, { isStatic: true, angle: railOne.rotation, friction: 0.006, restitution: 0.02, label: 'rail' });
-    this.matter.add.rectangle(railTwo.x, railTwo.y + 4, railTwo.width - 18, 28, { isStatic: true, angle: railTwo.rotation, friction: 0.006, restitution: 0.02, label: 'rail' });
+    this.addBeamWithBody(left.x, left.y, left.rotation, left.width);
+    this.addBeamWithBody(right.x, right.y, right.rotation, right.width);
+    this.addSupport(350, 385, 0x4c79b5);
+    this.addSupport(1198, 533, 0x4c79b5);
 
-    const launchBlock = this.add.rectangle(224, 227, 130, 46, 0x36a35d).setStrokeStyle(5, 0x1f7040);
-    launchBlock.setRotation(railOne.rotation);
-    this.add.circle(this.startBall.x, this.startBall.y, 41, 0x1670c6, .13);
-    this.add.image(this.startBall.x, this.startBall.y, 'energy-ball');
+    this.add.rectangle(255, 260, 126, 46, 0x3da85f).setStrokeStyle(5, 0x1e7040).setRotation(left.rotation);
+    this.add.circle(START_BALL.x, START_BALL.y, 45, 0x4bc4ff, .12);
+    this.ballPreview = this.add.image(START_BALL.x, START_BALL.y, 'energy-ball');
 
-    this.snapZone = this.add.circle(SNAP_TARGET.x, SNAP_TARGET.y, 105, 0x76d7ff, 0.1).setStrokeStyle(4, 0x63cfff, .42);
-    this.add.circle(SNAP_TARGET.x, SNAP_TARGET.y, 65, 0xffffff, .04).setStrokeStyle(2, 0xffffff, .32);
+    this.targetGhost = this.add.image(TARGET.x, TARGET.y, 'beam-red')
+      .setRotation(TARGET.rotation)
+      .setAlpha(.11)
+      .setTint(0x7ddcff);
+    this.targetGhost.setVisible(false);
 
-    this.bridgeShadow = this.add.ellipse(785, 426, 230, 35, 0x27344b, .18);
-    this.bridge = this.add.image(780, 630, 'bridge-red').setInteractive({ useHandCursor: true });
-    this.bridge.setRotation(Phaser.Math.DegToRad(-7));
+    const leftConnector = this.add.circle(656, 364, 17, 0x6bd5ff, .12).setStrokeStyle(4, 0x64cfff, .42);
+    const rightConnector = this.add.circle(923, 421, 17, 0x6bd5ff, .12).setStrokeStyle(4, 0x64cfff, .42);
+    this.connectorGlows = [leftConnector, rightConnector];
 
-    this.bridgeHandleLine = this.add.line(0, 0, 0, 0, 0, 0, 0x45566d, .8).setLineWidth(3).setOrigin(0);
-    this.bridgeHandle = this.add.circle(0, 0, 18, 0xffffff, 1).setStrokeStyle(5, 0x596a82).setInteractive({ useHandCursor: true });
+    this.bridgeShadow = this.add.ellipse(START_BRIDGE.x, START_BRIDGE.y + 30, 250, 31, 0x26344a, .2);
+    this.bridge = this.add.image(START_BRIDGE.x, START_BRIDGE.y, 'beam-red')
+      .setRotation(START_BRIDGE.rotation)
+      .setInteractive({ useHandCursor: true });
 
-    this.add.image(1372, 532, 'receiver').setScale(.92);
-    this.receiverGlow = this.add.circle(1372, 518, 65, 0x5ed6ff, .12).setBlendMode(Phaser.BlendModes.ADD);
-    this.receiverGlow.setAlpha(.18);
-    this.matter.add.rectangle(1372, 515, 93, 90, { isStatic: true, isSensor: true, label: 'receiver' });
+    this.handleLine = this.add.line(0, 0, 0, 0, 0, 0, 0x41536c, .7).setLineWidth(3).setOrigin(0);
+    this.handle = this.add.circle(0, 0, 20, 0xffffff, 1)
+      .setStrokeStyle(5, 0x53657c)
+      .setInteractive({ useHandCursor: true });
 
-    this.add.image(1510, 548, 'robot').setScale(.76);
+    this.receiverGlow = this.add.circle(1360, 526, 92, 0x5ddaff, .08)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(.18);
+    this.add.image(1360, 526, 'receiver').setScale(.84);
+    this.receiverCore = this.add.circle(1360, 523, 39, 0x07182d, .35);
+    this.matter.add.circle(1360, 523, 62, { isStatic: true, isSensor: true, label: 'receiver' });
+
+    this.robotHead = this.add.image(1490, 548, 'robot').setScale(.68);
     this.robotEyes = [
-      this.add.circle(1493, 503, 7, 0x64738b),
-      this.add.circle(1527, 503, 7, 0x64738b)
+      this.add.circle(1476, 514, 7, 0x66778f),
+      this.add.circle(1504, 514, 7, 0x66778f)
     ];
 
-    this.add.text(1265, 650, 'ЭНЕРГОПРИЁМНИК', { fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#526078' }).setOrigin(.5);
+    this.add.text(1360, 635, 'ЭНЕРГОПОРТ', {
+      fontFamily: 'Inter, Arial',
+      fontSize: '15px',
+      fontStyle: 'bold',
+      color: '#596880',
+      letterSpacing: 2
+    }).setOrigin(.5);
 
     this.hintGroup = this.add.container(0, 0).setVisible(false);
-    const ghost = this.add.image(SNAP_TARGET.x, SNAP_TARGET.y, 'bridge-red').setRotation(SNAP_TARGET.rotation).setAlpha(.3).setTint(0xbcecff);
+    const ghost = this.add.image(TARGET.x, TARGET.y, 'beam-red')
+      .setRotation(TARGET.rotation)
+      .setAlpha(.34)
+      .setTint(0xaeefff);
     const path = this.add.graphics();
-    path.lineStyle(4, 0x59c5f0, .7);
-    for (let x = 270; x < 1330; x += 30) {
-      const t = (x - 270) / 1060;
-      const y = 250 + 355 * t + Math.sin(t * Math.PI) * 26;
-      path.lineBetween(x, y, x + 13, y + 4);
+    path.lineStyle(4, 0x4fc6f2, .72);
+    const points = [
+      { x: 292, y: 260 }, { x: 470, y: 320 }, { x: 650, y: 360 },
+      { x: 790, y: 392 }, { x: 930, y: 424 }, { x: 1100, y: 458 }, { x: 1352, y: 520 }
+    ];
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = points[i];
+      const b = points[i + 1];
+      const steps = 5;
+      for (let s = 0; s < steps; s += 2) {
+        const t1 = s / steps;
+        const t2 = Math.min(1, (s + 1) / steps);
+        path.lineBetween(
+          Phaser.Math.Linear(a.x, b.x, t1), Phaser.Math.Linear(a.y, b.y, t1),
+          Phaser.Math.Linear(a.x, b.x, t2), Phaser.Math.Linear(a.y, b.y, t2)
+        );
+      }
     }
     this.hintGroup.add([ghost, path]);
+
+    this.matter.add.rectangle(800, 674, 1160, 26, { isStatic: true, friction: .6, label: 'bench' });
+  }
+
+  private addBeamWithBody(x: number, y: number, rotation: number, width: number): void {
+    this.add.ellipse(x, y + 28, width - 40, 28, 0x24334b, .14).setRotation(rotation);
+    this.add.image(x, y, 'beam-blue').setRotation(rotation);
+    this.matter.add.rectangle(x, y + 5, width - 20, 28, {
+      isStatic: true,
+      angle: rotation,
+      friction: .004,
+      restitution: .015,
+      label: 'rail'
+    });
+  }
+
+  private addSupport(x: number, y: number, color: number): void {
+    this.add.rectangle(x, y, 58, 20, color).setStrokeStyle(3, 0x2c4361);
+    this.add.rectangle(x, y + 35, 16, 62, 0x3e526e);
+    this.add.rectangle(x, y + 65, 82, 15, 0x2d3f57);
+    this.add.circle(x, y, 8, 0xd8e7f2).setStrokeStyle(3, 0x2c4361);
   }
 
   private createInteraction(): void {
-    this.bridge.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    this.bridge.on('pointerdown', (pointer: any) => {
       if (this.mode !== 'build') return;
       this.dragging = true;
       this.dragOffset.set(this.bridge.x - pointer.worldX, this.bridge.y - pointer.worldY);
-      this.bridge.setDepth(20);
-      this.bridgeShadow.setDepth(19);
+      this.bridge.setDepth(30);
+      this.bridgeShadow.setDepth(29);
+      this.setMessage('Поставь пластину между двумя синими дорожками.');
     });
 
-    this.bridgeHandle.on('pointerdown', () => {
+    this.handle.on('pointerdown', () => {
       if (this.mode !== 'build') return;
       this.rotating = true;
     });
 
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+    this.input.on('pointermove', (pointer: any) => {
       if (this.mode !== 'build') return;
       if (this.dragging) {
-        this.bridge.x = Phaser.Math.Clamp(pointer.worldX + this.dragOffset.x, 260, 1290);
-        this.bridge.y = Phaser.Math.Clamp(pointer.worldY + this.dragOffset.y, 210, 635);
+        this.bridge.x = Phaser.Math.Clamp(pointer.worldX + this.dragOffset.x, 255, 1320);
+        this.bridge.y = Phaser.Math.Clamp(pointer.worldY + this.dragOffset.y, 210, 690);
         this.applySoftSnap();
-        this.updateHandle();
+        this.updateBridgeUi();
       } else if (this.rotating) {
         this.bridge.rotation = Phaser.Math.Clamp(
           Phaser.Math.Angle.Between(this.bridge.x, this.bridge.y, pointer.worldX, pointer.worldY) + Math.PI / 2,
-          Phaser.Math.DegToRad(-28),
-          Phaser.Math.DegToRad(34)
+          Phaser.Math.DegToRad(-24),
+          Phaser.Math.DegToRad(30)
         );
-        this.updateHandle();
+        this.updateBridgeUi();
       }
     });
 
@@ -382,15 +515,15 @@ class WorkshopScene extends Phaser.Scene {
       if (this.mode !== 'build') return;
       this.dragging = false;
       this.rotating = false;
-      this.bridge.setDepth(5);
-      this.bridgeShadow.setDepth(4);
+      this.bridge.setDepth(8);
+      this.bridgeShadow.setDepth(7);
       this.applyReleaseSnap();
-      this.updateHandle();
+      this.updateBridgeUi();
     });
 
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _objects: Phaser.GameObjects.GameObject[], _deltaX: number, deltaY: number) => {
+    this.input.on('wheel', (_pointer: any, _objects: any[], _dx: number, dy: number) => {
       if (this.mode !== 'build') return;
-      this.rotateBridge(deltaY > 0 ? 3 : -3);
+      this.rotateBridge(dy > 0 ? 3 : -3);
     });
   }
 
@@ -408,51 +541,58 @@ class WorkshopScene extends Phaser.Scene {
     if (this.mode !== 'build') return;
     this.bridge.rotation = Phaser.Math.Clamp(
       this.bridge.rotation + Phaser.Math.DegToRad(degrees),
-      Phaser.Math.DegToRad(-28),
-      Phaser.Math.DegToRad(34)
+      Phaser.Math.DegToRad(-24),
+      Phaser.Math.DegToRad(30)
     );
-    this.updateHandle();
+    this.updateBridgeUi();
+  }
+
+  private bridgeDistance(): number {
+    return Phaser.Math.Distance.Between(this.bridge.x, this.bridge.y, TARGET.x, TARGET.y);
   }
 
   private applySoftSnap(): void {
-    const distance = Phaser.Math.Distance.Between(this.bridge.x, this.bridge.y, SNAP_TARGET.x, SNAP_TARGET.y);
-    this.snapZone.setAlpha(Phaser.Math.Clamp(0.1 + (1 - distance / 250) * 0.2, 0.08, 0.3));
-    if (distance < 105) {
-      this.bridge.x = Phaser.Math.Linear(this.bridge.x, SNAP_TARGET.x, 0.09);
-      this.bridge.y = Phaser.Math.Linear(this.bridge.y, SNAP_TARGET.y, 0.09);
+    const distance = this.bridgeDistance();
+    const strength = Phaser.Math.Clamp(1 - distance / 190, 0, 1);
+    this.connectorGlows.forEach((glow) => glow.setAlpha(.1 + strength * .5).setScale(1 + strength * .18));
+    if (distance < 130) {
+      this.bridge.x = Phaser.Math.Linear(this.bridge.x, TARGET.x, .12);
+      this.bridge.y = Phaser.Math.Linear(this.bridge.y, TARGET.y, .12);
+      this.bridge.rotation = Phaser.Math.Linear(this.bridge.rotation, TARGET.rotation, .055);
     }
   }
 
   private applyReleaseSnap(): void {
-    const distance = Phaser.Math.Distance.Between(this.bridge.x, this.bridge.y, SNAP_TARGET.x, SNAP_TARGET.y);
-    if (distance < 115) {
-      this.tweens.add({
-        targets: this.bridge,
-        x: SNAP_TARGET.x,
-        y: SNAP_TARGET.y,
-        rotation: Phaser.Math.Linear(this.bridge.rotation, SNAP_TARGET.rotation, 0.58),
-        duration: 210,
-        ease: 'Cubic.Out',
-        onUpdate: () => this.updateHandle(),
-        onComplete: () => this.updateHandle()
-      });
-      this.setMessage('Отлично. Теперь нажми «Запуск».');
-    }
+    if (this.bridgeDistance() > 145) return;
+    this.tweens.add({
+      targets: this.bridge,
+      x: TARGET.x,
+      y: TARGET.y,
+      rotation: TARGET.rotation,
+      duration: 230,
+      ease: 'Back.Out',
+      onUpdate: () => this.updateBridgeUi(),
+      onComplete: () => {
+        this.updateBridgeUi();
+        this.connectorGlows.forEach((glow) => glow.setAlpha(.72));
+        this.setMessage('Готово! Нажми «Запуск».');
+        this.setModeCopy('Пластина установлена', 'Запусти механизм и посмотри, что произойдёт');
+      }
+    });
   }
 
-  private updateHandle(): void {
-    const handleDistance = 74;
+  private updateBridgeUi(): void {
+    const distance = 74;
     const angle = this.bridge.rotation - Math.PI / 2;
-    const hx = this.bridge.x + Math.cos(angle) * handleDistance;
-    const hy = this.bridge.y + Math.sin(angle) * handleDistance;
-    this.bridgeHandle.setPosition(hx, hy);
-    this.bridgeHandleLine.setTo(this.bridge.x, this.bridge.y, hx, hy);
-    this.bridgeShadow.setPosition(this.bridge.x, this.bridge.y + 28);
-    this.bridgeShadow.setRotation(this.bridge.rotation);
+    const hx = this.bridge.x + Math.cos(angle) * distance;
+    const hy = this.bridge.y + Math.sin(angle) * distance;
+    this.handle.setPosition(hx, hy);
+    this.handleLine.setTo(this.bridge.x, this.bridge.y, hx, hy);
+    this.bridgeShadow.setPosition(this.bridge.x, this.bridge.y + 30).setRotation(this.bridge.rotation);
   }
 
   private createCollisions(): void {
-    this.matter.world.on('collisionstart', (event: Phaser.Physics.Matter.Events.CollisionStartEvent) => {
+    this.matter.world.on('collisionstart', (event: any) => {
       for (const pair of event.pairs) {
         const labels = [pair.bodyA.label, pair.bodyB.label];
         if (labels.includes('energy-ball') && labels.includes('receiver')) {
@@ -465,58 +605,72 @@ class WorkshopScene extends Phaser.Scene {
 
   private runSimulation(): void {
     if (this.mode !== 'build') return;
+
+    if (this.bridgeDistance() < 165) {
+      this.bridge.setPosition(TARGET.x, TARGET.y).setRotation(TARGET.rotation);
+      this.updateBridgeUi();
+    }
+
     this.mode = 'running';
     this.setButtons(true);
-    this.setModeCopy('Симуляция', 'Машина работает — наблюдай за цепочкой');
+    this.setModeCopy('Симуляция', 'Наблюдай, как энергия проходит по собранной дорожке');
     this.setMessage('Энергия пошла!');
     this.bridge.disableInteractive();
-    this.bridgeHandle.setVisible(false);
-    this.bridgeHandleLine.setVisible(false);
+    this.handle.setVisible(false);
+    this.handleLine.setVisible(false);
     this.hintGroup.setVisible(false);
+    this.ballPreview.setVisible(false);
 
-    this.bridgeBody = this.matter.add.rectangle(this.bridge.x, this.bridge.y + 3, BRIDGE_WIDTH - 16, BRIDGE_HEIGHT - 8, {
+    this.bridgeBody = this.matter.add.rectangle(this.bridge.x, this.bridge.y + 4, BRIDGE_WIDTH - 20, BRIDGE_HEIGHT - 12, {
       isStatic: true,
       angle: this.bridge.rotation,
-      friction: 0.006,
-      restitution: 0.02,
+      friction: .004,
+      restitution: .015,
       label: 'bridge'
     });
 
-    this.ball = this.matter.add.image(this.startBall.x, this.startBall.y - 18, 'energy-ball', undefined, {
-      friction: 0.004,
-      frictionAir: 0.001,
-      restitution: 0.04,
-      density: 0.0028,
+    this.ball = this.matter.add.image(START_BALL.x, START_BALL.y - 12, 'energy-ball', undefined, {
+      friction: .002,
+      frictionAir: .0008,
+      restitution: .025,
+      density: .0026,
       label: 'energy-ball'
     });
-    this.ball.setCircle(29);
-    this.ball.setBounce(0.04);
-    this.ball.setAngularVelocity(0.02);
+    this.ball.setCircle(32);
+    this.ball.setBounce(.025);
+    this.ball.setAngularVelocity(.025);
 
-    this.runTimeout = window.setTimeout(() => {
-      if (this.mode === 'running') this.failAttempt('Не хватило наклона. Чуть поверни пластину по часовой стрелке.');
-    }, 9000);
+    this.runTimer = window.setTimeout(() => {
+      if (this.mode === 'running') {
+        const distance = this.bridgeDistance();
+        const message = distance > 190
+          ? 'Пластина не соединяет дорожки. Перетащи её в светящийся разрыв.'
+          : 'Почти получилось. Чуть измени угол пластины.';
+        this.failAttempt(message);
+      }
+    }, 8500);
   }
 
   private failAttempt(message: string): void {
     if (this.mode !== 'running') return;
     this.mode = 'build';
-    this.clearBallAndBodies();
-    this.setButtons(false);
-    this.setModeCopy('Режим сборки', 'Положение пластины сохранено — поправь её и попробуй снова');
-    this.setMessage(message);
+    this.clearSimulation();
+    this.ballPreview.setVisible(true);
     this.bridge.setInteractive({ useHandCursor: true });
-    this.bridgeHandle.setVisible(true);
-    this.bridgeHandleLine.setVisible(true);
-    this.updateHandle();
+    this.handle.setVisible(true);
+    this.handleLine.setVisible(true);
+    this.setButtons(false);
+    this.setModeCopy('Режим сборки', 'Положение детали сохранено — поправь её и попробуй снова');
+    this.setMessage(message);
+    this.updateBridgeUi();
   }
 
   private winLevel(): void {
     if (this.mode !== 'running') return;
     this.mode = 'success';
-    if (this.runTimeout) window.clearTimeout(this.runTimeout);
+    if (this.runTimer) window.clearTimeout(this.runTimer);
     this.setButtons(true);
-    this.setModeCopy('Квест выполнен', 'Наклонная дорожка направила шар в приёмник');
+    this.setModeCopy('Квест выполнен', 'Ты замкнул дорожку и доставил энергию Луми');
     this.setMessage('Луми снова в сети!');
 
     if (this.ball) {
@@ -527,18 +681,19 @@ class WorkshopScene extends Phaser.Scene {
     }
 
     this.tweens.add({
-      targets: this.receiverGlow,
-      alpha: { from: .2, to: .95 },
-      scale: { from: 1, to: 1.28 },
-      duration: 520,
+      targets: [this.receiverGlow, this.receiverCore],
+      alpha: { from: .22, to: .98 },
+      scale: { from: 1, to: 1.26 },
+      duration: 470,
       yoyo: true,
       repeat: 2,
       ease: 'Sine.InOut'
     });
     this.robotEyes.forEach((eye, index) => {
-      eye.setFillStyle(0x64e7ff);
-      this.tweens.add({ targets: eye, alpha: { from: .25, to: 1 }, duration: 250, delay: index * 80, yoyo: true, repeat: 3 });
+      eye.setFillStyle(0x66e8ff);
+      this.tweens.add({ targets: eye, alpha: { from: .25, to: 1 }, duration: 230, delay: index * 90, yoyo: true, repeat: 4 });
     });
+    this.tweens.add({ targets: this.robotHead, y: this.robotHead.y - 8, duration: 260, yoyo: true, repeat: 2, ease: 'Sine.InOut' });
 
     const card = document.querySelector<HTMLElement>('#result-card');
     if (card) card.hidden = false;
@@ -546,24 +701,28 @@ class WorkshopScene extends Phaser.Scene {
 
   private fullReset(): void {
     this.mode = 'build';
-    this.clearBallAndBodies();
-    this.bridge.setPosition(780, 630).setRotation(Phaser.Math.DegToRad(-7));
+    this.clearSimulation();
+    this.bridge.setPosition(START_BRIDGE.x, START_BRIDGE.y).setRotation(START_BRIDGE.rotation);
     this.bridge.setInteractive({ useHandCursor: true });
-    this.bridgeHandle.setVisible(true);
-    this.bridgeHandleLine.setVisible(true);
+    this.ballPreview.setVisible(true);
+    this.handle.setVisible(true);
+    this.handleLine.setVisible(true);
     this.receiverGlow.setAlpha(.18).setScale(1);
-    this.robotEyes.forEach((eye) => eye.setFillStyle(0x64738b));
+    this.receiverCore.setAlpha(.35).setScale(1);
+    this.robotEyes.forEach((eye) => eye.setFillStyle(0x66778f));
     this.hintGroup.setVisible(false);
+    this.targetGhost.setVisible(false);
+    this.connectorGlows.forEach((glow) => glow.setAlpha(.12).setScale(1));
     const card = document.querySelector<HTMLElement>('#result-card');
     if (card) card.hidden = true;
     this.setButtons(false);
-    this.setModeCopy('Режим сборки', 'Перетащи красную пластину в светящийся разрыв');
-    this.setMessage('Мне не хватает одной детали…');
-    this.updateHandle();
+    this.setModeCopy('Режим сборки', 'Перетащи красную пластину в разрыв между дорожками');
+    this.setMessage('Луми: «Мне не хватает одной детали…»');
+    this.updateBridgeUi();
   }
 
-  private clearBallAndBodies(): void {
-    if (this.runTimeout) window.clearTimeout(this.runTimeout);
+  private clearSimulation(): void {
+    if (this.runTimer) window.clearTimeout(this.runTimer);
     if (this.ball) {
       this.ball.destroy();
       this.ball = undefined;
@@ -578,7 +737,8 @@ class WorkshopScene extends Phaser.Scene {
     if (this.mode !== 'build') return;
     const visible = !this.hintGroup.visible;
     this.hintGroup.setVisible(visible);
-    this.setMessage(visible ? 'Поставь пластину поверх голубого силуэта.' : 'Мне не хватает одной детали…');
+    this.targetGhost.setVisible(false);
+    this.setMessage(visible ? 'Совмести красную пластину с голубым силуэтом.' : 'Луми: «Мне не хватает одной детали…»');
   }
 
   private setMessage(message: string): void {
@@ -593,36 +753,20 @@ class WorkshopScene extends Phaser.Scene {
     if (copyNode) copyNode.textContent = copy;
   }
 
-  private setButtons(running: boolean): void {
+  private setButtons(locked: boolean): void {
     const run = document.querySelector<HTMLButtonElement>('#run-button');
     const hint = document.querySelector<HTMLButtonElement>('#hint-button');
-    if (run) run.disabled = running;
-    if (hint) hint.disabled = running;
-  }
-
-  private runDevGeometryChecks(): void {
-    const testPlacements = [
-      { x: 765, y: 405, angle: 8 },
-      { x: 785, y: 394, angle: 12 },
-      { x: 805, y: 385, angle: 16 }
-    ];
-    const results = testPlacements.map((placement) => {
-      const distance = Phaser.Math.Distance.Between(placement.x, placement.y, SNAP_TARGET.x, SNAP_TARGET.y);
-      const angleDelta = Math.abs(placement.angle - Phaser.Math.RadToDeg(SNAP_TARGET.rotation));
-      return { ...placement, accepted: distance <= 34 && angleDelta <= 7 };
-    });
-    console.groupCollapsed('[Young Inventor] Допуски первого квеста');
-    console.table(results);
-    console.groupEnd();
+    if (run) run.disabled = locked;
+    if (hint) hint.disabled = locked;
   }
 }
 
-const config: Phaser.Types.Core.GameConfig = {
+const config: any = {
   type: Phaser.AUTO,
   parent: 'game-container',
   width: WORLD_WIDTH,
   height: WORLD_HEIGHT,
-  backgroundColor: '#ead9bd',
+  backgroundColor: '#ead5b2',
   transparent: false,
   antialias: true,
   render: {
@@ -640,7 +784,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'matter',
     matter: {
-      gravity: { x: 0, y: 1.05 },
+      gravity: { x: 0, y: 1.02 },
       enableSleeping: false,
       debug: false
     }
