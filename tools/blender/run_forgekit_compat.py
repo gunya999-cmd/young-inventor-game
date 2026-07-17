@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -16,44 +17,6 @@ def point_at(obj, target):
     obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 
 
-def choose_render_engine(scene):
-    """Prefer CPU Cycles because Eevee can abort on headless GitHub runners."""
-    errors = []
-    for candidate in ("CYCLES", "BLENDER_WORKBENCH", "BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
-        try:
-            scene.render.engine = candidate
-            print(f"ForgeKit render engine: {candidate}")
-            return candidate
-        except (TypeError, ValueError, AttributeError) as error:
-            errors.append(f"{candidate}: {error}")
-    raise RuntimeError("No supported Blender render engine found. " + " | ".join(errors))
-
-
-def configure_samples(scene, samples):
-    if scene.render.engine == "CYCLES":
-        safe_samples = max(8, min(int(samples), 32))
-        scene.cycles.samples = safe_samples
-        scene.cycles.device = "CPU"
-        if hasattr(scene.cycles, "use_denoising"):
-            scene.cycles.use_denoising = True
-        if hasattr(scene.cycles, "preview_samples"):
-            scene.cycles.preview_samples = min(8, safe_samples)
-        print(f"ForgeKit Cycles CPU samples: {safe_samples}")
-        return
-
-    eevee = getattr(scene, "eevee", None)
-    if eevee is not None:
-        for property_name in ("taa_render_samples", "taa_samples"):
-            try:
-                if hasattr(eevee, property_name):
-                    setattr(eevee, property_name, int(samples))
-                    print(f"ForgeKit Eevee samples: {property_name}={samples}")
-                    return
-            except (TypeError, ValueError, AttributeError):
-                continue
-    print("ForgeKit samples: using Blender defaults")
-
-
 def set_supported_look(scene):
     for look in ("AgX - Medium High Contrast", "Medium High Contrast", "None"):
         try:
@@ -65,10 +28,48 @@ def set_supported_look(scene):
     print("ForgeKit color look: Blender default")
 
 
+def disable_all_denoising(scene):
+    # Ubuntu's Blender 4.0.2 package is built without OpenImageDenoiser.
+    cycles = getattr(scene, "cycles", None)
+    if cycles is not None:
+        for property_name in (
+            "use_denoising",
+            "use_preview_denoising",
+            "use_guiding",
+        ):
+            if hasattr(cycles, property_name):
+                try:
+                    setattr(cycles, property_name, False)
+                except (TypeError, ValueError, AttributeError):
+                    pass
+
+    for view_layer in scene.view_layers:
+        layer_cycles = getattr(view_layer, "cycles", None)
+        if layer_cycles is None:
+            continue
+        for property_name in (
+            "use_denoising",
+            "denoising_store_passes",
+        ):
+            if hasattr(layer_cycles, property_name):
+                try:
+                    setattr(layer_cycles, property_name, False)
+                except (TypeError, ValueError, AttributeError):
+                    pass
+
+    scene.render.use_compositing = False
+    print("ForgeKit denoising: disabled")
+
+
 def compatible_setup_scene(render_config):
     scene = bpy.context.scene
-    choose_render_engine(scene)
-    configure_samples(scene, int(render_config.get("samples", 24)))
+    scene.render.engine = "CYCLES"
+    scene.cycles.device = "CPU"
+    scene.cycles.samples = min(int(render_config.get("samples", 32)), 16)
+    scene.cycles.use_adaptive_sampling = False
+    if hasattr(scene.cycles, "preview_samples"):
+        scene.cycles.preview_samples = min(8, scene.cycles.samples)
+    disable_all_denoising(scene)
 
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
@@ -105,9 +106,27 @@ def compatible_setup_scene(render_config):
         light.data.color = color
         point_at(light, (0, 0, 0.35))
 
+    print(f"ForgeKit render engine: {scene.render.engine}")
+    print(f"ForgeKit Cycles CPU samples: {scene.cycles.samples}")
     return camera
+
+
+def smoke_or_full_main():
+    with open(forgekit.SPEC_PATH, "r", encoding="utf-8") as handle:
+        spec = json.load(handle)
+
+    requested_limit = int(os.environ.get("FORGEKIT_LIMIT", "0"))
+    parts = spec["parts"][:requested_limit] if requested_limit > 0 else spec["parts"]
+
+    for part in parts:
+        forgekit.render_part(part, spec)
+
+    manifest_spec = dict(spec)
+    manifest_spec["parts"] = parts
+    forgekit.write_manifest(manifest_spec)
+    print(f"ForgeKit complete: {len(parts)} parts")
 
 
 print(f"ForgeKit Blender version: {bpy.app.version_string}")
 forgekit.setup_scene = compatible_setup_scene
-forgekit.main()
+smoke_or_full_main()
