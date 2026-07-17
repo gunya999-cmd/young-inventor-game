@@ -1,0 +1,135 @@
+{
+  "system": {
+    "name": "ForgeKit",
+    "module_mm": 20,
+    "blender_module": 0.6,
+    "hole_diameter_mm": 8,
+    "axle_diameter_mm": 7.6,
+    "beam_height_mm": 14,
+    "beam_depth_mm": 8,
+    "design": {
+      "primary_finish": "powder_coated_blue_steel",
+      "secondary_finish": "safety_orange",
+      "hardware_finish": "brushed_steel",
+      "edge_style": "soft_industrial_bevel",
+      "camera": "fixed_isometric"
+    }
+  },
+  "render": {
+    "resolution": 768,
+    "samples": 64,
+    "transparent": true,
+    "ortho_scale": 7.2
+  },
+  "parts": [
+    {
+      "id": "beam_3",
+      "type": "beam",
+      "label": "Короткая балка",
+      "holes": 3,
+      "material": "blue_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["hole:0", "hole:1", "hole:2"]
+    },
+    {
+      "id": "beam_5",
+      "type": "beam",
+      "label": "Средняя балка",
+      "holes": 5,
+      "material": "blue_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["hole:0", "hole:1", "hole:2", "hole:3", "hole:4"]
+    },
+    {
+      "id": "beam_9",
+      "type": "beam",
+      "label": "Длинная балка",
+      "holes": 9,
+      "material": "blue_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["hole:0", "hole:1", "hole:2", "hole:3", "hole:4", "hole:5", "hole:6", "hole:7", "hole:8"]
+    },
+    {
+      "id": "angle_bracket",
+      "type": "angle_bracket",
+      "label": "Угловой кронштейн",
+      "horizontal_holes": 3,
+      "vertical_holes": 3,
+      "material": "orange_steel",
+      "pivot": [0.34, 0.66],
+      "anchors": ["horizontal:0", "horizontal:1", "horizontal:2", "vertical:0", "vertical:1", "vertical:2"]
+    },
+    {
+      "id": "mounting_upright",
+      "type": "upright",
+      "label": "Монтажная стойка",
+      "holes": 5,
+      "material": "blue_steel",
+      "pivot": [0.5, 0.82],
+      "anchors": ["hole:0", "hole:1", "hole:2", "hole:3", "hole:4", "base:left", "base:right"]
+    },
+    {
+      "id": "axle_standard",
+      "type": "axle",
+      "label": "Стандартная ось",
+      "length_modules": 5,
+      "material": "brushed_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["end:left", "end:right"]
+    },
+    {
+      "id": "hinge_joint",
+      "type": "hinge",
+      "label": "Шарнир",
+      "material": "orange_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["leaf:left", "leaf:right", "axis"]
+    },
+    {
+      "id": "lever_7",
+      "type": "lever",
+      "label": "Рычаг",
+      "holes": 7,
+      "pivot_hole": 3,
+      "material": "orange_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["hole:0", "hole:1", "hole:2", "hole:3", "hole:4", "hole:5", "hole:6"]
+    },
+    {
+      "id": "pulley_small",
+      "type": "pulley",
+      "label": "Малый шкив",
+      "radius_modules": 0.9,
+      "material": "blue_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["axis", "rope"]
+    },
+    {
+      "id": "pulley_large",
+      "type": "pulley",
+      "label": "Большой шкив",
+      "radius_modules": 1.4,
+      "material": "blue_steel",
+      "pivot": [0.5, 0.5],
+      "anchors": ["axis", "rope"]
+    },
+    {
+      "id": "weight_module",
+      "type": "weight",
+      "label": "Груз",
+      "mass_class": 2,
+      "material": "dark_steel",
+      "pivot": [0.5, 0.42],
+      "anchors": ["eye"]
+    },
+    {
+      "id": "spring_module",
+      "type": "spring_module",
+      "label": "Пружинный модуль",
+      "coils": 7,
+      "material": "brushed_steel",
+      "pivot": [0.5, 0.74],
+      "anchors": ["base:left", "base:right", "top"]
+    }
+  ]
+}
