@@ -3,54 +3,80 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#e7edf3" />
-    <meta name="description" content="Юный изобретатель — браузерная инженерная головоломка." />
-    <title>Юный изобретатель</title>
+    <meta name="theme-color" content="#0b1824" />
+    <meta name="description" content="Современная браузерная головоломка в духе The Incredible Machine." />
+    <title>Мастерская механизмов</title>
   </head>
   <body>
-    <main id="app">
-      <header class="topbar" aria-label="Панель уровня">
-        <div class="location-block">
-          <div class="location-mark">⌂</div>
-          <div>
-            <div class="eyebrow">Глава 1 · Легомастерская</div>
-            <div id="quest-counter" class="location-subtitle">Квест 1 из 10</div>
-          </div>
+    <main id="app" class="app-shell">
+      <header class="topbar">
+        <div class="top-actions top-actions--left">
+          <button class="icon-button" aria-label="Меню">☰</button>
+          <button class="icon-button" aria-label="Помощь">?</button>
         </div>
-        <div class="quest-title">
-          <strong id="quest-title">Замкни дорожку</strong>
-          <span id="quest-objective">Поставь одну пластину между двумя дорожками</span>
-        </div>
-        <div class="controls">
-          <button id="hint-button" class="button button-secondary" type="button">Подсказка</button>
-          <button id="run-button" class="button button-primary" type="button">▶ Запуск</button>
-          <button id="reset-button" class="button button-secondary button-icon" type="button" aria-label="Сбросить уровень">↻</button>
+        <section class="mission-card">
+          <span>УРОВЕНЬ 1</span>
+          <h1>ДОСТАВЬ ШАР В КОРЗИНУ</h1>
+          <p>Используй предметы из ящика и собери работающий механизм.</p>
+        </section>
+        <div class="top-actions top-actions--right">
+          <button id="run-button" class="action-button action-button--run">▶ <span>ЗАПУСК</span></button>
+          <button id="reset-button" class="action-button">↶ <span>СБРОС</span></button>
+          <button class="icon-button" aria-label="Настройки">☰</button>
         </div>
       </header>
 
-      <section id="game-shell" class="game-shell" aria-label="Игровое поле">
-        <div id="game-container"></div>
-        <div id="message-bubble" class="message-bubble"></div>
-        <div id="result-card" class="result-card" hidden>
-          <div class="result-icon">✓</div>
-          <div class="result-text">
-            <strong id="result-title">Готово!</strong>
-            <span id="result-copy"></span>
-          </div>
-          <button id="next-button" class="button button-primary" type="button">Следующий квест →</button>
+      <aside class="inventory-panel">
+        <h2>ВАШИ ПРЕДМЕТЫ</h2>
+        <div id="inventory" class="inventory-list">
+          <button class="inventory-item" data-part="plank-long"><span class="part-icon plank plank--long"></span><span>ДОСКА<br>ДЛИННАЯ</span><b>×2</b></button>
+          <button class="inventory-item" data-part="plank-short"><span class="part-icon plank plank--short"></span><span>ДОСКА<br>КОРОТКАЯ</span><b>×2</b></button>
+          <button class="inventory-item" data-part="spring"><span class="part-icon spring"></span><span>ПРУЖИНА</span><b>×1</b></button>
+          <button class="inventory-item" data-part="lever"><span class="part-icon lever"></span><span>РЫЧАГ</span><b>×1</b></button>
+          <button class="inventory-item" data-part="rope"><span class="part-icon rope"></span><span>ВЕРЁВКА</span><b>×2</b></button>
+          <button class="inventory-item" data-part="weight"><span class="part-icon weight"></span><span>ГРУЗ</span><b>×2</b></button>
+          <button class="inventory-item" data-part="fan"><span class="part-icon fan"></span><span>ВЕНТИЛЯТОР</span><b>×1</b></button>
         </div>
+        <button id="delete-zone" class="delete-zone">🗑 <span>УДАЛИТЬ<br>ПРЕДМЕТ</span></button>
+      </aside>
+
+      <section id="workspace" class="workspace" aria-label="Игровое поле">
+        <div class="wall-texture"></div>
+        <div class="fixed-object start-ramp">
+          <div class="metal-ball"></div>
+          <div class="wood-plank"></div>
+          <div class="metal-rail"></div>
+        </div>
+        <div class="fixed-object pulley-set pulley-set--left"><span class="pulley"></span><span class="rope-line rope-line--vertical"></span><span class="hanging-weight"></span></div>
+        <div class="fixed-object lever-base"><span class="lever-arm"></span></div>
+        <div class="fixed-object central-pulley"><span class="pulley"></span><span class="rope-line rope-line--diagonal"></span></div>
+        <div class="fixed-object gear-platform"><span class="gear gear--large"></span><span class="gear gear--small"></span><span class="gear gear--tiny"></span></div>
+        <div class="fixed-object spring-platform"><span class="coil"></span></div>
+        <div class="fixed-object balloon"><span></span></div>
+        <div class="fixed-object basket"><span class="basket-rim"></span><span class="basket-net"></span></div>
+        <div class="floor-slab"></div>
+        <div id="placed-layer" class="placed-layer"></div>
       </section>
 
-      <footer class="inventory-bar">
-        <div class="mode-copy">
-          <span class="status-dot"></span>
-          <div>
-            <strong id="mode-title">Режим сборки</strong>
-            <span id="mode-copy">Выбери деталь и собери механизм</span>
-          </div>
+      <footer class="toolbar">
+        <div class="tool-group">
+          <button class="tool-button active" data-tool="select">↖</button>
+          <button class="tool-button" data-tool="move">✋</button>
+          <button id="rotate-button" class="tool-button">⟳</button>
+          <button class="tool-button">🔗</button>
+          <button id="trash-button" class="tool-button">🗑</button>
         </div>
-        <div id="inventory" class="parts-list" aria-label="Доступные детали"></div>
-        <div class="shortcut-hint"><span class="touch-copy">Перетащи · поверни двумя пальцами</span><span class="desktop-copy">Поворот <kbd>Q</kbd><kbd>E</kbd> · Запуск <kbd>Space</kbd></span></div>
+        <div class="tool-group tool-group--center">
+          <button class="tool-button">○</button>
+          <button class="tool-button">╱</button>
+          <button class="tool-button">⛓</button>
+          <button class="tool-button disabled">♟</button>
+        </div>
+        <div class="tool-group">
+          <button class="tool-button">🔒</button>
+          <button class="tool-button">⚙</button>
+        </div>
+        <button class="hint-button">☼ ПОДСКАЗКА <b>3</b></button>
       </footer>
     </main>
     <script type="module" src="/src/main.ts"></script>
