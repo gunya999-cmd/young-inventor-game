@@ -13,7 +13,7 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -25,19 +25,25 @@ jobs:
           sudo apt-get install -y blender
           blender --version
 
-      - name: Render procedural assets
-        run: blender --background --python tools/blender/render_assets.py
+      - name: Render ForgeKit construction system
+        run: blender --background --python tools/blender/render_engineering_kit.py
 
-      - name: Verify output
+      - name: Verify ForgeKit output
         run: |
-          test -d generated-assets
-          ls -lh generated-assets
-          test "$(find generated-assets -maxdepth 1 -name '*.png' | wc -l)" -eq 4
+          test -d generated-assets/forgekit
+          test -d generated-assets/forgekit/icons
+          test -f generated-assets/forgekit/manifest.json
+          echo "Full-size assets:"
+          find generated-assets/forgekit -maxdepth 1 -name '*.png' -print
+          echo "Inventory icons:"
+          find generated-assets/forgekit/icons -maxdepth 1 -name '*.png' -print
+          test "$(find generated-assets/forgekit -maxdepth 1 -name '*.png' | wc -l)" -eq 12
+          test "$(find generated-assets/forgekit/icons -maxdepth 1 -name '*.png' | wc -l)" -eq 12
 
-      - name: Upload rendered asset pack
+      - name: Upload ForgeKit asset library
         uses: actions/upload-artifact@v4
         with:
-          name: tim-asset-pack-v1
-          path: generated-assets/*.png
+          name: forgekit-engineering-constructor-v1
+          path: generated-assets/forgekit
           if-no-files-found: error
           retention-days: 14
