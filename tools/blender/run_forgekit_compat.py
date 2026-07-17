@@ -17,8 +17,9 @@ def point_at(obj, target):
 
 
 def choose_render_engine(scene):
+    """Prefer CPU Cycles because Eevee can abort on headless GitHub runners."""
     errors = []
-    for candidate in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "BLENDER_WORKBENCH"):
+    for candidate in ("CYCLES", "BLENDER_WORKBENCH", "BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
         try:
             scene.render.engine = candidate
             print(f"ForgeKit render engine: {candidate}")
@@ -28,20 +29,29 @@ def choose_render_engine(scene):
     raise RuntimeError("No supported Blender render engine found. " + " | ".join(errors))
 
 
-def set_eevee_samples(scene, samples):
-    eevee = getattr(scene, "eevee", None)
-    if eevee is None:
-        print("ForgeKit samples: using Blender defaults")
+def configure_samples(scene, samples):
+    if scene.render.engine == "CYCLES":
+        safe_samples = max(8, min(int(samples), 32))
+        scene.cycles.samples = safe_samples
+        scene.cycles.device = "CPU"
+        if hasattr(scene.cycles, "use_denoising"):
+            scene.cycles.use_denoising = True
+        if hasattr(scene.cycles, "preview_samples"):
+            scene.cycles.preview_samples = min(8, safe_samples)
+        print(f"ForgeKit Cycles CPU samples: {safe_samples}")
         return
-    for property_name in ("taa_render_samples", "taa_samples"):
-        try:
-            if hasattr(eevee, property_name):
-                setattr(eevee, property_name, samples)
-                print(f"ForgeKit samples: {property_name}={samples}")
-                return
-        except (TypeError, ValueError, AttributeError):
-            continue
-    print("ForgeKit samples: compatible property not exposed; using Blender defaults")
+
+    eevee = getattr(scene, "eevee", None)
+    if eevee is not None:
+        for property_name in ("taa_render_samples", "taa_samples"):
+            try:
+                if hasattr(eevee, property_name):
+                    setattr(eevee, property_name, int(samples))
+                    print(f"ForgeKit Eevee samples: {property_name}={samples}")
+                    return
+            except (TypeError, ValueError, AttributeError):
+                continue
+    print("ForgeKit samples: using Blender defaults")
 
 
 def set_supported_look(scene):
@@ -58,7 +68,7 @@ def set_supported_look(scene):
 def compatible_setup_scene(render_config):
     scene = bpy.context.scene
     choose_render_engine(scene)
-    set_eevee_samples(scene, int(render_config.get("samples", 32)))
+    configure_samples(scene, int(render_config.get("samples", 24)))
 
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
