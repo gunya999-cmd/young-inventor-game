@@ -17,12 +17,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
-      - name: Install Blender
+      - name: Install Blender and virtual display
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender xvfb
           blender --version
 
       - name: Render ForgeKit construction system
@@ -31,7 +31,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          blender --background --factory-startup --python tools/blender/run_forgekit_compat.py 2>&1 | tee forgekit-render.log
+          xvfb-run -a -s '-screen 0 1280x1024x24' \
+            blender --background --factory-startup --python tools/blender/run_forgekit_compat.py \
+            2>&1 | tee forgekit-render.log
 
       - name: Upload render diagnostics
         if: always()
@@ -45,8 +47,8 @@ jobs:
       - name: Stop after renderer failure
         if: steps.render_forgekit.outcome != 'success'
         run: |
-          echo 'ForgeKit renderer failed. Last 120 log lines:'
-          tail -n 120 forgekit-render.log || true
+          echo 'ForgeKit renderer failed. Last 160 log lines:'
+          tail -n 160 forgekit-render.log || true
           exit 1
 
       - name: Verify ForgeKit output
