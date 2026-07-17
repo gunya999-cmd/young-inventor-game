@@ -17,27 +17,31 @@ def point_at(obj, target):
 
 
 def choose_render_engine(scene):
-    available = {
-        item.identifier
-        for item in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items
-    }
+    errors = []
     for candidate in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "BLENDER_WORKBENCH"):
-        if candidate in available:
+        try:
             scene.render.engine = candidate
             print(f"ForgeKit render engine: {candidate}")
             return candidate
-    raise RuntimeError(f"No supported Blender render engine found. Available: {sorted(available)}")
+        except (TypeError, ValueError, AttributeError) as error:
+            errors.append(f"{candidate}: {error}")
+    raise RuntimeError("No supported Blender render engine found. " + " | ".join(errors))
 
 
 def set_eevee_samples(scene, samples):
     eevee = getattr(scene, "eevee", None)
     if eevee is None:
+        print("ForgeKit samples: using Blender defaults")
         return
     for property_name in ("taa_render_samples", "taa_samples"):
-        if hasattr(eevee, property_name):
-            setattr(eevee, property_name, samples)
-            print(f"ForgeKit samples: {property_name}={samples}")
-            return
+        try:
+            if hasattr(eevee, property_name):
+                setattr(eevee, property_name, samples)
+                print(f"ForgeKit samples: {property_name}={samples}")
+                return
+        except (TypeError, ValueError, AttributeError):
+            continue
+    print("ForgeKit samples: compatible property not exposed; using Blender defaults")
 
 
 def set_supported_look(scene):
@@ -46,7 +50,7 @@ def set_supported_look(scene):
             scene.view_settings.look = look
             print(f"ForgeKit color look: {look}")
             return
-        except TypeError:
+        except (TypeError, ValueError, AttributeError):
             continue
     print("ForgeKit color look: Blender default")
 
