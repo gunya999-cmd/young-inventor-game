@@ -1,0 +1,43 @@
+name: Render Blender assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/blender/**'
+      - '.github/workflows/render-assets.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Render procedural assets
+        run: blender --background --python tools/blender/render_assets.py
+
+      - name: Verify output
+        run: |
+          test -d generated-assets
+          ls -lh generated-assets
+          test "$(find generated-assets -maxdepth 1 -name '*.png' | wc -l)" -eq 4
+
+      - name: Upload rendered asset pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: tim-asset-pack-v1
+          path: generated-assets/*.png
+          if-no-files-found: error
+          retention-days: 14
