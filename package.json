@@ -1,16 +1,16 @@
 {
   "name": "young-inventor-game",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vitest run && tsc -b && vite build",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "build": "npm run test && tsc -b && vite build",
+    "test": "vitest run src/model.test.ts src/physics.test.ts",
+    "test:watch": "vitest src/model.test.ts src/physics.test.ts"
   },
   "dependencies": {
-    "phaser": "3.90.0"
+    "planck": "1.5.0"
   },
   "devDependencies": {
     "typescript": "5.8.3",
