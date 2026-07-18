@@ -2,7 +2,7 @@
 import Phaser from 'phaser';
 import './style.css';
 import './hinge-v4.css';
-import { EditorV4Scene, WORLD_HEIGHT, WORLD_WIDTH } from './editor/EditorV4Scene';
+import { EditorV4RuntimeScene, WORLD_HEIGHT, WORLD_WIDTH } from './editor/EditorV4RuntimeScene';
 import { activeEditor } from './editor/EditorV2Scene';
 import type { EditorPartKind } from './editor/catalog';
 
@@ -28,7 +28,7 @@ new Phaser.Game({
       debug: false
     }
   },
-  scene: [EditorV4Scene]
+  scene: [EditorV4RuntimeScene]
 });
 
 const byId = <T extends HTMLElement>(id: string): T | null => document.querySelector<T>(`#${id}`);
