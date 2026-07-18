@@ -10,22 +10,25 @@ export class WorkshopLevel extends Phaser.Scene {
   constructor() {
     super('WorkshopLevel');
     this.running = false;
+    this.failed = false;
     this.completed = false;
     this.guidePlaced = false;
     this.ropeConnected = false;
     this.weightAdded = false;
     this.ballCaught = false;
+    this.ball2OnLever = false;
     this.secondReleased = false;
     this.hammerReleased = false;
     this.selectedPart = null;
     this.elapsed = 0;
-    this.weightOffset = -70;
-    this.guideAngle = 22;
+    this.weightOffset = 70;
+    this.guideAngle = 18;
     this.bucketX = 575;
-    this.gateX = 730;
-    this.bucketStartY = 520;
-    this.gateStartY = 500;
+    this.gateX = 760;
+    this.bucketStartY = 535;
+    this.gateStartY = 505;
     this.ropeLength = this.bucketStartY + this.gateStartY;
+    this.autoplay = new URLSearchParams(window.location.search).has('autoplay');
   }
 
   create() {
@@ -35,17 +38,20 @@ export class WorkshopLevel extends Phaser.Scene {
     this.createWorkshopBackground();
     this.createMechanism();
     this.createBuildInput();
+
     this.collisionHandler = (event) => this.handleCollision(event);
     this.matter.world.on('collisionstart', this.collisionHandler);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.matter.world.off('collisionstart', this.collisionHandler);
       setActiveScene(null);
     });
+
     resetHud();
-    if (new URLSearchParams(window.location.search).has('autoplay')) {
-      this.time.delayedCall(650, () => {
+    window.__TIM_AUTOPLAY_RESULT__ = 'idle';
+    if (this.autoplay) {
+      this.time.delayedCall(450, () => {
         this.applyHint();
-        this.startSimulation();
+        this.time.delayedCall(350, () => this.startSimulation());
       });
     }
   }
