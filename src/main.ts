@@ -1,7 +1,7 @@
 // @ts-nocheck
 import Phaser from 'phaser';
 import './style.css';
-import { EditorV3Scene, WORLD_HEIGHT, WORLD_WIDTH } from './editor/EditorV3Scene';
+import { EditorV4Scene, WORLD_HEIGHT, WORLD_WIDTH } from './editor/EditorV4Scene';
 import { activeEditor } from './editor/EditorV2Scene';
 import type { EditorPartKind } from './editor/catalog';
 
@@ -20,14 +20,14 @@ new Phaser.Game({
     matter: {
       gravity: { x: 0, y: 1 },
       enableSleeping: false,
-      positionIterations: 12,
-      velocityIterations: 10,
-      constraintIterations: 12,
+      positionIterations: 14,
+      velocityIterations: 12,
+      constraintIterations: 16,
       runner: { fps: 120, frameDeltaSmoothing: true, frameDeltaSnapping: true },
       debug: false
     }
   },
-  scene: [EditorV3Scene]
+  scene: [EditorV4Scene]
 });
 
 const byId = <T extends HTMLElement>(id: string): T | null => document.querySelector<T>(`#${id}`);
@@ -42,6 +42,9 @@ byId<HTMLButtonElement>('rotate-right')?.addEventListener('click', () => activeE
 byId<HTMLButtonElement>('duplicate-button')?.addEventListener('click', () => activeEditor?.duplicateSelected());
 byId<HTMLButtonElement>('fix-button')?.addEventListener('click', () => activeEditor?.toggleSelectedFixed());
 byId<HTMLButtonElement>('rope-button')?.addEventListener('click', () => activeEditor?.armRopeTool());
+byId<HTMLButtonElement>('hinge-button')?.addEventListener('click', () => activeEditor?.armHingeTool());
+byId<HTMLButtonElement>('limit-button')?.addEventListener('click', () => activeEditor?.cycleSelectedHingeLimit());
+byId<HTMLButtonElement>('remove-hinge-button')?.addEventListener('click', () => activeEditor?.removeSelectedHinge());
 byId<HTMLButtonElement>('delete-button')?.addEventListener('click', () => activeEditor?.deleteSelected());
 byId<HTMLButtonElement>('undo-button')?.addEventListener('click', () => activeEditor?.undo());
 byId<HTMLButtonElement>('redo-button')?.addEventListener('click', () => activeEditor?.redo());
@@ -127,4 +130,5 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Delete' || event.key === 'Backspace') activeEditor?.deleteSelected();
   if (event.key === 'ArrowLeft') activeEditor?.rotateSelected(-1);
   if (event.key === 'ArrowRight') activeEditor?.rotateSelected(1);
+  if (event.key.toLowerCase() === 'h') activeEditor?.armHingeTool();
 });
