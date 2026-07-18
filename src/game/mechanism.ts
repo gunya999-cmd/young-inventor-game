@@ -1,6 +1,6 @@
 // @ts-nocheck
 import Phaser from 'phaser';
-import { FLOOR_Y } from './ui';
+import { FLOOR_Y, WORLD_WIDTH } from './ui';
 export const mechanismMethods = {
   createMechanism() {
     const support = this.add.graphics().setDepth(1);
