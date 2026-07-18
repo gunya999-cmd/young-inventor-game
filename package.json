@@ -1,7 +1,7 @@
 {
   "name": "young-inventor-game",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "phaser": "3.90.0"
+    "planck": "1.5.0"
   },
   "devDependencies": {
     "typescript": "5.8.3",
