@@ -3,20 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#1b1713" />
-    <meta name="description" content="Свободная физическая головоломка в духе The Incredible Machine." />
-    <title>TIM 2.0 — Подними ворота</title>
+    <meta name="theme-color" content="#17130f" />
+    <meta name="description" content="Свободная физическая головоломка на Box2D в духе классических инженерных игр." />
+    <title>Машина изобретателя — Box2D</title>
   </head>
   <body>
     <main id="app" class="game-shell">
-      <div id="game-stage" class="game-stage" aria-label="Игровое поле"></div>
+      <canvas id="game-canvas" aria-label="Игровое поле"></canvas>
 
       <header class="top-bar panel">
         <div class="mission-block">
-          <span class="level-number">02</span>
+          <span class="level-number">01</span>
           <div>
-            <h1>ПОДНИМИ ВОРОТА</h1>
-            <p>Используй рычаг, ось, противовес или блоки. Решение выбираешь ты.</p>
+            <h1>ДОСТАВЬ ШАР В КОРЗИНУ</h1>
+            <p>Свободно размещай детали. Никаких готовых позиций и автоматической сборки.</p>
           </div>
         </div>
         <div class="center-state">
@@ -33,65 +33,64 @@
         </nav>
       </header>
 
-      <aside id="inspector" class="inspector panel" aria-label="Настройка выбранной детали">
+      <aside id="inspector" class="inspector panel" aria-label="Настройка детали">
         <div class="selection-info">
           <strong id="selection-name">ИНСТРУМЕНТЫ</strong>
           <span id="selection-angle"></span>
         </div>
         <button id="rotate-left" type="button" title="Повернуть влево">↶</button>
         <button id="rotate-right" type="button" title="Повернуть вправо">↷</button>
-        <button id="duplicate-button" type="button">⧉ КОПИЯ</button>
         <button id="fix-button" type="button">📍 ЗАКРЕПИТЬ</button>
-        <button id="rope-button" type="button">〰 ВЕРЁВКА ×2</button>
-        <button id="hinge-button" type="button">⊙ ОСЬ ×2</button>
-        <button id="limit-button" type="button" disabled>∠ ОГРАНИЧИТЕЛЬ</button>
-        <button id="remove-hinge-button" type="button" disabled title="Убрать ось">⊘</button>
-        <button id="delete-button" class="danger-button" type="button">⌫</button>
+        <button id="rope-button" type="button">〰 ВЕРЁВКА ×3</button>
+        <button id="hinge-button" type="button">⊙ ОСЬ ×3</button>
+        <button id="delete-button" class="danger-button" type="button" title="Удалить">⌫</button>
       </aside>
 
       <div id="status-message" class="status-toast panel" aria-live="polite">
-        Поставь рычаг, выбери его и нажми «Ось», затем коснись нужной точки опоры.
+        Построй механизм: стартовый шар должен попасть в корзину справа.
       </div>
 
-      <section class="utility-panel panel" aria-label="Работа с конструкцией">
+      <section class="utility-panel panel" aria-label="Конструкция">
         <button id="save-button" type="button">СОХРАНИТЬ</button>
         <button id="load-button" type="button" disabled>ЗАГРУЗИТЬ</button>
         <button id="clear-button" type="button">УБРАТЬ ДЕТАЛИ</button>
         <button id="reset-button" type="button">СБРОС УРОВНЯ</button>
       </section>
 
-      <footer id="parts-palette" class="parts-palette panel" aria-label="Инвентарь деталей">
+      <footer class="parts-palette panel" aria-label="Инвентарь деталей">
         <div class="palette-heading">
           <strong>ИНВЕНТАРЬ</strong>
-          <small>Тяни деталь прямо на поле</small>
+          <small>Зажми и перетащи деталь прямо на поле</small>
         </div>
         <button class="palette-part" data-kind="ball" type="button">
-          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>цель уже на поле</small><em class="part-count">×0</em>
+          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>цель уже на поле</small><em data-count>×0</em>
         </button>
         <button class="palette-part" data-kind="plank" type="button">
-          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>наклон и опора</small><em class="part-count">×2</em>
+          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>направляющая</small><em data-count>×4</em>
         </button>
         <button class="palette-part" data-kind="lever" type="button">
-          <span class="palette-icon lever-icon"></span><b>РЫЧАГ</b><small>ось ставится свободно</small><em class="part-count">×2</em>
+          <span class="palette-icon lever-icon"></span><b>РЫЧАГ</b><small>свободная ось</small><em data-count>×2</em>
         </button>
         <button class="palette-part" data-kind="wall" type="button">
-          <span class="palette-icon wall-icon"></span><b>СТЕНКА</b><small>ограничитель</small><em class="part-count">×1</em>
+          <span class="palette-icon wall-icon"></span><b>СТЕНКА</b><small>упор</small><em data-count>×2</em>
         </button>
         <button class="palette-part" data-kind="pulley" type="button">
-          <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>для верёвки</small><em class="part-count">×2</em>
+          <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>для троса</small><em data-count>×2</em>
         </button>
         <button class="palette-part" data-kind="weight" type="button">
-          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>создаёт момент</small><em class="part-count">×1</em>
+          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>создаёт момент</small><em data-count>×2</em>
         </button>
       </footer>
 
       <section id="result-card" class="result-card panel" aria-live="polite">
         <span class="result-icon">✓</span>
         <h2>МЕХАНИЗМ СРАБОТАЛ</h2>
-        <p>Шар прошёл через открытые ворота.</p>
+        <p>Стартовый шар оказался в корзине.</p>
         <b id="result-time">0.0 сек.</b>
         <button id="result-again" type="button">ВЕРНУТЬСЯ К КОНСТРУКЦИИ</button>
       </section>
+
+      <div id="fatal-error" class="fatal-error" hidden></div>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
