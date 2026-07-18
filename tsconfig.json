@@ -16,5 +16,13 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": [
+    "src/main.ts",
+    "src/app.ts",
+    "src/model.ts",
+    "src/physics.ts",
+    "src/renderer.ts",
+    "src/model.test.ts",
+    "src/physics.test.ts"
+  ]
 }
