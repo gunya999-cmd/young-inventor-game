@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vitest run && tsc -b && vite build",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "build": "npm run test && tsc -b && vite build",
+    "test": "vitest run src/model.test.ts src/physics.test.ts",
+    "test:watch": "vitest src/model.test.ts src/physics.test.ts"
   },
   "dependencies": {
     "planck": "1.5.0"
