@@ -49,7 +49,7 @@ export class MachineModel {
   addPart(part: PartInstance): void {
     this.assertBuildMode();
     if (this.parts.has(part.id)) throw new Error(`Duplicate part id: ${part.id}`);
-    this.parts.set(part.id, cloneSnapshot({ parts: [part], connections: [] }).parts[0]);
+    this.parts.set(idOf(part), cloneSnapshot({ parts: [part], connections: [] }).parts[0]);
   }
 
   removePart(id: PartId): void {
@@ -89,13 +89,13 @@ export class MachineModel {
     if (!part.definition.canRotate && transform.angle !== part.transform.angle) {
       throw new Error(`Part cannot rotate: ${id}`);
     }
-    this.parts.set(id, {
-      ...part,
-      transform: {
-        position: { ...transform.position },
-        angle: normalizeAngle(transform.angle)
-      }
-    });
+    this.parts.set(id, withTransform(part, transform));
+  }
+
+  applySimulationTransform(id: PartId, transform: Transform): void {
+    if (this._mode === 'build') throw new Error('Simulation transforms require a running or paused machine');
+    const part = this.getPart(id);
+    this.parts.set(id, withTransform(part, transform));
   }
 
   setFixed(id: PartId, fixed: boolean): void {
@@ -203,4 +203,18 @@ export class MachineModel {
   private assertBuildMode(): void {
     if (this._mode !== 'build') throw new Error('Machine can only be edited in build mode');
   }
+}
+
+function idOf(part: PartInstance): PartId {
+  return part.id;
+}
+
+function withTransform(part: PartInstance, transform: Transform): PartInstance {
+  return {
+    ...part,
+    transform: {
+      position: { ...transform.position },
+      angle: normalizeAngle(transform.angle)
+    }
+  };
 }
