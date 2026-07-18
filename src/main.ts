@@ -45,9 +45,9 @@ const config = {
     matter: {
       gravity: { x: 0, y: 1 },
       enableSleeping: false,
-      positionIterations: 10,
-      velocityIterations: 8,
-      constraintIterations: 8,
+      positionIterations: 12,
+      velocityIterations: 10,
+      constraintIterations: 10,
       runner: {
         fps: 60,
         frameDeltaSmoothing: true,
@@ -70,7 +70,10 @@ partButtons.forEach((button) => {
   });
 });
 
-runButton?.addEventListener('click', () => activeScene?.startSimulation());
+runButton?.addEventListener('click', () => {
+  if (activeScene?.failed) activeScene.resetLevel();
+  else activeScene?.startSimulation();
+});
 resetButton?.addEventListener('click', () => activeScene?.resetLevel());
 againButton?.addEventListener('click', () => activeScene?.resetLevel());
 rotateLeftButton?.addEventListener('click', () => activeScene?.rotateGuide(-1));
@@ -84,7 +87,8 @@ soundButton?.addEventListener('click', () => {
 document.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
     event.preventDefault();
-    activeScene?.startSimulation();
+    if (activeScene?.failed) activeScene.resetLevel();
+    else activeScene?.startSimulation();
   }
   if (event.key.toLowerCase() === 'r') activeScene?.resetLevel();
   if (event.key === 'ArrowLeft') activeScene?.rotateGuide(-1);
