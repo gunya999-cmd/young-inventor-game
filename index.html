@@ -3,66 +3,77 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#16120f" />
-    <meta name="description" content="Физическая головоломка в духе The Incredible Machine." />
+    <meta name="theme-color" content="#1c1713" />
+    <meta name="description" content="Физическая головоломка TIM 2.0." />
     <title>TIM 2.0 — Запусти мастерскую</title>
   </head>
   <body>
     <main id="app" class="game-shell">
       <div id="game-stage" class="game-stage" aria-label="Игровое поле"></div>
 
-      <section class="mission-panel glass-panel">
-        <span class="eyebrow">ЭТАП 01</span>
-        <h1>ЗАПУСТИ МАСТЕРСКУЮ</h1>
-        <p>Собери недостающие связи и заставь молоток ударить по колоколу.</p>
-        <div class="objective"><span></span><b id="objective-text">Установи 3 детали</b></div>
-      </section>
+      <header class="hud-top">
+        <section class="mission-compact panel">
+          <span class="eyebrow">ЭТАП 01</span>
+          <div>
+            <h1>ЗАПУСТИ МАСТЕРСКУЮ</h1>
+            <p id="objective-text">Установи 3 недостающие детали</p>
+          </div>
+        </section>
 
-      <nav class="top-controls" aria-label="Управление симуляцией">
-        <button id="sound-button" class="round-button" type="button" aria-label="Звук">🔊</button>
-        <button id="reset-button" class="round-button" type="button" aria-label="Сбросить">↻</button>
-        <button id="run-button" class="play-button" type="button"><span>▶</span><b>ПУСК</b></button>
-      </nav>
+        <section class="timer-chip panel" aria-label="Время прохождения">
+          <span>ВРЕМЯ</span>
+          <b id="timer">00:00.0</b>
+        </section>
 
-      <aside class="status-panel glass-panel">
-        <div><span>ВРЕМЯ</span><b id="timer">00:00.0</b></div>
-        <p id="status-message">Выберите детали снизу и установите их на поле.</p>
+        <nav class="top-controls" aria-label="Управление симуляцией">
+          <button id="sound-button" class="icon-button" type="button" aria-label="Звук">🔊</button>
+          <button id="reset-button" class="icon-button" type="button" aria-label="Сбросить">↻</button>
+          <button id="run-button" class="play-button" type="button"><span>▶</span><b>ПУСК</b></button>
+        </nav>
+      </header>
+
+      <aside id="status-panel" class="status-toast panel" aria-live="polite">
+        <span class="status-dot"></span>
+        <p id="status-message">Выбери детали снизу и собери цепочку.</p>
       </aside>
 
-      <section class="build-tools glass-panel" aria-label="Настройка выбранной детали">
-        <button id="rotate-left" type="button" title="Повернуть против часовой стрелки">↶</button>
-        <button id="rotate-right" type="button" title="Повернуть по часовой стрелке">↷</button>
-        <button id="hint-button" type="button" class="hint-button">ПОДСКАЗКА</button>
-      </section>
-
-      <footer class="parts-tray glass-panel">
-        <div class="tray-title">
-          <span>ДЕТАЛИ</span>
-          <small>Нажми, затем настрой положение</small>
+      <footer class="parts-tray panel">
+        <div class="tray-label">
+          <strong>ДЕТАЛИ</strong>
+          <small>3 из 3</small>
         </div>
+
         <button class="part-card" data-part="guide" type="button">
           <span class="part-preview guide-preview"></span>
-          <strong>НАПРАВЛЯЮЩАЯ</strong>
+          <span><strong>НАПРАВЛЯЮЩАЯ</strong><small>путь для шара</small></span>
           <em>×1</em>
         </button>
+
         <button class="part-card" data-part="rope" type="button">
           <span class="part-preview rope-preview"></span>
-          <strong>ВЕРЁВКА</strong>
+          <span><strong>ВЕРЁВКА</strong><small>ведро ↔ заслонка</small></span>
           <em>×1</em>
         </button>
+
         <button class="part-card" data-part="weight" type="button">
           <span class="part-preview weight-preview"></span>
-          <strong>ГРУЗ РЫЧАГА</strong>
+          <span><strong>ПРОТИВОВЕС</strong><small>настройка рычага</small></span>
           <em>×1</em>
         </button>
+
+        <div class="build-tools" aria-label="Настройка выбранной детали">
+          <button id="rotate-left" type="button" title="Повернуть против часовой стрелки">↶</button>
+          <button id="rotate-right" type="button" title="Повернуть по часовой стрелке">↷</button>
+          <button id="hint-button" type="button" class="hint-button">ПОДСКАЗКА</button>
+        </div>
       </footer>
 
-      <section id="result-card" class="result-card glass-panel" aria-live="polite">
+      <section id="result-card" class="result-card panel" aria-live="polite">
         <span class="result-icon">✓</span>
-        <h2>МЕХАНИЗМ СРАБОТАЛ</h2>
-        <p>Молоток передал достаточный импульс колоколу.</p>
+        <h2>КОЛОКОЛ ПРОЗВЕНЕЛ</h2>
+        <p>Вся цепочка сработала по законам физики.</p>
         <div class="stars">★ ★ ★</div>
-        <button id="again-button" type="button">ПОВТОРИТЬ ЭТАП</button>
+        <button id="again-button" type="button">ПОВТОРИТЬ</button>
       </section>
     </main>
     <script type="module" src="/src/main.ts"></script>
