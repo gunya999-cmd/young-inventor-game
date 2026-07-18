@@ -1,6 +1,7 @@
 // @ts-nocheck
 import Phaser from 'phaser';
 import './style.css';
+import './hinge-v4.css';
 import { EditorV4Scene, WORLD_HEIGHT, WORLD_WIDTH } from './editor/EditorV4Scene';
 import { activeEditor } from './editor/EditorV2Scene';
 import type { EditorPartKind } from './editor/catalog';
