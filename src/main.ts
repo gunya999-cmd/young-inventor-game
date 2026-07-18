@@ -1,7 +1,8 @@
 // @ts-nocheck
 import Phaser from 'phaser';
 import './style.css';
-import { EditorV2Scene, WORLD_HEIGHT, WORLD_WIDTH, activeEditor } from './editor/EditorV2Scene';
+import { EditorV3Scene, WORLD_HEIGHT, WORLD_WIDTH } from './editor/EditorV3Scene';
+import { activeEditor } from './editor/EditorV2Scene';
 import type { EditorPartKind } from './editor/catalog';
 
 new Phaser.Game({
@@ -26,7 +27,7 @@ new Phaser.Game({
       debug: false
     }
   },
-  scene: [EditorV2Scene]
+  scene: [EditorV3Scene]
 });
 
 const byId = <T extends HTMLElement>(id: string): T | null => document.querySelector<T>(`#${id}`);
