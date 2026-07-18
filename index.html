@@ -4,63 +4,88 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#1b1713" />
-    <meta name="description" content="Свободная физическая песочница в духе The Incredible Machine." />
-    <title>TIM 2.0 — Песочница</title>
+    <meta name="description" content="Свободная физическая головоломка в духе The Incredible Machine." />
+    <title>TIM 2.0 — Доставь шар</title>
   </head>
   <body>
     <main id="app" class="game-shell">
-      <div id="game-stage" class="game-stage" aria-label="Свободное игровое поле"></div>
+      <div id="game-stage" class="game-stage" aria-label="Игровое поле"></div>
 
       <header class="top-bar panel">
-        <div class="brand-block">
-          <span class="brand-mark">TIM</span>
+        <div class="mission-block">
+          <span class="level-number">01</span>
           <div>
-            <h1>ПЕСОЧНИЦА</h1>
-            <p>Перетащи детали на поле и собери собственный механизм</p>
+            <h1>ДОСТАВЬ ШАР В КОРЗИНУ</h1>
+            <p>Построй механизм. Правильных мест и единственного решения нет.</p>
           </div>
         </div>
-        <div id="mode-label" class="mode-chip">СБОРКА</div>
+        <div class="center-state">
+          <span id="mode-label" class="mode-chip">СБОРКА</span>
+          <b id="run-timer">0.0с</b>
+        </div>
         <nav class="simulation-controls" aria-label="Управление симуляцией">
+          <button id="undo-button" class="icon-button" type="button" title="Отменить">↶</button>
+          <button id="redo-button" class="icon-button" type="button" title="Повторить">↷</button>
+          <button id="camera-button" class="icon-button" type="button" title="Сбросить камеру">⌖</button>
+          <button id="pause-button" class="icon-button" type="button" disabled title="Пауза">Ⅱ</button>
+          <button id="stop-button" class="icon-button" type="button" disabled title="Стоп">■</button>
           <button id="run-button" class="primary-button" type="button">▶ ПУСК</button>
-          <button id="pause-button" type="button" disabled>Ⅱ ПАУЗА</button>
-          <button id="stop-button" type="button" disabled>■ СТОП</button>
-          <button id="clear-button" type="button">ОЧИСТИТЬ</button>
         </nav>
       </header>
 
       <aside id="inspector" class="inspector panel" aria-label="Настройка выбранной детали">
+        <div class="selection-info">
+          <strong id="selection-name">ИНСТРУМЕНТЫ</strong>
+          <span id="selection-angle"></span>
+        </div>
         <button id="rotate-left" type="button" title="Повернуть влево">↶</button>
         <button id="rotate-right" type="button" title="Повернуть вправо">↷</button>
+        <button id="duplicate-button" type="button">⧉ КОПИЯ</button>
         <button id="fix-button" type="button">📍 ЗАКРЕПИТЬ</button>
-        <button id="rope-button" type="button">〰 ВЕРЁВКА</button>
-        <button id="delete-button" class="danger-button" type="button">⌫ УДАЛИТЬ</button>
+        <button id="rope-button" type="button">〰 ВЕРЁВКА ×2</button>
+        <button id="delete-button" class="danger-button" type="button">⌫</button>
       </aside>
 
       <div id="status-message" class="status-toast panel" aria-live="polite">
-        Перетащи деталь из нижней панели на любое место поля.
+        Построй путь: шар должен попасть в корзину справа.
       </div>
+
+      <section class="utility-panel panel" aria-label="Работа с конструкцией">
+        <button id="save-button" type="button">СОХРАНИТЬ</button>
+        <button id="load-button" type="button" disabled>ЗАГРУЗИТЬ</button>
+        <button id="clear-button" type="button">УБРАТЬ ДЕТАЛИ</button>
+        <button id="reset-button" type="button">СБРОС УРОВНЯ</button>
+      </section>
 
       <footer id="parts-palette" class="parts-palette panel" aria-label="Инвентарь деталей">
         <div class="palette-heading">
-          <strong>ДЕТАЛИ</strong>
-          <small>Тяни на поле</small>
+          <strong>ИНВЕНТАРЬ</strong>
+          <small>Тяни деталь прямо на поле</small>
         </div>
         <button class="palette-part" data-kind="ball" type="button">
-          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>свободный</small>
+          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>свободный</small><em class="part-count">×1</em>
         </button>
         <button class="palette-part" data-kind="plank" type="button">
-          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>закреплена</small>
+          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>наклон и опора</small><em class="part-count">×4</em>
         </button>
         <button class="palette-part" data-kind="wall" type="button">
-          <span class="palette-icon wall-icon"></span><b>СТЕНА</b><small>закреплена</small>
+          <span class="palette-icon wall-icon"></span><b>СТЕНКА</b><small>ограничитель</small><em class="part-count">×2</em>
         </button>
         <button class="palette-part" data-kind="pulley" type="button">
-          <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>точки верёвки</small>
+          <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>для верёвки</small><em class="part-count">×2</em>
         </button>
         <button class="palette-part" data-kind="weight" type="button">
-          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>тяжёлый</small>
+          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>создаёт усилие</small><em class="part-count">×1</em>
         </button>
       </footer>
+
+      <section id="result-card" class="result-card panel" aria-live="polite">
+        <span class="result-icon">✓</span>
+        <h2>МЕХАНИЗМ СРАБОТАЛ</h2>
+        <p>Шар оказался в корзине.</p>
+        <b id="result-time">0.0 сек.</b>
+        <button id="result-again" type="button">ВЕРНУТЬСЯ К КОНСТРУКЦИИ</button>
+      </section>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
