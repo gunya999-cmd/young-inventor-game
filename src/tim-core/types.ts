@@ -63,6 +63,11 @@ export interface Connection {
   readonly b: Endpoint;
   readonly restLength?: number;
   readonly route?: readonly Endpoint[];
+  readonly localPointA?: Vec2;
+  readonly localPointB?: Vec2;
+  readonly referenceAngle?: number;
+  readonly minAngle?: number;
+  readonly maxAngle?: number;
 }
 
 export interface MachineSnapshot {
