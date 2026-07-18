@@ -4,6 +4,38 @@ import './style.css';
 import { SandboxScene, WORLD_HEIGHT, WORLD_WIDTH, activeSandbox } from './editor/SandboxScene';
 import type { EditorPartKind } from './editor/catalog';
 
+// Phaser recreates a Matter body inside setCircle / setRectangle and otherwise
+// drops isStatic, density and friction. Preserve those properties so build-mode
+// parts never start falling before the player presses Run.
+const matterImagePrototype = Phaser.Physics.Matter.Image.prototype as Record<string, Function>;
+const originalSetCircle = matterImagePrototype.setCircle;
+const originalSetRectangle = matterImagePrototype.setRectangle;
+
+function preservedBodyOptions(image: Phaser.Physics.Matter.Image, supplied?: Record<string, unknown>) {
+  const body = image.body as MatterJS.BodyType | undefined;
+  if (!body) return supplied ?? {};
+  return {
+    isStatic: body.isStatic,
+    isSensor: body.isSensor,
+    density: body.density,
+    friction: body.friction,
+    frictionStatic: body.frictionStatic,
+    frictionAir: body.frictionAir,
+    restitution: body.restitution,
+    label: body.label,
+    collisionFilter: { ...body.collisionFilter },
+    ...(supplied ?? {})
+  };
+}
+
+matterImagePrototype.setCircle = function patchedSetCircle(radius: number, options?: Record<string, unknown>) {
+  return originalSetCircle.call(this, radius, preservedBodyOptions(this, options));
+};
+
+matterImagePrototype.setRectangle = function patchedSetRectangle(width: number, height: number, options?: Record<string, unknown>) {
+  return originalSetRectangle.call(this, width, height, preservedBodyOptions(this, options));
+};
+
 new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game-stage',
