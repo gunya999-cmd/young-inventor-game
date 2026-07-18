@@ -13,13 +13,19 @@ describe('TIM sandbox part catalog', () => {
     expect(part.definition.canRotate).toBe(true);
   });
 
-  it('exposes compatible rope anchors on connectable parts', () => {
+  it('exposes compatible rope anchors and a pulley route guide', () => {
     expect(getPartSpec('weight').definition.anchors).toContainEqual({
       id: 'top',
       kind: 'rope',
       localPosition: { x: 0, y: -35 }
     });
-    expect(getPartSpec('pulley').definition.anchors.filter((anchor) => anchor.kind === 'rope')).toHaveLength(2);
+    const pulleyAnchors = getPartSpec('pulley').definition.anchors.filter((anchor) => anchor.kind === 'rope');
+    expect(pulleyAnchors).toHaveLength(3);
+    expect(pulleyAnchors).toContainEqual({
+      id: 'guide',
+      kind: 'rope',
+      localPosition: { x: 0, y: 0 }
+    });
   });
 
   it('keeps walls non-connectable and fixed by default', () => {
