@@ -162,8 +162,8 @@ export class PhysicsEngine {
       const bodyA = this.bodies.get(rope.a.partId);
       const bodyB = this.bodies.get(rope.b.partId);
       if (!bodyA || !bodyB || bodyA === bodyB) continue;
-      const anchorA = localPointToPhysics(rope.a);
-      const anchorB = localPointToPhysics(rope.b);
+      const anchorA = localPointToPhysics({ x: rope.a.localX, y: rope.a.localY });
+      const anchorB = localPointToPhysics({ x: rope.b.localX, y: rope.b.localY });
       this.world.createJoint(new RopeJoint({
         bodyA,
         bodyB,
