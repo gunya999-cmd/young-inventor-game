@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#1b1713" />
     <meta name="description" content="Свободная физическая головоломка в духе The Incredible Machine." />
-    <title>TIM 2.0 — Доставь шар</title>
+    <title>TIM 2.0 — Подними ворота</title>
   </head>
   <body>
     <main id="app" class="game-shell">
@@ -13,10 +13,10 @@
 
       <header class="top-bar panel">
         <div class="mission-block">
-          <span class="level-number">01</span>
+          <span class="level-number">02</span>
           <div>
-            <h1>ДОСТАВЬ ШАР В КОРЗИНУ</h1>
-            <p>Построй механизм. Правильных мест и единственного решения нет.</p>
+            <h1>ПОДНИМИ ВОРОТА</h1>
+            <p>Используй рычаг, ось, противовес или блоки. Решение выбираешь ты.</p>
           </div>
         </div>
         <div class="center-state">
@@ -43,11 +43,14 @@
         <button id="duplicate-button" type="button">⧉ КОПИЯ</button>
         <button id="fix-button" type="button">📍 ЗАКРЕПИТЬ</button>
         <button id="rope-button" type="button">〰 ВЕРЁВКА ×2</button>
+        <button id="hinge-button" type="button">⊙ ОСЬ ×2</button>
+        <button id="limit-button" type="button" disabled>∠ ОГРАНИЧИТЕЛЬ</button>
+        <button id="remove-hinge-button" type="button" disabled title="Убрать ось">⊘</button>
         <button id="delete-button" class="danger-button" type="button">⌫</button>
       </aside>
 
       <div id="status-message" class="status-toast panel" aria-live="polite">
-        Построй путь: шар должен попасть в корзину справа.
+        Поставь рычаг, выбери его и нажми «Ось», затем коснись нужной точки опоры.
       </div>
 
       <section class="utility-panel panel" aria-label="Работа с конструкцией">
@@ -63,26 +66,29 @@
           <small>Тяни деталь прямо на поле</small>
         </div>
         <button class="palette-part" data-kind="ball" type="button">
-          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>свободный</small><em class="part-count">×1</em>
+          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>цель уже на поле</small><em class="part-count">×0</em>
         </button>
         <button class="palette-part" data-kind="plank" type="button">
-          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>наклон и опора</small><em class="part-count">×4</em>
+          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>наклон и опора</small><em class="part-count">×2</em>
+        </button>
+        <button class="palette-part" data-kind="lever" type="button">
+          <span class="palette-icon lever-icon"></span><b>РЫЧАГ</b><small>ось ставится свободно</small><em class="part-count">×2</em>
         </button>
         <button class="palette-part" data-kind="wall" type="button">
-          <span class="palette-icon wall-icon"></span><b>СТЕНКА</b><small>ограничитель</small><em class="part-count">×2</em>
+          <span class="palette-icon wall-icon"></span><b>СТЕНКА</b><small>ограничитель</small><em class="part-count">×1</em>
         </button>
         <button class="palette-part" data-kind="pulley" type="button">
           <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>для верёвки</small><em class="part-count">×2</em>
         </button>
         <button class="palette-part" data-kind="weight" type="button">
-          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>создаёт усилие</small><em class="part-count">×1</em>
+          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>создаёт момент</small><em class="part-count">×1</em>
         </button>
       </footer>
 
       <section id="result-card" class="result-card panel" aria-live="polite">
         <span class="result-icon">✓</span>
         <h2>МЕХАНИЗМ СРАБОТАЛ</h2>
-        <p>Шар оказался в корзине.</p>
+        <p>Шар прошёл через открытые ворота.</p>
         <b id="result-time">0.0 сек.</b>
         <button id="result-again" type="button">ВЕРНУТЬСЯ К КОНСТРУКЦИИ</button>
       </section>
