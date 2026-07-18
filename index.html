@@ -2,67 +2,65 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#18130f" />
-    <meta name="description" content="Физическая головоломка в духе The Incredible Machine." />
-    <title>TIM 2.0 — Запусти мастерскую</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#1b1713" />
+    <meta name="description" content="Свободная физическая песочница в духе The Incredible Machine." />
+    <title>TIM 2.0 — Песочница</title>
   </head>
   <body>
     <main id="app" class="game-shell">
-      <div id="game-stage" class="game-stage" aria-label="Игровое поле"></div>
+      <div id="game-stage" class="game-stage" aria-label="Свободное игровое поле"></div>
 
-      <header class="hud-top">
-        <section class="mission-chip panel">
-          <span class="level-badge">01</span>
+      <header class="top-bar panel">
+        <div class="brand-block">
+          <span class="brand-mark">TIM</span>
           <div>
-            <h1>ЗАПУСТИ МАСТЕРСКУЮ</h1>
-            <p id="objective-text">Установи три недостающие детали</p>
+            <h1>ПЕСОЧНИЦА</h1>
+            <p>Перетащи детали на поле и собери собственный механизм</p>
           </div>
-        </section>
-
-        <section class="timer-chip panel">
-          <span>ВРЕМЯ</span>
-          <b id="timer">00:00.0</b>
-        </section>
-
-        <nav class="top-controls" aria-label="Управление симуляцией">
-          <button id="sound-button" class="round-button" type="button" aria-label="Звук">🔊</button>
-          <button id="reset-button" class="round-button" type="button" aria-label="Сбросить">↻</button>
-          <button id="run-button" class="play-button" type="button"><span>▶</span><b>ПУСК</b></button>
+        </div>
+        <div id="mode-label" class="mode-chip">СБОРКА</div>
+        <nav class="simulation-controls" aria-label="Управление симуляцией">
+          <button id="run-button" class="primary-button" type="button">▶ ПУСК</button>
+          <button id="pause-button" type="button" disabled>Ⅱ ПАУЗА</button>
+          <button id="stop-button" type="button" disabled>■ СТОП</button>
+          <button id="clear-button" type="button">ОЧИСТИТЬ</button>
         </nav>
       </header>
 
-      <div id="status-message" class="status-toast panel">Собери рабочую цепочку и запусти симуляцию.</div>
+      <aside id="inspector" class="inspector panel" aria-label="Настройка выбранной детали">
+        <button id="rotate-left" type="button" title="Повернуть влево">↶</button>
+        <button id="rotate-right" type="button" title="Повернуть вправо">↷</button>
+        <button id="fix-button" type="button">📍 ЗАКРЕПИТЬ</button>
+        <button id="rope-button" type="button">〰 ВЕРЁВКА</button>
+        <button id="delete-button" class="danger-button" type="button">⌫ УДАЛИТЬ</button>
+      </aside>
 
-      <section class="build-tools panel" aria-label="Настройка детали">
-        <button id="rotate-left" type="button" aria-label="Повернуть влево">↶</button>
-        <button id="rotate-right" type="button" aria-label="Повернуть вправо">↷</button>
-        <button id="hint-button" type="button" class="hint-button">ПОДСКАЗКА</button>
-      </section>
+      <div id="status-message" class="status-toast panel" aria-live="polite">
+        Перетащи деталь из нижней панели на любое место поля.
+      </div>
 
-      <footer class="parts-tray panel">
-        <span class="tray-label">ДЕТАЛИ</span>
-        <button class="part-card" data-part="guide" type="button">
-          <span class="part-preview guide-preview"></span>
-          <strong>НАПРАВЛЯЮЩАЯ</strong><em>×1</em>
+      <footer id="parts-palette" class="parts-palette panel" aria-label="Инвентарь деталей">
+        <div class="palette-heading">
+          <strong>ДЕТАЛИ</strong>
+          <small>Тяни на поле</small>
+        </div>
+        <button class="palette-part" data-kind="ball" type="button">
+          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>свободный</small>
         </button>
-        <button class="part-card" data-part="rope" type="button">
-          <span class="part-preview rope-preview"></span>
-          <strong>ВЕРЁВКА</strong><em>×1</em>
+        <button class="palette-part" data-kind="plank" type="button">
+          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>закреплена</small>
         </button>
-        <button class="part-card" data-part="weight" type="button">
-          <span class="part-preview weight-preview"></span>
-          <strong>ПРОТИВОВЕС</strong><em>×1</em>
+        <button class="palette-part" data-kind="wall" type="button">
+          <span class="palette-icon wall-icon"></span><b>СТЕНА</b><small>закреплена</small>
+        </button>
+        <button class="palette-part" data-kind="pulley" type="button">
+          <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>точки верёвки</small>
+        </button>
+        <button class="palette-part" data-kind="weight" type="button">
+          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>тяжёлый</small>
         </button>
       </footer>
-
-      <section id="result-card" class="result-card panel" aria-live="polite">
-        <span class="result-icon">✓</span>
-        <h2>МЕХАНИЗМ СРАБОТАЛ</h2>
-        <p>Молоток ударил по колоколу.</p>
-        <div class="stars">★ ★ ★</div>
-        <button id="again-button" type="button">ПОВТОРИТЬ</button>
-      </section>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
