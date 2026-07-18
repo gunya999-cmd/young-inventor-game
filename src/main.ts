@@ -62,13 +62,23 @@ function moveGhost(clientX: number, clientY: number): void {
   paletteDrag.ghost.style.transform = `translate3d(${clientX}px, ${clientY}px, 0) translate(-50%, -50%)`;
 }
 
+function screenToWorld(clientX: number, clientY: number) {
+  if (!activeEditor) return null;
+  const canvas = activeEditor.game.canvas;
+  const rect = canvas.getBoundingClientRect();
+  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+  const gameX = (clientX - rect.left) * (WORLD_WIDTH / rect.width);
+  const gameY = (clientY - rect.top) * (WORLD_HEIGHT / rect.height);
+  return activeEditor.cameras.main.getWorldPoint(gameX, gameY);
+}
+
 function finishPaletteDrag(clientX: number, clientY: number): void {
   if (!paletteDrag) return;
   const drag = paletteDrag;
   paletteDrag = null;
   drag.ghost.remove();
   drag.source.classList.remove('drag-source');
-  const position = activeEditor?.clientToWorld(clientX, clientY);
+  const position = screenToWorld(clientX, clientY);
   if (position) activeEditor?.addPartFromPalette(drag.kind, position);
 }
 
