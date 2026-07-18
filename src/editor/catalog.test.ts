@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createPartInstance, getPartSpec, isEditorPartKind, PART_CATALOG } from './catalog';
 
-describe('TIM sandbox part catalog', () => {
-  it('contains the first playable engineering parts', () => {
-    expect(Object.keys(PART_CATALOG).sort()).toEqual(['ball', 'plank', 'pulley', 'wall', 'weight']);
+describe('TIM editor part catalog', () => {
+  it('contains the playable engineering parts and internal level parts', () => {
+    expect(Object.keys(PART_CATALOG).sort()).toEqual(['ball', 'gate', 'hinge', 'lever', 'plank', 'pulley', 'wall', 'weight']);
   });
 
   it('creates freely positioned instances without scripted slots', () => {
@@ -21,11 +21,20 @@ describe('TIM sandbox part catalog', () => {
     });
     const pulleyAnchors = getPartSpec('pulley').definition.anchors.filter((anchor) => anchor.kind === 'rope');
     expect(pulleyAnchors).toHaveLength(3);
-    expect(pulleyAnchors).toContainEqual({
-      id: 'guide',
-      kind: 'rope',
-      localPosition: { x: 0, y: 0 }
-    });
+    expect(pulleyAnchors).toContainEqual({ id: 'guide', kind: 'rope', localPosition: { x: 0, y: 0 } });
+  });
+
+  it('gives a lever two rope ends and a movable pivot anchor', () => {
+    const lever = getPartSpec('lever');
+    expect(lever.defaultFixed).toBe(false);
+    expect(lever.definition.kind).toBe('lever');
+    expect(lever.definition.anchors.filter((anchor) => anchor.kind === 'rope')).toHaveLength(2);
+    expect(lever.definition.anchors).toContainEqual({ id: 'pivot', kind: 'hinge', localPosition: { x: 0, y: 0 } });
+  });
+
+  it('keeps internal hinge pins fixed and gates movable', () => {
+    expect(createPartInstance('hinge', 'hinge-1', { x: 100, y: 100 }).fixed).toBe(true);
+    expect(createPartInstance('gate', 'gate-1', { x: 100, y: 100 }).fixed).toBe(false);
   });
 
   it('keeps walls non-connectable and fixed by default', () => {
@@ -35,7 +44,7 @@ describe('TIM sandbox part catalog', () => {
   });
 
   it('rejects unknown palette kinds', () => {
-    expect(isEditorPartKind('ball')).toBe(true);
+    expect(isEditorPartKind('lever')).toBe(true);
     expect(isEditorPartKind('rocket')).toBe(false);
   });
 });

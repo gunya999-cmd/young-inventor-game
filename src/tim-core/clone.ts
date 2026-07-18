@@ -30,7 +30,12 @@ function cloneConnection(connection: Connection): Connection {
     a: { ...connection.a },
     b: { ...connection.b },
     restLength: connection.restLength,
-    route: connection.route?.map((endpoint) => ({ ...endpoint }))
+    route: connection.route?.map((endpoint) => ({ ...endpoint })),
+    localPointA: connection.localPointA ? { ...connection.localPointA } : undefined,
+    localPointB: connection.localPointB ? { ...connection.localPointB } : undefined,
+    referenceAngle: connection.referenceAngle,
+    minAngle: connection.minAngle,
+    maxAngle: connection.maxAngle
   };
 }
 

@@ -8,7 +8,10 @@ export const LEVEL_INVENTORY: Readonly<Record<EditorPartKind, number>> = {
   plank: 4,
   wall: 2,
   pulley: 2,
-  weight: 1
+  weight: 1,
+  lever: 0,
+  hinge: 0,
+  gate: 0
 };
 export const LEVEL_ROPES = 2;
 

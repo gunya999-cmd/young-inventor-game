@@ -1,6 +1,6 @@
 import type { PartDefinition, PartInstance, PartKind, Vec2 } from '../tim-core/types';
 
-export type EditorPartKind = 'ball' | 'plank' | 'wall' | 'pulley' | 'weight';
+export type EditorPartKind = 'ball' | 'plank' | 'wall' | 'pulley' | 'weight' | 'lever' | 'hinge' | 'gate';
 
 export interface EditorPartSpec {
   readonly kind: EditorPartKind;
@@ -17,35 +17,15 @@ export interface EditorPartSpec {
 
 const definitions: Record<EditorPartKind, EditorPartSpec> = {
   ball: {
-    kind: 'ball',
-    label: 'Шар',
-    width: 54,
-    height: 54,
-    radius: 27,
-    defaultFixed: false,
-    density: 0.0024,
-    friction: 0.035,
-    restitution: 0.34,
-    definition: {
-      kind: 'ball',
-      canRotate: false,
-      canFlip: false,
-      anchors: [{ id: 'center', kind: 'rope', localPosition: { x: 0, y: 0 } }]
-    }
+    kind: 'ball', label: 'Шар', width: 54, height: 54, radius: 27, defaultFixed: false,
+    density: 0.0024, friction: 0.035, restitution: 0.34,
+    definition: { kind: 'ball', canRotate: false, canFlip: false, anchors: [{ id: 'center', kind: 'rope', localPosition: { x: 0, y: 0 } }] }
   },
   plank: {
-    kind: 'plank',
-    label: 'Доска',
-    width: 210,
-    height: 28,
-    defaultFixed: true,
-    density: 0.0012,
-    friction: 0.55,
-    restitution: 0.08,
+    kind: 'plank', label: 'Доска', width: 210, height: 28, defaultFixed: true,
+    density: 0.0012, friction: 0.55, restitution: 0.08,
     definition: {
-      kind: 'plank',
-      canRotate: true,
-      canFlip: true,
+      kind: 'plank', canRotate: true, canFlip: true,
       anchors: [
         { id: 'left', kind: 'rope', localPosition: { x: -88, y: 0 } },
         { id: 'right', kind: 'rope', localPosition: { x: 88, y: 0 } },
@@ -54,35 +34,15 @@ const definitions: Record<EditorPartKind, EditorPartSpec> = {
     }
   },
   wall: {
-    kind: 'wall',
-    label: 'Стена',
-    width: 160,
-    height: 28,
-    defaultFixed: true,
-    density: 0.004,
-    friction: 0.7,
-    restitution: 0.04,
-    definition: {
-      kind: 'wall',
-      canRotate: true,
-      canFlip: false,
-      anchors: []
-    }
+    kind: 'wall', label: 'Стена', width: 160, height: 28, defaultFixed: true,
+    density: 0.004, friction: 0.7, restitution: 0.04,
+    definition: { kind: 'wall', canRotate: true, canFlip: false, anchors: [] }
   },
   pulley: {
-    kind: 'pulley',
-    label: 'Блок',
-    width: 72,
-    height: 72,
-    radius: 36,
-    defaultFixed: true,
-    density: 0.002,
-    friction: 0.18,
-    restitution: 0.06,
+    kind: 'pulley', label: 'Блок', width: 72, height: 72, radius: 36, defaultFixed: true,
+    density: 0.002, friction: 0.18, restitution: 0.06,
     definition: {
-      kind: 'pulley',
-      canRotate: false,
-      canFlip: false,
+      kind: 'pulley', canRotate: false, canFlip: false,
       anchors: [
         { id: 'guide', kind: 'rope', localPosition: { x: 0, y: 0 } },
         { id: 'rim-left', kind: 'rope', localPosition: { x: -29, y: 0 } },
@@ -92,19 +52,36 @@ const definitions: Record<EditorPartKind, EditorPartSpec> = {
     }
   },
   weight: {
-    kind: 'weight',
-    label: 'Груз',
-    width: 66,
-    height: 82,
-    defaultFixed: false,
-    density: 0.006,
-    friction: 0.42,
-    restitution: 0.02,
+    kind: 'weight', label: 'Груз', width: 66, height: 82, defaultFixed: false,
+    density: 0.006, friction: 0.42, restitution: 0.02,
+    definition: { kind: 'weight', canRotate: true, canFlip: false, anchors: [{ id: 'top', kind: 'rope', localPosition: { x: 0, y: -35 } }] }
+  },
+  lever: {
+    kind: 'lever', label: 'Рычаг', width: 270, height: 32, defaultFixed: false,
+    density: 0.00145, friction: 0.62, restitution: 0.05,
     definition: {
-      kind: 'weight',
-      canRotate: true,
-      canFlip: false,
-      anchors: [{ id: 'top', kind: 'rope', localPosition: { x: 0, y: -35 } }]
+      kind: 'lever', canRotate: true, canFlip: true,
+      anchors: [
+        { id: 'left', kind: 'rope', localPosition: { x: -118, y: 0 } },
+        { id: 'right', kind: 'rope', localPosition: { x: 118, y: 0 } },
+        { id: 'pivot', kind: 'hinge', localPosition: { x: 0, y: 0 } }
+      ]
+    }
+  },
+  hinge: {
+    kind: 'hinge', label: 'Ось', width: 34, height: 34, radius: 17, defaultFixed: true,
+    density: 0.01, friction: 0.8, restitution: 0,
+    definition: { kind: 'custom', canRotate: false, canFlip: false, anchors: [{ id: 'pin', kind: 'hinge', localPosition: { x: 0, y: 0 } }] }
+  },
+  gate: {
+    kind: 'gate', label: 'Ворота', width: 38, height: 236, defaultFixed: false,
+    density: 0.0028, friction: 0.7, restitution: 0.03,
+    definition: {
+      kind: 'custom', canRotate: true, canFlip: false,
+      anchors: [
+        { id: 'pivot', kind: 'hinge', localPosition: { x: 0, y: -102 } },
+        { id: 'pull', kind: 'rope', localPosition: { x: 0, y: 96 } }
+      ]
     }
   }
 };
@@ -136,5 +113,5 @@ export function createPartInstance(kind: EditorPartKind, id: string, position: V
 }
 
 export function isEditorPartKind(kind: PartKind | string): kind is EditorPartKind {
-  return kind === 'ball' || kind === 'plank' || kind === 'wall' || kind === 'pulley' || kind === 'weight';
+  return kind === 'ball' || kind === 'plank' || kind === 'wall' || kind === 'pulley' || kind === 'weight' || kind === 'lever' || kind === 'hinge' || kind === 'gate';
 }
