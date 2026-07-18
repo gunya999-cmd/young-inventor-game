@@ -84,6 +84,7 @@ const definitions: Record<EditorPartKind, EditorPartSpec> = {
       canRotate: false,
       canFlip: false,
       anchors: [
+        { id: 'guide', kind: 'rope', localPosition: { x: 0, y: 0 } },
         { id: 'rim-left', kind: 'rope', localPosition: { x: -29, y: 0 } },
         { id: 'rim-right', kind: 'rope', localPosition: { x: 29, y: 0 } },
         { id: 'axle', kind: 'hinge', localPosition: { x: 0, y: 0 } }
