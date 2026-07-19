@@ -2,92 +2,186 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#17130f" />
-    <meta name="description" content="Свободная физическая головоломка на Box2D в духе классических инженерных игр." />
-    <title>Машина изобретателя — Box2D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#11161d" />
+    <meta name="description" content="Десктопная физическая головоломка на Box2D в духе классических инженерных игр." />
+    <title>Машина изобретателя — Desktop</title>
   </head>
   <body>
-    <main id="app" class="game-shell">
-      <canvas id="game-canvas" aria-label="Игровое поле"></canvas>
-
-      <header class="top-bar panel">
-        <div class="mission-block">
+    <main id="app" class="desktop-app">
+      <header class="top-toolbar">
+        <section class="mission-summary" aria-label="Задача уровня">
           <span class="level-number">01</span>
           <div>
-            <h1>ДОСТАВЬ ШАР В КОРЗИНУ</h1>
-            <p>Свободно размещай детали. Никаких готовых позиций и автоматической сборки.</p>
+            <p class="eyebrow">ИСПЫТАТЕЛЬНАЯ ЛАБОРАТОРИЯ</p>
+            <h1>Доставь шар в корзину</h1>
+            <p class="mission-copy">Построй собственный механизм. Готовых позиций и автоматической сборки нет.</p>
           </div>
-        </div>
-        <div class="center-state">
+        </section>
+
+        <section class="run-state" aria-label="Состояние симуляции">
           <span id="mode-label" class="mode-chip">СБОРКА</span>
           <b id="run-timer">0.0с</b>
-        </div>
+        </section>
+
         <nav class="simulation-controls" aria-label="Управление симуляцией">
-          <button id="undo-button" class="icon-button" type="button" title="Отменить">↶</button>
-          <button id="redo-button" class="icon-button" type="button" title="Повторить">↷</button>
-          <button id="camera-button" class="icon-button" type="button" title="Сбросить камеру">⌖</button>
-          <button id="pause-button" class="icon-button" type="button" disabled title="Пауза">Ⅱ</button>
-          <button id="stop-button" class="icon-button" type="button" disabled title="Стоп">■</button>
-          <button id="run-button" class="primary-button" type="button">▶ ПУСК</button>
+          <button id="undo-button" class="tool-button icon-only" type="button" title="Отменить (Ctrl+Z)">↶</button>
+          <button id="redo-button" class="tool-button icon-only" type="button" title="Повторить (Ctrl+Y)">↷</button>
+          <span class="toolbar-divider"></span>
+          <button id="camera-button" class="tool-button" type="button" title="Показать всё поле">⌖ Поле</button>
+          <button id="pause-button" class="tool-button icon-only" type="button" disabled title="Пауза (P)">Ⅱ</button>
+          <button id="stop-button" class="tool-button icon-only" type="button" disabled title="Стоп (Space)">■</button>
+          <button id="run-button" class="run-button" type="button">▶ Запустить</button>
         </nav>
       </header>
 
-      <aside id="inspector" class="inspector panel" aria-label="Настройка детали">
-        <div class="selection-info">
-          <strong id="selection-name">ИНСТРУМЕНТЫ</strong>
-          <span id="selection-angle"></span>
+      <aside class="library-panel side-panel" aria-label="Библиотека деталей">
+        <header class="panel-heading">
+          <div>
+            <p class="eyebrow">КОНСТРУКТОР</p>
+            <h2>Детали</h2>
+          </div>
+          <span class="panel-badge">Перетащи</span>
+        </header>
+        <p class="panel-description">Зажми деталь мышью и перенеси её на рабочее поле.</p>
+
+        <div class="parts-list">
+          <button class="palette-part" data-kind="ball" type="button">
+            <span class="palette-icon ball-icon"></span>
+            <span class="part-copy"><b>Шар</b><small>Целевой уже на поле</small></span>
+            <em data-count>×0</em>
+          </button>
+          <button class="palette-part" data-kind="plank" type="button">
+            <span class="palette-icon plank-icon"></span>
+            <span class="part-copy"><b>Доска</b><small>Направляющая и опора</small></span>
+            <em data-count>×4</em>
+          </button>
+          <button class="palette-part" data-kind="lever" type="button">
+            <span class="palette-icon lever-icon"></span>
+            <span class="part-copy"><b>Рычаг</b><small>Работает со свободной осью</small></span>
+            <em data-count>×2</em>
+          </button>
+          <button class="palette-part" data-kind="wall" type="button">
+            <span class="palette-icon wall-icon"></span>
+            <span class="part-copy"><b>Стенка</b><small>Жёсткий упор</small></span>
+            <em data-count>×2</em>
+          </button>
+          <button class="palette-part" data-kind="pulley" type="button">
+            <span class="palette-icon pulley-icon"></span>
+            <span class="part-copy"><b>Блок</b><small>Изменяет направление троса</small></span>
+            <em data-count>×2</em>
+          </button>
+          <button class="palette-part" data-kind="weight" type="button">
+            <span class="palette-icon weight-icon"></span>
+            <span class="part-copy"><b>Груз</b><small>Создаёт силу и момент</small></span>
+            <em data-count>×2</em>
+          </button>
         </div>
-        <button id="rotate-left" type="button" title="Повернуть влево">↶</button>
-        <button id="rotate-right" type="button" title="Повернуть вправо">↷</button>
-        <button id="fix-button" type="button">📍 ЗАКРЕПИТЬ</button>
-        <button id="rope-button" type="button">〰 ВЕРЁВКА ×3</button>
-        <button id="hinge-button" type="button">⊙ ОСЬ ×3</button>
-        <button id="delete-button" class="danger-button" type="button" title="Удалить">⌫</button>
+
+        <section class="connections-card">
+          <p class="eyebrow">СОЕДИНЕНИЯ</p>
+          <button id="rope-button" class="connection-button" type="button">〰 Верёвка <span>×3</span></button>
+          <button id="hinge-button" class="connection-button" type="button">⊙ Установить ось <span>×3</span></button>
+        </section>
+
+        <section class="shortcut-card" aria-label="Горячие клавиши">
+          <p class="eyebrow">БЫСТРОЕ УПРАВЛЕНИЕ</p>
+          <dl>
+            <div><dt>Q / E</dt><dd>поворот</dd></div>
+            <div><dt>Ctrl+D</dt><dd>копия</dd></div>
+            <div><dt>Delete</dt><dd>удалить</dd></div>
+            <div><dt>Space</dt><dd>пуск / стоп</dd></div>
+          </dl>
+        </section>
       </aside>
 
-      <div id="status-message" class="status-toast panel" aria-live="polite">
-        Построй механизм: стартовый шар должен попасть в корзину справа.
-      </div>
-
-      <section class="utility-panel panel" aria-label="Конструкция">
-        <button id="save-button" type="button">СОХРАНИТЬ</button>
-        <button id="load-button" type="button" disabled>ЗАГРУЗИТЬ</button>
-        <button id="clear-button" type="button">УБРАТЬ ДЕТАЛИ</button>
-        <button id="reset-button" type="button">СБРОС УРОВНЯ</button>
+      <section class="workspace-panel" aria-label="Рабочее поле">
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">РАБОЧЕЕ ПОЛЕ</p>
+            <strong>Стенд 1600 × 900</strong>
+          </div>
+          <div class="workspace-tools">
+            <label class="toggle-control">
+              <input id="snap-toggle" type="checkbox" checked />
+              <span>Привязка 10 px</span>
+            </label>
+            <span class="zoom-hint">Ctrl + колесо — масштаб</span>
+          </div>
+        </div>
+        <div class="canvas-frame">
+          <canvas id="game-canvas" aria-label="Игровое поле"></canvas>
+          <div class="canvas-corner-label">BOX2D · 120 Hz</div>
+        </div>
       </section>
 
-      <footer class="parts-palette panel" aria-label="Инвентарь деталей">
-        <div class="palette-heading">
-          <strong>ИНВЕНТАРЬ</strong>
-          <small>Зажми и перетащи деталь прямо на поле</small>
+      <aside id="inspector" class="properties-panel side-panel" aria-label="Свойства выбранной детали">
+        <header class="panel-heading">
+          <div>
+            <p class="eyebrow">ИНСПЕКТОР</p>
+            <h2 id="selection-name">Ничего не выбрано</h2>
+          </div>
+          <span id="selection-status" class="state-badge">—</span>
+        </header>
+        <p id="selection-help" class="panel-description">Выбери деталь на поле, чтобы изменить её положение и свойства.</p>
+
+        <div class="property-content">
+          <section class="property-group">
+            <h3>Положение</h3>
+            <div class="numeric-grid">
+              <label>X <input id="position-x" type="number" step="1" disabled /></label>
+              <label>Y <input id="position-y" type="number" step="1" disabled /></label>
+            </div>
+          </section>
+
+          <section class="property-group">
+            <div class="group-title-row"><h3>Поворот</h3><span id="selection-angle">—</span></div>
+            <div class="angle-controls">
+              <button id="rotate-left" class="tool-button icon-only" type="button" title="Повернуть влево (Q)">↶</button>
+              <label><input id="angle-input" type="number" min="-180" max="180" step="1" disabled /><span>°</span></label>
+              <button id="rotate-right" class="tool-button icon-only" type="button" title="Повернуть вправо (E)">↷</button>
+            </div>
+          </section>
+
+          <section class="property-group">
+            <h3>Крепление</h3>
+            <button id="fix-button" class="wide-action" type="button">Закрепить неподвижно</button>
+            <button id="remove-hinge-button" class="wide-action secondary" type="button" disabled>Удалить ось</button>
+          </section>
+
+          <section class="property-group">
+            <h3>Действия</h3>
+            <div class="action-grid">
+              <button id="duplicate-button" type="button">⧉ Копия</button>
+              <button id="delete-button" class="danger-button" type="button">⌫ Удалить</button>
+            </div>
+          </section>
         </div>
-        <button class="palette-part" data-kind="ball" type="button">
-          <span class="palette-icon ball-icon"></span><b>ШАР</b><small>цель уже на поле</small><em data-count>×0</em>
-        </button>
-        <button class="palette-part" data-kind="plank" type="button">
-          <span class="palette-icon plank-icon"></span><b>ДОСКА</b><small>направляющая</small><em data-count>×4</em>
-        </button>
-        <button class="palette-part" data-kind="lever" type="button">
-          <span class="palette-icon lever-icon"></span><b>РЫЧАГ</b><small>свободная ось</small><em data-count>×2</em>
-        </button>
-        <button class="palette-part" data-kind="wall" type="button">
-          <span class="palette-icon wall-icon"></span><b>СТЕНКА</b><small>упор</small><em data-count>×2</em>
-        </button>
-        <button class="palette-part" data-kind="pulley" type="button">
-          <span class="palette-icon pulley-icon"></span><b>БЛОК</b><small>для троса</small><em data-count>×2</em>
-        </button>
-        <button class="palette-part" data-kind="weight" type="button">
-          <span class="palette-icon weight-icon"></span><b>ГРУЗ</b><small>создаёт момент</small><em data-count>×2</em>
-        </button>
+
+        <section class="project-actions">
+          <h3>Конструкция</h3>
+          <div class="action-grid">
+            <button id="save-button" type="button">Сохранить</button>
+            <button id="load-button" type="button" disabled>Загрузить</button>
+            <button id="clear-button" type="button">Убрать детали</button>
+            <button id="reset-button" type="button">Сбросить уровень</button>
+          </div>
+        </section>
+      </aside>
+
+      <footer class="status-bar">
+        <span class="status-light"></span>
+        <span id="status-message" aria-live="polite">Построй механизм: стартовый шар должен попасть в корзину справа.</span>
+        <span class="status-shortcuts">Alt + ЛКМ или средняя кнопка — перемещение поля</span>
       </footer>
 
-      <section id="result-card" class="result-card panel" aria-live="polite">
+      <section id="result-card" class="result-card" aria-live="polite">
         <span class="result-icon">✓</span>
-        <h2>МЕХАНИЗМ СРАБОТАЛ</h2>
+        <p class="eyebrow">ИСПЫТАНИЕ ПРОЙДЕНО</p>
+        <h2>Механизм сработал</h2>
         <p>Стартовый шар оказался в корзине.</p>
         <b id="result-time">0.0 сек.</b>
-        <button id="result-again" type="button">ВЕРНУТЬСЯ К КОНСТРУКЦИИ</button>
+        <button id="result-again" type="button">Вернуться к конструкции</button>
       </section>
 
       <div id="fatal-error" class="fatal-error" hidden></div>
