@@ -65,48 +65,48 @@ export interface MachineSnapshot {
 
 export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
   ball: {
-    kind: 'ball', label: 'Шар', width: 56, height: 56, radius: 28,
+    kind: 'ball', label: 'Стальной шар', width: 56, height: 56, radius: 28,
     density: 1.2, friction: 0.18, restitution: 0.28,
     defaultFixed: false, canHinge: false, color: '#596773'
   },
   plank: {
-    kind: 'plank', label: 'Доска', width: 220, height: 30,
-    density: 0.8, friction: 0.72, restitution: 0.04,
+    kind: 'plank', label: 'Направляющая', width: 235, height: 28,
+    density: 0.62, friction: 0.78, restitution: 0.03,
     defaultFixed: true, canHinge: true, color: '#a96531'
   },
   wall: {
-    kind: 'wall', label: 'Стенка', width: 170, height: 30,
-    density: 2.4, friction: 0.82, restitution: 0.02,
-    defaultFixed: true, canHinge: false, color: '#53616c'
+    kind: 'wall', label: 'Пружинный отбойник', width: 155, height: 34,
+    density: 3.2, friction: 0.5, restitution: 1.08,
+    defaultFixed: true, canHinge: false, color: '#ca3f4d'
   },
   lever: {
-    kind: 'lever', label: 'Рычаг', width: 275, height: 34,
-    density: 0.9, friction: 0.68, restitution: 0.04,
+    kind: 'lever', label: 'Балансир', width: 300, height: 32,
+    density: 0.72, friction: 0.64, restitution: 0.04,
     defaultFixed: false, canHinge: true, color: '#bd7436'
   },
   pulley: {
-    kind: 'pulley', label: 'Блок', width: 76, height: 76, radius: 38,
-    density: 1.3, friction: 0.28, restitution: 0.03,
+    kind: 'pulley', label: 'Вентилятор', width: 92, height: 92, radius: 46,
+    density: 1.6, friction: 0.3, restitution: 0.02,
     defaultFixed: true, canHinge: false, color: '#4b5964'
   },
   weight: {
-    kind: 'weight', label: 'Груз', width: 68, height: 84,
-    density: 5.5, friction: 0.46, restitution: 0.01,
-    defaultFixed: false, canHinge: false, color: '#343b40'
+    kind: 'weight', label: 'Грузовой ящик', width: 82, height: 72,
+    density: 2.8, friction: 0.7, restitution: 0.02,
+    defaultFixed: false, canHinge: false, color: '#6f5135'
   }
 };
 
 export const INVENTORY: Readonly<Record<PartKind, number>> = {
   ball: 0,
-  plank: 4,
-  wall: 2,
-  lever: 2,
-  pulley: 2,
-  weight: 2
+  plank: 6,
+  wall: 4,
+  lever: 3,
+  pulley: 3,
+  weight: 4
 };
 
-export const MAX_ROPES = 3;
-export const MAX_HINGES = 3;
+export const MAX_ROPES = 4;
+export const MAX_HINGES = 4;
 
 export function createInitialSnapshot(): MachineSnapshot {
   return {
