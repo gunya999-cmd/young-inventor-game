@@ -57,6 +57,7 @@ export class PhysicsEngine {
   }
 
   step(seconds: number): void {
+    this.applyFanForces();
     this.world.step(seconds, 8, 3);
   }
 
@@ -116,8 +117,8 @@ export class PhysicsEngine {
         type: part.fixed ? 'static' : 'dynamic',
         position: Vec2(position.x, position.y),
         angle: -part.angle,
-        linearDamping: part.kind === 'ball' ? 0.04 : 0.12,
-        angularDamping: part.kind === 'ball' ? 0.04 : 0.18,
+        linearDamping: part.kind === 'ball' ? 0.04 : part.kind === 'weight' ? 0.2 : 0.12,
+        angularDamping: part.kind === 'ball' ? 0.04 : part.kind === 'weight' ? 0.3 : 0.18,
         bullet: part.kind === 'ball',
         userData: { partId: part.id, kind: part.kind } satisfies BodyData
       });
@@ -132,6 +133,32 @@ export class PhysicsEngine {
         userData: { partId: part.id, kind: part.kind } satisfies BodyData
       });
       this.bodies.set(part.id, body);
+    }
+  }
+
+  private applyFanForces(): void {
+    for (const fanPart of this.source.parts) {
+      if (fanPart.kind !== 'pulley') continue;
+      const fanBody = this.bodies.get(fanPart.id);
+      if (!fanBody) continue;
+      const origin = fanBody.getPosition();
+      const angle = fanBody.getAngle();
+      const directionX = Math.cos(angle);
+      const directionY = Math.sin(angle);
+
+      for (const [id, body] of this.bodies) {
+        if (id === fanPart.id || body.getType() !== 'dynamic') continue;
+        const position = body.getPosition();
+        const deltaX = position.x - origin.x;
+        const deltaY = position.y - origin.y;
+        const forward = deltaX * directionX + deltaY * directionY;
+        if (forward < 0.2 || forward > 4.6) continue;
+        const sideways = Math.abs(-deltaX * directionY + deltaY * directionX);
+        const halfWidth = 0.45 + forward * 0.32;
+        if (sideways > halfWidth) continue;
+        const strength = 23 * (1 - forward / 5.2) * (1 - sideways / Math.max(halfWidth, 0.01));
+        body.applyForceToCenter(Vec2(directionX * strength, directionY * strength), true);
+      }
     }
   }
 
