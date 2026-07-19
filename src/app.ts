@@ -502,7 +502,7 @@ export class GameApp {
   private rotateSelected(direction: -1 | 1, fine: boolean): void {
     if (this.mode !== 'build') return;
     const part = this.selectedPart();
-    if (!rotatable(part)) return;
+    if (!part || !rotatable(part)) return;
     const degrees = fine ? 1 : 5;
     part.angle += direction * degrees * Math.PI / 180;
     this.commit(`Деталь повёрнута на ${degrees}°.`);
@@ -534,7 +534,7 @@ export class GameApp {
   private applyAngleInput(): void {
     if (this.mode !== 'build') return;
     const part = this.selectedPart();
-    if (!rotatable(part)) return;
+    if (!part || !rotatable(part)) return;
     const degrees = Number(required<HTMLInputElement>('#angle-input').value);
     if (!Number.isFinite(degrees)) return;
     part.angle = normalizeDegrees(degrees) * Math.PI / 180;
