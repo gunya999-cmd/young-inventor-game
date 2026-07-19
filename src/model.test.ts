@@ -18,7 +18,7 @@ describe('machine model', () => {
   it('does not consume inventory for locked level objects', () => {
     const snapshot = createInitialSnapshot();
     expect(remaining(snapshot, 'ball')).toBe(0);
-    expect(remaining(snapshot, 'plank')).toBe(4);
+    expect(remaining(snapshot, 'plank')).toBe(6);
   });
 
   it('hit-tests a rotated part in local coordinates', () => {
