@@ -1,4 +1,5 @@
 import './style.css';
+import './gamefeel.css';
 import { GameApp } from './app';
 
 function showFatalError(error: unknown): void {
