@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PARTS,
   SnapshotHistory,
   containsPoint,
   createInitialSnapshot,
@@ -19,12 +20,28 @@ describe('machine model', () => {
     const snapshot = createInitialSnapshot();
     expect(remaining(snapshot, 'ball')).toBe(0);
     expect(remaining(snapshot, 'plank')).toBe(6);
+    expect(remaining(snapshot, 'domino')).toBe(10);
+    expect(remaining(snapshot, 'spring')).toBe(3);
+    expect(remaining(snapshot, 'magnet')).toBe(2);
+  });
+
+  it('defines genuinely different physical roles for new parts', () => {
+    expect(PARTS.rubberball.restitution).toBeGreaterThan(0.8);
+    expect(PARTS.domino.height).toBeGreaterThan(PARTS.domino.width * 2);
+    expect(PARTS.spring.defaultFixed).toBe(true);
+    expect(PARTS.magnet.defaultFixed).toBe(true);
   });
 
   it('hit-tests a rotated part in local coordinates', () => {
     const part: PartState = { id: 'p', kind: 'plank', x: 400, y: 300, angle: Math.PI / 2, fixed: true };
     expect(containsPoint(part, { x: 400, y: 390 })).toBe(true);
     expect(containsPoint(part, { x: 510, y: 300 }, 0)).toBe(false);
+  });
+
+  it('hit-tests circular rubber balls by radius', () => {
+    const part: PartState = { id: 'r', kind: 'rubberball', x: 200, y: 200, angle: 0, fixed: false };
+    expect(containsPoint(part, { x: 225, y: 200 }, 0)).toBe(true);
+    expect(containsPoint(part, { x: 240, y: 200 }, 0)).toBe(false);
   });
 });
 
