@@ -15,16 +15,18 @@ import {
   cloneSnapshot,
   type Endpoint,
   type MachineSnapshot,
+  type PartKind,
   type PartState,
   type Point
 } from './model';
 
 interface BodyData {
   partId?: string;
-  kind?: string;
+  kind?: PartKind | 'level' | 'basket';
   goal?: boolean;
 }
 
+const MAGNETIC_KINDS = new Set<PartKind>(['ball', 'weight', 'domino', 'lever']);
 const pxToMeters = (value: number): number => value / PHYSICS_SCALE;
 const metersToPx = (value: number): number => value * PHYSICS_SCALE;
 
@@ -58,6 +60,7 @@ export class PhysicsEngine {
 
   step(seconds: number): void {
     this.applyFanForces();
+    this.applyMagnetForces();
     this.world.step(seconds, 8, 3);
   }
 
@@ -113,13 +116,15 @@ export class PhysicsEngine {
     for (const part of this.source.parts) {
       const spec = PARTS[part.kind];
       const position = pixelPointToPhysics(part);
+      const rolling = part.kind === 'ball' || part.kind === 'rubberball';
+      const heavy = part.kind === 'weight';
       const body = this.world.createBody({
         type: part.fixed ? 'static' : 'dynamic',
         position: Vec2(position.x, position.y),
         angle: -part.angle,
-        linearDamping: part.kind === 'ball' ? 0.04 : part.kind === 'weight' ? 0.2 : 0.12,
-        angularDamping: part.kind === 'ball' ? 0.04 : part.kind === 'weight' ? 0.3 : 0.18,
-        bullet: part.kind === 'ball',
+        linearDamping: rolling ? 0.035 : heavy ? 0.2 : 0.12,
+        angularDamping: rolling ? 0.035 : heavy ? 0.3 : part.kind === 'domino' ? 0.08 : 0.18,
+        bullet: rolling,
         userData: { partId: part.id, kind: part.kind } satisfies BodyData
       });
       const shape = spec.radius
@@ -158,6 +163,30 @@ export class PhysicsEngine {
         if (sideways > halfWidth) continue;
         const strength = 23 * (1 - forward / 5.2) * (1 - sideways / Math.max(halfWidth, 0.01));
         body.applyForceToCenter(Vec2(directionX * strength, directionY * strength), true);
+      }
+    }
+  }
+
+  private applyMagnetForces(): void {
+    for (const magnetPart of this.source.parts) {
+      if (magnetPart.kind !== 'magnet') continue;
+      const magnetBody = this.bodies.get(magnetPart.id);
+      if (!magnetBody) continue;
+      const origin = magnetBody.getPosition();
+
+      for (const targetPart of this.source.parts) {
+        if (!MAGNETIC_KINDS.has(targetPart.kind)) continue;
+        const targetBody = this.bodies.get(targetPart.id);
+        if (!targetBody || targetBody.getType() !== 'dynamic') continue;
+        const position = targetBody.getPosition();
+        const deltaX = origin.x - position.x;
+        const deltaY = origin.y - position.y;
+        const distance = Math.hypot(deltaX, deltaY);
+        if (distance < 0.18 || distance > 3.8) continue;
+        const falloff = Math.pow(1 - distance / 3.8, 1.45);
+        const acceleration = 26 * falloff;
+        const force = targetBody.getMass() * acceleration;
+        targetBody.applyForceToCenter(Vec2(deltaX / distance * force, deltaY / distance * force), true);
       }
     }
   }
@@ -208,6 +237,17 @@ export class PhysicsEngine {
     const goal = dataA?.goal === true || dataB?.goal === true;
     const target = dataA?.partId === 'target-ball' || dataB?.partId === 'target-ball';
     if (goal && target) this.goalReached = true;
+
+    const springFixture = dataA?.kind === 'spring' ? a : dataB?.kind === 'spring' ? b : null;
+    const targetFixture = springFixture === a ? b : springFixture === b ? a : null;
+    if (!springFixture || !targetFixture) return;
+    const targetBody = targetFixture.getBody();
+    if (targetBody.getType() !== 'dynamic') return;
+    const springBody = springFixture.getBody();
+    const angle = springBody.getAngle();
+    const direction = Vec2(Math.cos(angle), Math.sin(angle));
+    const impulse = Math.max(2.2, targetBody.getMass() * 2.9);
+    targetBody.applyLinearImpulse(Vec2(direction.x * impulse, direction.y * impulse), targetBody.getWorldCenter(), true);
   }
 }
 
