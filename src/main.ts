@@ -1,6 +1,7 @@
 import './style.css';
 import './gamefeel.css';
 import { GameApp } from './app';
+import { installExtendedParts } from './extendedParts';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -16,6 +17,7 @@ window.addEventListener('error', (event) => showFatalError(event.error ?? event.
 window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
 try {
+  installExtendedParts();
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   new GameApp(canvas);

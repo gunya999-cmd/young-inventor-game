@@ -6,6 +6,18 @@
     <meta name="theme-color" content="#0b0f14" />
     <meta name="description" content="Десктопная физическая головоломка на Box2D в духе классических инженерных игр." />
     <title>Машина изобретателя — Desktop</title>
+    <style>
+      .library-panel .parts-list{min-height:0;flex:1;overflow-y:auto;align-content:start;padding-bottom:12px;scrollbar-width:thin}
+      .library-panel .palette-part{min-height:56px}
+      .inventory-section-label{margin:5px 12px 0;color:#65768a;font-size:8px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+      .inventory-section-label:first-child{margin-top:0}
+      .extended-icon{display:grid!important;place-items:center;border-radius:9px;color:#f5f7fa;font-size:28px;font-weight:900;text-shadow:0 2px 4px rgba(0,0,0,.5)}
+      .domino-icon{background:linear-gradient(145deg,#f2e6cd,#958872);color:#302a22;font-size:22px}
+      .rubberball-icon{border-radius:50%;background:radial-gradient(circle at 32% 28%,#eaffff 0 8%,#64d8fa 9% 30%,#168bc9 54%,#064b78 82%);color:#ffdc63;font-size:17px}
+      .spring-icon{background:linear-gradient(145deg,#303a43,#161d23);color:#f5c655;font-size:26px}
+      .magnet-icon{background:linear-gradient(90deg,#ca3f4b 0 48%,#3e83c7 52% 100%);font-size:25px}
+      @media(max-height:880px){.shortcut-card{display:none}.library-panel .palette-part{min-height:52px}.part-copy small{display:none}}
+    </style>
   </head>
   <body>
     <main id="app" class="desktop-app">
@@ -13,9 +25,9 @@
         <section class="mission-summary" aria-label="Задача уровня">
           <span class="level-number">01</span>
           <div>
-            <p class="eyebrow">ИСПЫТАНИЕ · ПЕРВЫЙ ЗАПУСК</p>
+            <p class="eyebrow">ИСПЫТАНИЕ · ЦЕПНАЯ РЕАКЦИЯ</p>
             <h1>Проведи шар в приёмник</h1>
-            <p class="mission-copy">Комбинируй направляющие, балансиры, отбойники, вентиляторы, ящики, оси и верёвки.</p>
+            <p class="mission-copy">Комбинируй падение домино, отскок, пружинный импульс, воздушный поток и магнитное притяжение.</p>
           </div>
         </section>
         <section class="run-state" aria-label="Состояние симуляции"><span id="mode-label" class="mode-chip">СБОРКА</span><b id="run-timer">0.0с</b></section>
@@ -26,22 +38,31 @@
 
       <aside class="library-panel side-panel" aria-label="Библиотека деталей">
         <header class="panel-heading"><div><p class="eyebrow">ДЕТАЛИ И МЕХАНИЗМЫ</p><h2>Мастерская</h2></div><span class="panel-badge">DRAG</span></header>
-        <p class="panel-description">Теперь у деталей разные физические роли. Комбинируй массу, импульс, опору и поток воздуха.</p>
+        <p class="panel-description">У каждой детали своя роль. Перетащи её на стенд и собери последовательность событий.</p>
         <div class="parts-list">
-          <button class="palette-part" data-kind="ball" type="button"><span class="palette-icon ball-icon"></span><span class="part-copy"><b>Стальной шар</b><small>Целевой объект уровня</small></span><em data-count>×0</em></button>
-          <button class="palette-part" data-kind="plank" type="button"><span class="palette-icon plank-icon"></span><span class="part-copy"><b>Направляющая</b><small>Длинная опора с высоким сцеплением</small></span><em data-count>×6</em></button>
+          <p class="inventory-section-label">Объект уровня</p>
+          <button class="palette-part" data-kind="ball" type="button"><span class="palette-icon ball-icon"></span><span class="part-copy"><b>Стальной шар</b><small>Его нужно доставить в приёмник</small></span><em data-count>×0</em></button>
+
+          <p class="inventory-section-label">Конструкция и масса</p>
+          <button class="palette-part" data-kind="plank" type="button"><span class="palette-icon plank-icon"></span><span class="part-copy"><b>Направляющая</b><small>Опора с высоким сцеплением</small></span><em data-count>×6</em></button>
           <button class="palette-part" data-kind="lever" type="button"><span class="palette-icon lever-icon"></span><span class="part-copy"><b>Балансир</b><small>Передаёт движение через ось</small></span><em data-count>×3</em></button>
-          <button class="palette-part" data-kind="wall" type="button"><span class="palette-icon wall-icon"></span><span class="part-copy"><b>Отбойник</b><small>Жёстко закреплён и сильно отбрасывает</small></span><em data-count>×4</em></button>
-          <button class="palette-part" data-kind="pulley" type="button"><span class="palette-icon pulley-icon"></span><span class="part-copy"><b>Вентилятор</b><small>Создаёт направленный поток воздуха</small></span><em data-count>×3</em></button>
-          <button class="palette-part" data-kind="weight" type="button"><span class="palette-icon weight-icon"></span><span class="part-copy"><b>Грузовой ящик</b><small>Тяжёлое подвижное тело и противовес</small></span><em data-count>×4</em></button>
+          <button class="palette-part" data-kind="weight" type="button"><span class="palette-icon weight-icon"></span><span class="part-copy"><b>Грузовой ящик</b><small>Тяжёлое тело и противовес</small></span><em data-count>×4</em></button>
+          <button class="palette-part" data-kind="domino" type="button"><span class="palette-icon extended-icon domino-icon">••</span><span class="part-copy"><b>Домино</b><small>Запускает последовательное падение</small></span><em data-count>×10</em></button>
+          <button class="palette-part" data-kind="rubberball" type="button"><span class="palette-icon extended-icon rubberball-icon">╱</span><span class="part-copy"><b>Резиновый мяч</b><small>Почти не теряет энергию при отскоке</small></span><em data-count>×3</em></button>
+
+          <p class="inventory-section-label">Активные механизмы</p>
+          <button class="palette-part" data-kind="wall" type="button"><span class="palette-icon wall-icon"></span><span class="part-copy"><b>Отбойник</b><small>Сильно отражает столкнувшиеся тела</small></span><em data-count>×4</em></button>
+          <button class="palette-part" data-kind="pulley" type="button"><span class="palette-icon pulley-icon"></span><span class="part-copy"><b>Вентилятор</b><small>Создаёт постоянный поток воздуха</small></span><em data-count>×3</em></button>
+          <button class="palette-part" data-kind="spring" type="button"><span class="palette-icon extended-icon spring-icon">≋</span><span class="part-copy"><b>Толкатель</b><small>Даёт сильный импульс по направлению стрелки</small></span><em data-count>×3</em></button>
+          <button class="palette-part" data-kind="magnet" type="button"><span class="palette-icon extended-icon magnet-icon">∩</span><span class="part-copy"><b>Магнит</b><small>Притягивает металлические подвижные детали</small></span><em data-count>×2</em></button>
         </div>
-        <section class="connections-card"><p class="eyebrow">СОЕДИНЕНИЯ</p><button id="rope-button" class="connection-button" type="button">〰 Верёвка <span>×4</span></button><button id="hinge-button" class="connection-button" type="button">⊙ Установить ось <span>×4</span></button></section>
+        <section class="connections-card"><p class="eyebrow">СОЕДИНЕНИЯ</p><button id="rope-button" class="connection-button" type="button">〰 Верёвка <span>×5</span></button><button id="hinge-button" class="connection-button" type="button">⊙ Установить ось <span>×5</span></button></section>
         <section class="shortcut-card"><p class="eyebrow">КЛАВИАТУРА</p><dl><div><dt>Q / E</dt><dd>поворот</dd></div><div><dt>Ctrl+D</dt><dd>копия</dd></div><div><dt>Delete</dt><dd>удалить</dd></div><div><dt>Space</dt><dd>пуск / стоп</dd></div></dl></section>
       </aside>
 
       <section class="workspace-panel" aria-label="Рабочее поле">
         <div class="workspace-header"><div><p class="eyebrow">МЕХАНИЧЕСКИЙ СТЕНД</p><strong>Сцена 1600 × 900</strong></div><div class="workspace-tools"><label class="toggle-control"><input id="snap-toggle" type="checkbox" checked /><span>Привязка 10 px</span></label><span class="zoom-hint">Ctrl + колесо — масштаб</span></div></div>
-        <div class="canvas-frame"><canvas id="game-canvas" aria-label="Игровое поле"></canvas><div class="objective-strip" aria-hidden="true"><span class="objective-start"><i></i>СТАРТ</span><span class="objective-line"></span><span class="objective-finish"><i></i>ПРИЁМНИК</span></div><div class="build-prompt"><strong>СОБЕРИ ЦЕПНУЮ РЕАКЦИЮ</strong><span>Попробуй отбойник для импульса или вентилятор для постоянной силы</span></div><div class="state-legend"><span><i class="legend-level"></i>объект уровня</span><span><i class="legend-fixed"></i>закреплено</span><span><i class="legend-free"></i>движется</span></div><div class="canvas-corner-label">PLANCK / BOX2D · 120 Hz</div></div>
+        <div class="canvas-frame"><canvas id="game-canvas" aria-label="Игровое поле"></canvas><div class="objective-strip" aria-hidden="true"><span class="objective-start"><i></i>СТАРТ</span><span class="objective-line"></span><span class="objective-finish"><i></i>ПРИЁМНИК</span></div><div class="build-prompt"><strong>СОБЕРИ ЦЕПНУЮ РЕАКЦИЮ</strong><span>Домино передаёт удар, толкатель запускает тело, магнит меняет траекторию</span></div><div class="state-legend"><span><i class="legend-level"></i>объект уровня</span><span><i class="legend-fixed"></i>закреплено</span><span><i class="legend-free"></i>движется</span></div><div class="canvas-corner-label">PLANCK / BOX2D · 120 Hz</div></div>
       </section>
 
       <aside id="inspector" class="properties-panel side-panel" aria-label="Свойства выбранной детали">

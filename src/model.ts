@@ -2,7 +2,17 @@ export const WORLD_WIDTH = 1600;
 export const WORLD_HEIGHT = 900;
 export const PHYSICS_SCALE = 100;
 
-export type PartKind = 'ball' | 'plank' | 'wall' | 'lever' | 'pulley' | 'weight';
+export type PartKind =
+  | 'ball'
+  | 'plank'
+  | 'wall'
+  | 'lever'
+  | 'pulley'
+  | 'weight'
+  | 'domino'
+  | 'rubberball'
+  | 'spring'
+  | 'magnet';
 export type GameMode = 'build' | 'running' | 'paused';
 
 export interface Point {
@@ -93,6 +103,26 @@ export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
     kind: 'weight', label: 'Грузовой ящик', width: 82, height: 72,
     density: 2.8, friction: 0.7, restitution: 0.02,
     defaultFixed: false, canHinge: false, color: '#6f5135'
+  },
+  domino: {
+    kind: 'domino', label: 'Домино', width: 34, height: 102,
+    density: 0.56, friction: 0.86, restitution: 0.035,
+    defaultFixed: false, canHinge: false, color: '#e7d8b8'
+  },
+  rubberball: {
+    kind: 'rubberball', label: 'Резиновый мяч', width: 62, height: 62, radius: 31,
+    density: 0.74, friction: 0.24, restitution: 0.92,
+    defaultFixed: false, canHinge: false, color: '#39aee8'
+  },
+  spring: {
+    kind: 'spring', label: 'Пружинный толкатель', width: 126, height: 54,
+    density: 3.4, friction: 0.62, restitution: 0.18,
+    defaultFixed: true, canHinge: false, color: '#efb43f'
+  },
+  magnet: {
+    kind: 'magnet', label: 'Магнит', width: 104, height: 88,
+    density: 3.1, friction: 0.55, restitution: 0.04,
+    defaultFixed: true, canHinge: false, color: '#d9535d'
   }
 };
 
@@ -102,11 +132,15 @@ export const INVENTORY: Readonly<Record<PartKind, number>> = {
   wall: 4,
   lever: 3,
   pulley: 3,
-  weight: 4
+  weight: 4,
+  domino: 10,
+  rubberball: 3,
+  spring: 3,
+  magnet: 2
 };
 
-export const MAX_ROPES = 4;
-export const MAX_HINGES = 4;
+export const MAX_ROPES = 5;
+export const MAX_HINGES = 5;
 
 export function createInitialSnapshot(): MachineSnapshot {
   return {
