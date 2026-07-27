@@ -57,8 +57,9 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    { id: 'level-weight', kind: 'weight', x: 625, y: 555, angle: 0, fixed: false, locked: true },
-    { id: 'level-latch', kind: 'latch', x: 625, y: 615, angle: 0, fixed: true, locked: true },
+    // The weight is deliberately left of the future centered pivot, giving it a larger moment arm after release.
+    { id: 'level-weight', kind: 'weight', x: 580, y: 555, angle: 0, fixed: false, locked: true },
+    { id: 'level-latch', kind: 'latch', x: 580, y: 615, angle: 0, fixed: true, locked: true },
     // Mounted below the future right lever arm. The lever itself becomes the physical trigger.
     { id: 'level-button', kind: 'button', x: 760, y: 745, angle: 0, fixed: true, locked: true }
   ],
