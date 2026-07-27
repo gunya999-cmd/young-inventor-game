@@ -1,7 +1,7 @@
 import { Box, Vec2, World, type Body, type Fixture } from 'planck';
 import {
   PARTS,
-  WORLD_HEIGHT,
+  PHYSICS_SCALE,
   cloneSnapshot,
   type Endpoint,
   type MachineSnapshot,
@@ -26,6 +26,15 @@ interface RuntimePartState extends PartState {
   deviceActive?: boolean;
 }
 
+export interface PhysicsEngineOptions {
+  includeLevelGeometry?: boolean;
+}
+
+export interface PartKinematics {
+  velocity: Point;
+  angularVelocity: number;
+}
+
 const MAGNETIC_KINDS = new Set<PartKind>(['ball', 'weight', 'domino', 'lever']);
 
 export class PhysicsEngine {
@@ -36,10 +45,10 @@ export class PhysicsEngine {
   private readonly signals: SignalRuntime;
   private goalReached = false;
 
-  constructor(snapshot: MachineSnapshot) {
+  constructor(snapshot: MachineSnapshot, options: PhysicsEngineOptions = {}) {
     this.source = cloneSnapshot(snapshot);
     this.world = new World({ gravity: Vec2(0, -PHYSICS_CONFIG.gravity), allowSleep: true });
-    this.createLevelGeometry();
+    if (options.includeLevelGeometry !== false) this.createLevelGeometry();
     this.createParts();
     createHinges(this.world, this.source, this.bodies);
     createRopes(this.world, this.source, this.bodies);
@@ -89,6 +98,16 @@ export class PhysicsEngine {
     const body = this.bodies.get(partId);
     if (!body) return null;
     return { position: physicsPointToPixel(body.getPosition()), angle: -body.getAngle() };
+  }
+
+  partKinematics(partId: string): PartKinematics | null {
+    const body = this.bodies.get(partId);
+    if (!body) return null;
+    const velocity = body.getLinearVelocity();
+    return {
+      velocity: { x: velocity.x * PHYSICS_SCALE, y: -velocity.y * PHYSICS_SCALE },
+      angularVelocity: -body.getAngularVelocity()
+    };
   }
 
   private createLevelGeometry(): void {

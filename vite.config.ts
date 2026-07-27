@@ -5,6 +5,9 @@ export default defineConfig({
   build: {
     target: 'es2020',
     sourcemap: false,
-    chunkSizeWarningLimit: 1800
+    chunkSizeWarningLimit: 1800,
+    rollupOptions: {
+      input: ['index.html', 'physics-bench.html']
+    }
   }
 });
