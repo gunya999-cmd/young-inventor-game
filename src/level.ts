@@ -45,7 +45,7 @@ export const LEVEL_07: LevelSpec = {
     { id: 'start-rail', x: 275, y: 305, width: 420, height: 26, angle: 0.09 },
     { id: 'left-bench', x: 610, y: 470, width: 290, height: 24, angle: 0.015 },
     { id: 'barrier', x: 825, y: 585, width: 30, height: 400, angle: 0 },
-    { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: -0.02 }
+    { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: 0.04 }
   ],
   receiver: {
     x: 1390,
@@ -59,7 +59,8 @@ export const LEVEL_07: LevelSpec = {
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
     { id: 'level-weight', kind: 'weight', x: 625, y: 555, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 625, y: 615, angle: 0, fixed: true, locked: true },
-    { id: 'level-button', kind: 'button', x: 520, y: 760, angle: 0, fixed: true, locked: true }
+    // Recessed into the left bench so the rolling target ball can press it without hitting a tall obstacle.
+    { id: 'level-button', kind: 'button', x: 650, y: 460, angle: 0, fixed: true, locked: true }
   ],
   initialSignals: [
     { id: 'level-signal', sourcePartId: 'level-button', targetPartId: 'level-latch', action: 'release' }
