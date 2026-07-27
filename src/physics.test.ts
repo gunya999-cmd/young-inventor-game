@@ -1,21 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PhysicsEngine } from './physics';
-import { installSpringSystem } from './springSystem';
-import { installEventSystem } from './eventSystem';
 import { createInitialSnapshot, type MachineSnapshot } from './model';
 
-installSpringSystem();
-installEventSystem();
-
-type SpringAwareEngine = PhysicsEngine & {
-  springCompression(partId: string): number;
-};
-
-type DeviceAwareEngine = PhysicsEngine & {
-  deviceActive(partId: string): boolean;
-};
-
-describe('Planck physics vertical slice', () => {
+describe('Planck physics core', () => {
   it('moves the unlocked target ball under Box2D gravity', () => {
     const engine = new PhysicsEngine(createInitialSnapshot());
     const before = engine.partTransform('target-ball');
@@ -44,7 +31,8 @@ describe('Planck physics vertical slice', () => {
       hinges: [{
         id: 'hinge-1', partId: 'lever-1', localX: -90, localY: 0,
         referenceAngle: 0, lowerAngle: -1.2, upperAngle: 1.2
-      }]
+      }],
+      signals: []
     };
     const engine = new PhysicsEngine(snapshot);
     for (let index = 0; index < 120; index += 1) engine.step(1 / 120);
@@ -69,7 +57,8 @@ describe('Planck physics vertical slice', () => {
         pulleyPartId: 'sheave-1',
         ratio: 1
       }],
-      hinges: []
+      hinges: [],
+      signals: []
     };
     const engine = new PhysicsEngine(snapshot);
     const heavyBefore = engine.partTransform('heavy')!;
@@ -89,9 +78,10 @@ describe('Planck physics vertical slice', () => {
         { id: 'falling-weight', kind: 'weight', x: 900, y: 475, angle: 0, fixed: false }
       ],
       ropes: [],
-      hinges: []
+      hinges: [],
+      signals: []
     };
-    const engine = new PhysicsEngine(snapshot) as SpringAwareEngine;
+    const engine = new PhysicsEngine(snapshot);
     const compressionSamples: number[] = [];
     const weightYSamples: number[] = [];
 
@@ -125,8 +115,7 @@ describe('Planck physics vertical slice', () => {
     };
     const engine = new PhysicsEngine(snapshot);
     for (let index = 0; index < 180; index += 1) engine.step(1 / 120);
-    const load = engine.partTransform('load')!;
-    expect(load.position.y).toBeLessThan(500);
+    expect(engine.partTransform('load')!.position.y).toBeLessThan(500);
   });
 
   it('releases a latch only after a physical body presses its linked button', () => {
@@ -143,7 +132,7 @@ describe('Planck physics vertical slice', () => {
         id: 'signal-1', sourcePartId: 'button-1', targetPartId: 'latch-1', action: 'release'
       }]
     };
-    const engine = new PhysicsEngine(snapshot) as DeviceAwareEngine;
+    const engine = new PhysicsEngine(snapshot);
     for (let index = 0; index < 240; index += 1) engine.step(1 / 120);
 
     expect(engine.deviceActive('button-1')).toBe(true);
