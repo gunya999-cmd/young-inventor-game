@@ -7,10 +7,7 @@ import { createInitialSnapshot, type MachineSnapshot } from './model';
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // Descending guide prevents the target ball from wedging between the bench and the barrier.
-    // It routes the ball directly onto the right lever arm.
-    { id: 'solution-drop', kind: 'plank', x: 680, y: 545, angle: 0.70, fixed: true },
-    // Centered pivot keeps the empty lever neutral. The ball arrives on the right arm.
+    // Centered pivot keeps the empty lever neutral. The ball falls through the level's drop shaft onto the right arm.
     { id: 'solution-lever', kind: 'lever', x: 655, y: 690, angle: 0, fixed: false },
     // Catch the launched ball after it clears the barrier.
     { id: 'solution-catch', kind: 'plank', x: 995, y: 430, angle: 0.10, fixed: true },
