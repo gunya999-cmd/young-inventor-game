@@ -120,7 +120,7 @@ export class CanvasRenderer {
     this.resize();
     const context = this.context;
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.fillStyle = '#0b1118';
+    context.fillStyle = '#e9e2d5';
     context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     const scale = this.baseScale * this.zoom;
@@ -143,42 +143,64 @@ export class CanvasRenderer {
   }
 
   private drawWorkshop(context: CanvasRenderingContext2D): void {
-    const background = context.createLinearGradient(0, 0, 0, WORLD_HEIGHT);
-    background.addColorStop(0, '#1a2b3b');
-    background.addColorStop(0.62, '#152433');
-    background.addColorStop(1, '#101b26');
-    context.fillStyle = background;
+    const board = context.createLinearGradient(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    board.addColorStop(0, '#f8f4e9');
+    board.addColorStop(.5, '#f2eddf');
+    board.addColorStop(1, '#ece5d6');
+    context.fillStyle = board;
     context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    context.fillStyle = 'rgba(108,151,184,.12)';
-    for (let x = 0; x <= WORLD_WIDTH; x += 25) context.fillRect(x, 0, 1, WORLD_HEIGHT);
-    for (let y = 0; y <= WORLD_HEIGHT; y += 25) context.fillRect(0, y, WORLD_WIDTH, 1);
-    context.fillStyle = 'rgba(125,172,207,.19)';
-    for (let x = 0; x <= WORLD_WIDTH; x += 100) context.fillRect(x, 0, 1.5, WORLD_HEIGHT);
-    for (let y = 0; y <= WORLD_HEIGHT; y += 100) context.fillRect(0, y, WORLD_WIDTH, 1.5);
+    // Subtle engineering grid: useful for construction, deliberately secondary to the mechanism.
+    context.save();
+    context.strokeStyle = 'rgba(116,119,111,.075)';
+    context.lineWidth = 1;
+    for (let x = 0; x <= WORLD_WIDTH; x += 25) {
+      context.beginPath(); context.moveTo(x, 0); context.lineTo(x, WORLD_HEIGHT); context.stroke();
+    }
+    for (let y = 0; y <= WORLD_HEIGHT; y += 25) {
+      context.beginPath(); context.moveTo(0, y); context.lineTo(WORLD_WIDTH, y); context.stroke();
+    }
+    context.strokeStyle = 'rgba(116,105,87,.105)';
+    context.lineWidth = 1.4;
+    for (let x = 0; x <= WORLD_WIDTH; x += 100) {
+      context.beginPath(); context.moveTo(x, 0); context.lineTo(x, WORLD_HEIGHT); context.stroke();
+    }
+    for (let y = 0; y <= WORLD_HEIGHT; y += 100) {
+      context.beginPath(); context.moveTo(0, y); context.lineTo(WORLD_WIDTH, y); context.stroke();
+    }
+    context.restore();
 
-    context.strokeStyle = 'rgba(133,180,215,.28)';
+    // Pegboard holes make the surface feel like a physical laboratory fixture rather than CAD software.
+    context.fillStyle = 'rgba(118,105,85,.16)';
+    for (let y = 37; y < WORLD_HEIGHT; y += 50) {
+      for (let x = 37; x < WORLD_WIDTH; x += 50) {
+        context.beginPath(); context.arc(x, y, 2.25, 0, Math.PI * 2); context.fill();
+      }
+    }
+
+    context.strokeStyle = 'rgba(112,92,65,.22)';
     context.lineWidth = 2;
-    context.strokeRect(18, 18, WORLD_WIDTH - 36, WORLD_HEIGHT - 36);
+    roundedRect(context, 14, 14, WORLD_WIDTH - 28, WORLD_HEIGHT - 28, 16);
+    context.stroke();
 
-    context.fillStyle = 'rgba(172,203,225,.68)';
-    context.font = '800 15px system-ui, sans-serif';
-    context.fillText('ИСПЫТАТЕЛЬНЫЙ СТЕНД 01', 36, 52);
-    context.fillStyle = 'rgba(133,167,193,.55)';
-    context.font = '700 11px system-ui, sans-serif';
-    context.fillText('СВОБОДНАЯ СБОРКА · ГРАВИТАЦИЯ 9.8 м/с²', 36, 72);
+    context.fillStyle = 'rgba(91,88,80,.56)';
+    context.font = '800 13px system-ui, sans-serif';
+    context.fillText('МОНТАЖНАЯ ПАНЕЛЬ · МЕХАНИКА', 32, 45);
+    context.fillStyle = 'rgba(124,116,104,.46)';
+    context.font = '700 10px system-ui, sans-serif';
+    context.fillText('g = 9.81 м/с² · фиксированный шаг 120 Hz', 32, 63);
 
     context.save();
-    context.strokeStyle = 'rgba(112,192,137,.24)';
-    context.setLineDash([12, 10]);
-    context.lineWidth = 3;
-    roundedRect(context, 1265, 505, 250, 245, 20);
+    context.strokeStyle = 'rgba(83,137,99,.24)';
+    context.setLineDash([9, 8]);
+    context.lineWidth = 2;
+    roundedRect(context, 1266, 504, 248, 246, 18);
     context.stroke();
     context.setLineDash([]);
-    context.fillStyle = 'rgba(112,192,137,.7)';
-    context.font = '800 12px system-ui, sans-serif';
+    context.fillStyle = 'rgba(73,126,89,.65)';
+    context.font = '800 11px system-ui, sans-serif';
     context.textAlign = 'center';
-    context.fillText('ЦЕЛЕВАЯ ЗОНА', 1390, 490);
+    context.fillText('ПРИЁМНАЯ ЗОНА', 1390, 488);
     context.restore();
   }
 
@@ -189,19 +211,20 @@ export class CanvasRenderer {
 
     context.save();
     context.translate(1385, 625);
-    const glow = context.createLinearGradient(0, -70, 0, 65);
-    glow.addColorStop(0, 'rgba(103,184,126,.08)');
-    glow.addColorStop(1, 'rgba(103,184,126,.2)');
-    context.fillStyle = glow;
-    roundedRect(context, -82, -62, 164, 116, 14);
+    context.shadowColor = 'rgba(59,93,67,.13)';
+    context.shadowBlur = 20;
+    context.shadowOffsetY = 7;
+    context.fillStyle = 'rgba(201,224,204,.52)';
+    roundedRect(context, -82, -62, 164, 116, 13);
     context.fill();
-    context.strokeStyle = '#70b884';
-    context.lineWidth = 5;
+    context.shadowColor = 'transparent';
+    context.strokeStyle = '#668b70';
+    context.lineWidth = 4;
     context.stroke();
-    context.fillStyle = '#8bc99d';
-    context.font = '900 16px system-ui, sans-serif';
+    context.fillStyle = '#55735d';
+    context.font = '850 13px system-ui, sans-serif';
     context.textAlign = 'center';
-    context.fillText('КОРЗИНА', 0, 82);
+    context.fillText('ПРИЁМНИК', 0, 82);
     context.restore();
 
     this.drawPlatform(context, 1385, 687, 190, 22, 0);
@@ -213,22 +236,23 @@ export class CanvasRenderer {
     context.save();
     context.translate(x, y);
     context.rotate(angle);
-    context.shadowColor = 'rgba(0,0,0,.42)';
-    context.shadowBlur = 12;
-    context.shadowOffsetY = 6;
+    context.shadowColor = 'rgba(75,68,57,.18)';
+    context.shadowBlur = 9;
+    context.shadowOffsetY = 5;
     const gradient = context.createLinearGradient(0, -height / 2, 0, height / 2);
-    gradient.addColorStop(0, '#9ba8b1');
-    gradient.addColorStop(0.35, '#5d6b75');
-    gradient.addColorStop(1, '#263139');
+    gradient.addColorStop(0, '#e2e3df');
+    gradient.addColorStop(.22, '#aeb6b6');
+    gradient.addColorStop(.58, '#798486');
+    gradient.addColorStop(1, '#596366');
     context.fillStyle = gradient;
     roundedRect(context, -width / 2, -height / 2, width, height, 5);
     context.fill();
     context.shadowColor = 'transparent';
-    context.strokeStyle = '#111a21';
-    context.lineWidth = 3;
+    context.strokeStyle = '#515c60';
+    context.lineWidth = 2;
     context.stroke();
-    context.fillStyle = 'rgba(255,255,255,.3)';
-    context.fillRect(-width / 2 + 8, -height / 2 + 5, width - 16, 2);
+    context.fillStyle = 'rgba(255,255,255,.58)';
+    context.fillRect(-width / 2 + 8, -height / 2 + 4, width - 16, 2);
     context.restore();
   }
 
@@ -237,16 +261,16 @@ export class CanvasRenderer {
     context.save();
     context.translate(part.x, part.y);
     context.rotate(part.angle);
-    context.shadowColor = 'rgba(0,0,0,.46)';
-    context.shadowBlur = selected ? 18 : 10;
-    context.shadowOffsetY = 7;
+    context.shadowColor = 'rgba(64,55,44,.22)';
+    context.shadowBlur = selected ? 17 : 9;
+    context.shadowOffsetY = 6;
 
     switch (part.kind) {
       case 'ball': this.drawBall(context, spec.radius ?? 28); break;
-      case 'plank': this.drawWood(context, spec.width, spec.height, false); break;
-      case 'lever': this.drawWood(context, spec.width, spec.height, true); break;
-      case 'wall': this.drawMetalBar(context, spec.width, spec.height); break;
-      case 'pulley': this.drawPulley(context, spec.radius ?? 38); break;
+      case 'plank': this.drawGuide(context, spec.width, spec.height); break;
+      case 'lever': this.drawLever(context, spec.width, spec.height); break;
+      case 'wall': this.drawBumper(context, spec.width, spec.height); break;
+      case 'pulley': this.drawFan(context, spec.radius ?? 38); break;
       case 'weight': this.drawWeight(context, spec.width, spec.height); break;
     }
 
@@ -263,41 +287,39 @@ export class CanvasRenderer {
     context.save();
     context.translate(part.x, part.y);
     context.rotate(part.angle);
-    context.strokeStyle = '#ffc15b';
+    context.strokeStyle = '#4c8eaa';
     context.lineWidth = 3;
-    context.setLineDash([9, 6]);
+    context.setLineDash([8, 6]);
     if (spec.radius) {
       context.beginPath();
-      context.arc(0, 0, spec.radius + 12, 0, Math.PI * 2);
+      context.arc(0, 0, spec.radius + 11, 0, Math.PI * 2);
       context.stroke();
     } else {
-      roundedRect(context, -spec.width / 2 - 10, -spec.height / 2 - 10, spec.width + 20, spec.height + 20, 8);
+      roundedRect(context, -spec.width / 2 - 9, -spec.height / 2 - 9, spec.width + 18, spec.height + 18, 8);
       context.stroke();
       context.setLineDash([]);
-      context.fillStyle = '#ffc15b';
-      for (const x of [-spec.width / 2 - 10, spec.width / 2 + 10]) {
-        for (const y of [-spec.height / 2 - 10, spec.height / 2 + 10]) context.fillRect(x - 5, y - 5, 10, 10);
+      context.fillStyle = '#4c8eaa';
+      for (const x of [-spec.width / 2 - 9, spec.width / 2 + 9]) {
+        for (const y of [-spec.height / 2 - 9, spec.height / 2 + 9]) context.fillRect(x - 4, y - 4, 8, 8);
       }
     }
     context.setLineDash([]);
 
     if (rotatable(part)) {
-      const handleY = -(spec.height / 2 + 58);
-      context.strokeStyle = '#ffc15b';
+      const handleY = -(spec.height / 2 + 55);
+      context.strokeStyle = '#4c8eaa';
       context.lineWidth = 2;
       context.beginPath();
-      context.moveTo(0, -spec.height / 2 - 10);
-      context.lineTo(0, handleY + 10);
+      context.moveTo(0, -spec.height / 2 - 9);
+      context.lineTo(0, handleY + 9);
       context.stroke();
-      context.fillStyle = '#17212b';
-      context.beginPath();
-      context.arc(0, handleY, 13, 0, Math.PI * 2);
-      context.fill();
-      context.strokeStyle = '#ffc15b';
-      context.lineWidth = 4;
+      context.fillStyle = '#f8f4ea';
+      context.beginPath(); context.arc(0, handleY, 12, 0, Math.PI * 2); context.fill();
+      context.strokeStyle = '#4c8eaa';
+      context.lineWidth = 3;
       context.stroke();
-      context.fillStyle = '#ffc15b';
-      context.font = '900 15px system-ui, sans-serif';
+      context.fillStyle = '#4c8eaa';
+      context.font = '900 14px system-ui, sans-serif';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.fillText('↻', 0, handleY + 1);
@@ -309,19 +331,16 @@ export class CanvasRenderer {
     const spec = PARTS[part.kind];
     const points = spec.radius ? [{ x: 0, y: 0 }] : [{ x: -spec.width * .32, y: 0 }, { x: spec.width * .32, y: 0 }];
     for (const point of points) {
-      context.fillStyle = '#d8a24f';
-      context.beginPath();
-      context.arc(point.x, point.y, 7, 0, Math.PI * 2);
-      context.fill();
-      context.strokeStyle = '#352414';
-      context.lineWidth = 2;
+      const gradient = context.createRadialGradient(point.x - 2, point.y - 2, 1, point.x, point.y, 7);
+      gradient.addColorStop(0, '#f8dfac');
+      gradient.addColorStop(.45, '#c5914b');
+      gradient.addColorStop(1, '#79552b');
+      context.fillStyle = gradient;
+      context.beginPath(); context.arc(point.x, point.y, 6.5, 0, Math.PI * 2); context.fill();
+      context.strokeStyle = '#765128';
+      context.lineWidth = 1.5;
       context.stroke();
-      context.strokeStyle = '#5b3b18';
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(point.x - 3, point.y);
-      context.lineTo(point.x + 3, point.y);
-      context.stroke();
+      context.beginPath(); context.moveTo(point.x - 3, point.y); context.lineTo(point.x + 3, point.y); context.stroke();
     }
   }
 
@@ -330,102 +349,111 @@ export class CanvasRenderer {
     context.save();
     context.rotate(-part.angle);
     context.translate(spec.radius ? spec.radius + 8 : spec.width / 2 + 8, -(spec.radius ?? spec.height / 2) - 8);
-    context.fillStyle = '#8bbad8';
-    roundedRect(context, -25, -10, 50, 20, 5);
+    context.fillStyle = '#dcebf0';
+    roundedRect(context, -22, -9, 44, 18, 6);
     context.fill();
-    context.fillStyle = '#132737';
-    context.font = '900 9px system-ui, sans-serif';
+    context.strokeStyle = '#8cabb8';
+    context.lineWidth = 1;
+    context.stroke();
+    context.fillStyle = '#496b79';
+    context.font = '850 8px system-ui, sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillText('LEVEL', 0, 0);
+    context.fillText('ДАНО', 0, 0);
     context.restore();
   }
 
   private drawBall(context: CanvasRenderingContext2D, radius: number): void {
-    const gradient = context.createRadialGradient(-radius * .35, -radius * .42, radius * .08, 0, 0, radius);
+    const gradient = context.createRadialGradient(-radius * .34, -radius * .4, radius * .05, 0, 0, radius);
     gradient.addColorStop(0, '#ffffff');
-    gradient.addColorStop(.18, '#c4d0d8');
-    gradient.addColorStop(.52, '#62727e');
-    gradient.addColorStop(.82, '#222d35');
-    gradient.addColorStop(1, '#0c1217');
+    gradient.addColorStop(.14, '#d8dde0');
+    gradient.addColorStop(.42, '#90999d');
+    gradient.addColorStop(.72, '#515b60');
+    gradient.addColorStop(1, '#283035');
     context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(0, 0, radius, 0, Math.PI * 2);
-    context.fill();
-    context.strokeStyle = '#0a1116';
-    context.lineWidth = 4;
+    context.beginPath(); context.arc(0, 0, radius, 0, Math.PI * 2); context.fill();
+    context.strokeStyle = '#424b50';
+    context.lineWidth = 2.5;
     context.stroke();
+    context.strokeStyle = 'rgba(255,255,255,.36)';
+    context.lineWidth = 1.5;
+    context.beginPath(); context.arc(-5, -6, radius * .62, 3.6, 5.2); context.stroke();
   }
 
-  private drawWood(context: CanvasRenderingContext2D, width: number, height: number, lever: boolean): void {
+  private drawGuide(context: CanvasRenderingContext2D, width: number, height: number): void {
     const gradient = context.createLinearGradient(0, -height / 2, 0, height / 2);
-    gradient.addColorStop(0, lever ? '#efa34f' : '#e5aa66');
-    gradient.addColorStop(.45, lever ? '#b9652d' : '#ad6332');
-    gradient.addColorStop(1, '#5e2d14');
-    context.fillStyle = '#191d20';
-    roundedRect(context, -width / 2 - 4, -height / 2 - 4, width + 8, height + 8, 7);
-    context.fill();
+    gradient.addColorStop(0, '#e9e9e4');
+    gradient.addColorStop(.25, '#b7c0c0');
+    gradient.addColorStop(.6, '#7e8a8c');
+    gradient.addColorStop(1, '#596467');
     context.fillStyle = gradient;
     roundedRect(context, -width / 2, -height / 2, width, height, 5);
     context.fill();
-    context.strokeStyle = '#4b240f';
+    context.strokeStyle = '#5e696c';
     context.lineWidth = 2;
     context.stroke();
-    context.strokeStyle = 'rgba(255,225,180,.45)';
-    context.beginPath();
-    context.moveTo(-width / 2 + 14, -height / 2 + 7);
-    context.lineTo(width / 2 - 14, -height / 2 + 7);
+    context.strokeStyle = 'rgba(255,255,255,.65)';
+    context.lineWidth = 2;
+    context.beginPath(); context.moveTo(-width / 2 + 10, -height / 2 + 5); context.lineTo(width / 2 - 10, -height / 2 + 5); context.stroke();
+    context.strokeStyle = 'rgba(54,65,68,.33)';
+    context.lineWidth = 1;
+    context.beginPath(); context.moveTo(-width / 2 + 12, height / 2 - 5); context.lineTo(width / 2 - 12, height / 2 - 5); context.stroke();
+  }
+
+  private drawLever(context: CanvasRenderingContext2D, width: number, height: number): void {
+    const wood = context.createLinearGradient(0, -height / 2, 0, height / 2);
+    wood.addColorStop(0, '#e2b77f');
+    wood.addColorStop(.42, '#bd7d45');
+    wood.addColorStop(1, '#86502b');
+    context.fillStyle = wood;
+    roundedRect(context, -width / 2, -height / 2, width, height, 5);
+    context.fill();
+    context.strokeStyle = '#754623';
+    context.lineWidth = 2;
     context.stroke();
+    context.strokeStyle = 'rgba(255,232,196,.56)';
+    context.lineWidth = 1.5;
+    context.beginPath(); context.moveTo(-width/2+14,-height/2+6); context.bezierCurveTo(-40,-height/2+2,40,-height/2+9,width/2-14,-height/2+5); context.stroke();
+    context.strokeStyle = 'rgba(86,48,22,.25)';
+    context.beginPath(); context.moveTo(-width/2+18,4); context.bezierCurveTo(-50,0,60,8,width/2-18,2); context.stroke();
   }
 
-  private drawMetalBar(context: CanvasRenderingContext2D, width: number, height: number): void {
-    const gradient = context.createLinearGradient(0, -height / 2, 0, height / 2);
-    gradient.addColorStop(0, '#a7b2ba');
-    gradient.addColorStop(.35, '#65727b');
-    gradient.addColorStop(1, '#222b31');
-    context.fillStyle = '#11181d';
-    roundedRect(context, -width / 2 - 4, -height / 2 - 4, width + 8, height + 8, 6);
-    context.fill();
-    context.fillStyle = gradient;
-    roundedRect(context, -width / 2, -height / 2, width, height, 4);
-    context.fill();
-    context.fillStyle = 'rgba(255,255,255,.3)';
-    context.fillRect(-width / 2 + 10, -height / 2 + 5, width - 20, 2);
+  private drawBumper(context: CanvasRenderingContext2D, width: number, height: number): void {
+    context.fillStyle = '#636e72';
+    roundedRect(context, -width/2-4,-height/2-4,width+8,height+8,7); context.fill();
+    const rubber = context.createLinearGradient(0,-height/2,0,height/2);
+    rubber.addColorStop(0,'#d87c6f');
+    rubber.addColorStop(.48,'#b7554d');
+    rubber.addColorStop(1,'#873f3c');
+    context.fillStyle = rubber;
+    roundedRect(context,-width/2,-height/2,width,height,6); context.fill();
+    context.strokeStyle='#743735'; context.lineWidth=2; context.stroke();
+    context.strokeStyle='rgba(255,220,210,.45)'; context.lineWidth=2;
+    context.beginPath(); context.moveTo(-width/2+10,-height/2+6); context.lineTo(width/2-10,-height/2+6); context.stroke();
   }
 
-  private drawPulley(context: CanvasRenderingContext2D, radius: number): void {
-    context.fillStyle = '#11181e';
-    context.beginPath(); context.arc(0, 0, radius, 0, Math.PI * 2); context.fill();
-    const gradient = context.createRadialGradient(-8, -10, 4, 0, 0, radius - 4);
-    gradient.addColorStop(0, '#b9c4ca');
-    gradient.addColorStop(.45, '#6e7d87');
-    gradient.addColorStop(1, '#2b3740');
-    context.fillStyle = gradient;
-    context.beginPath(); context.arc(0, 0, radius - 5, 0, Math.PI * 2); context.fill();
-    context.strokeStyle = '#152029';
-    context.lineWidth = 10;
-    context.beginPath(); context.arc(0, 0, radius - 15, 0, Math.PI * 2); context.stroke();
-    context.fillStyle = '#f0a246';
-    context.beginPath(); context.arc(0, 0, 9, 0, Math.PI * 2); context.fill();
-    context.fillStyle = '#332315';
-    context.beginPath(); context.arc(0, 0, 4, 0, Math.PI * 2); context.fill();
+  private drawFan(context: CanvasRenderingContext2D, radius: number): void {
+    const shell = context.createRadialGradient(-9,-10,3,0,0,radius);
+    shell.addColorStop(0,'#e5e7e4'); shell.addColorStop(.45,'#9ca7a8'); shell.addColorStop(1,'#59666a');
+    context.fillStyle=shell; context.beginPath(); context.arc(0,0,radius,0,Math.PI*2); context.fill();
+    context.strokeStyle='#596569'; context.lineWidth=3; context.stroke();
+    context.fillStyle='#506067';
+    for(let i=0;i<6;i+=1){context.save();context.rotate(i*Math.PI/3);context.beginPath();context.moveTo(5,0);context.quadraticCurveTo(radius*.48,-12,radius*.68,0);context.quadraticCurveTo(radius*.45,11,5,0);context.fill();context.restore();}
+    context.fillStyle='#d39a4d'; context.beginPath();context.arc(0,0,8,0,Math.PI*2);context.fill();
+    context.fillStyle='#5c5143'; context.beginPath();context.arc(0,0,3,0,Math.PI*2);context.fill();
   }
 
   private drawWeight(context: CanvasRenderingContext2D, width: number, height: number): void {
-    const gradient = context.createLinearGradient(-width / 2, 0, width / 2, 0);
-    gradient.addColorStop(0, '#0e1418');
-    gradient.addColorStop(.35, '#8c969b');
-    gradient.addColorStop(.62, '#384148');
-    gradient.addColorStop(1, '#090d10');
-    context.fillStyle = gradient;
-    roundedRect(context, -width / 2, -height / 2 + 11, width, height - 11, 7);
-    context.fill();
-    context.strokeStyle = '#20292e';
-    context.lineWidth = 9;
-    context.beginPath(); context.arc(0, -height / 2 + 10, 13, Math.PI, 0); context.stroke();
-    context.strokeStyle = 'rgba(255,255,255,.27)';
-    context.lineWidth = 2;
-    context.beginPath(); context.moveTo(-width / 2 + 10, -height / 2 + 25); context.lineTo(width / 2 - 10, -height / 2 + 25); context.stroke();
+    const crate = context.createLinearGradient(-width/2,0,width/2,0);
+    crate.addColorStop(0,'#76502f'); crate.addColorStop(.25,'#bd8650'); crate.addColorStop(.55,'#9a663a'); crate.addColorStop(1,'#674329');
+    context.fillStyle=crate;
+    roundedRect(context,-width/2,-height/2+8,width,height-8,6); context.fill();
+    context.strokeStyle='#654125'; context.lineWidth=2.5; context.stroke();
+    context.strokeStyle='rgba(75,46,25,.38)'; context.lineWidth=5;
+    context.beginPath();context.moveTo(-width/2+8,-height/2+16);context.lineTo(width/2-8,height/2-7);context.stroke();
+    context.beginPath();context.moveTo(width/2-8,-height/2+16);context.lineTo(-width/2+8,height/2-7);context.stroke();
+    context.strokeStyle='#657175'; context.lineWidth=7; context.beginPath();context.arc(0,-height/2+8,13,Math.PI,0);context.stroke();
+    context.strokeStyle='rgba(255,255,255,.45)';context.lineWidth=1.5;context.beginPath();context.arc(-2,-height/2+7,10,3.5,5.9);context.stroke();
   }
 
   private drawRopes(context: CanvasRenderingContext2D, frame: RenderFrame): void {
@@ -439,20 +467,17 @@ export class CanvasRenderer {
 
   private drawRopeLine(context: CanvasRenderingContext2D, a: Point, b: Point, preview: boolean): void {
     const ropeDistance = Math.hypot(b.x - a.x, b.y - a.y);
-    const sag = preview ? 0 : Math.min(42, ropeDistance * .07);
+    const sag = preview ? 0 : Math.min(38, ropeDistance * .06);
     context.save();
-    context.strokeStyle = preview ? 'rgba(255,193,90,.35)' : 'rgba(0,0,0,.42)';
-    context.lineWidth = preview ? 8 : 9;
-    context.beginPath();
-    context.moveTo(a.x + 3, a.y + 4);
-    context.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + sag, b.x + 3, b.y + 4);
-    context.stroke();
-    context.strokeStyle = preview ? '#ffc15a' : '#d29b59';
-    context.lineWidth = 4;
-    context.beginPath();
-    context.moveTo(a.x, a.y);
-    context.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + sag, b.x, b.y);
-    context.stroke();
+    context.strokeStyle = preview ? 'rgba(65,133,160,.25)' : 'rgba(84,58,33,.22)';
+    context.lineWidth = preview ? 7 : 7;
+    context.beginPath(); context.moveTo(a.x+2,a.y+3); context.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+sag,b.x+2,b.y+3); context.stroke();
+    context.strokeStyle = preview ? '#4c8eaa' : '#aa7b49';
+    context.lineWidth = 3.3;
+    context.beginPath(); context.moveTo(a.x,a.y); context.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+sag,b.x,b.y); context.stroke();
+    context.strokeStyle = preview ? 'rgba(255,255,255,.45)' : 'rgba(238,207,162,.55)';
+    context.lineWidth = 1;
+    context.beginPath(); context.moveTo(a.x,a.y-1); context.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+sag-1,b.x,b.y-1); context.stroke();
     context.restore();
   }
 
@@ -462,36 +487,33 @@ export class CanvasRenderer {
       if (!part) continue;
       const point = localToWorld(part, { x: hinge.localX, y: hinge.localY });
       const selected = selectedId === hinge.partId;
-      context.fillStyle = selected ? '#ffc15b' : '#d88a38';
-      context.beginPath(); context.arc(point.x, point.y, selected ? 12 : 9, 0, Math.PI * 2); context.fill();
-      context.strokeStyle = '#302016';
-      context.lineWidth = 3;
-      context.stroke();
-      context.fillStyle = '#31383c';
-      context.beginPath(); context.arc(point.x, point.y, selected ? 5 : 4, 0, Math.PI * 2); context.fill();
+      const gradient = context.createRadialGradient(point.x-2,point.y-2,1,point.x,point.y,selected?11:8);
+      gradient.addColorStop(0,'#f6d899'); gradient.addColorStop(.5,'#c38d44'); gradient.addColorStop(1,'#76532d');
+      context.fillStyle=gradient; context.beginPath(); context.arc(point.x,point.y,selected?11:8,0,Math.PI*2); context.fill();
+      context.strokeStyle='#74512c'; context.lineWidth=2; context.stroke();
+      context.fillStyle='#596267'; context.beginPath(); context.arc(point.x,point.y,selected?4.5:3.5,0,Math.PI*2); context.fill();
     }
   }
 
   private drawToolPreview(context: CanvasRenderingContext2D, frame: RenderFrame): void {
     if (frame.ropeTool) {
-      context.fillStyle = '#ffc15b';
-      context.strokeStyle = '#2b1b0d';
+      context.fillStyle = '#4c8eaa';
+      context.strokeStyle = '#f7f2e8';
       context.lineWidth = 2;
       for (const part of frame.snapshot.parts) {
         if (part.kind === 'wall') continue;
-        context.beginPath(); context.arc(part.x, part.y, 8, 0, Math.PI * 2); context.fill(); context.stroke();
+        context.beginPath(); context.arc(part.x,part.y,7,0,Math.PI*2); context.fill(); context.stroke();
       }
     }
     if (frame.ropeStart && frame.pointerWorld) {
       const part = frame.snapshot.parts.find((candidate) => candidate.id === frame.ropeStart?.partId);
-      if (part) this.drawRopeLine(context, endpointWorld(part, frame.ropeStart), frame.pointerWorld, true);
+      if (part) this.drawRopeLine(context,endpointWorld(part,frame.ropeStart),frame.pointerWorld,true);
     }
     if (frame.hingeTool && frame.pointerWorld) {
-      context.strokeStyle = '#ffc15b';
-      context.lineWidth = 3;
-      context.beginPath(); context.arc(frame.pointerWorld.x, frame.pointerWorld.y, 13, 0, Math.PI * 2); context.stroke();
-      context.beginPath(); context.moveTo(frame.pointerWorld.x - 18, frame.pointerWorld.y); context.lineTo(frame.pointerWorld.x + 18, frame.pointerWorld.y); context.stroke();
-      context.beginPath(); context.moveTo(frame.pointerWorld.x, frame.pointerWorld.y - 18); context.lineTo(frame.pointerWorld.x, frame.pointerWorld.y + 18); context.stroke();
+      context.strokeStyle='#4c8eaa';context.lineWidth=3;
+      context.beginPath();context.arc(frame.pointerWorld.x,frame.pointerWorld.y,12,0,Math.PI*2);context.stroke();
+      context.beginPath();context.moveTo(frame.pointerWorld.x-16,frame.pointerWorld.y);context.lineTo(frame.pointerWorld.x+16,frame.pointerWorld.y);context.stroke();
+      context.beginPath();context.moveTo(frame.pointerWorld.x,frame.pointerWorld.y-16);context.lineTo(frame.pointerWorld.x,frame.pointerWorld.y+16);context.stroke();
     }
   }
 }
