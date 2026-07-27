@@ -43,7 +43,8 @@ export const LEVEL_07: LevelSpec = {
   platforms: [
     { id: 'floor', x: 800, y: 815, width: 1500, height: 30, angle: 0 },
     { id: 'start-rail', x: 275, y: 305, width: 420, height: 26, angle: 0.09 },
-    { id: 'left-bench', x: 610, y: 470, width: 290, height: 24, angle: 0.015 },
+    // Ends early enough to form a real drop shaft before the barrier. The ball can fall, but cannot pass right at this height.
+    { id: 'left-bench', x: 610, y: 470, width: 250, height: 24, angle: 0.015 },
     { id: 'barrier', x: 825, y: 585, width: 30, height: 400, angle: 0 },
     { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: 0.04 }
   ],
