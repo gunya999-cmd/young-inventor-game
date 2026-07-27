@@ -62,9 +62,8 @@ export const LEVEL_07: LevelSpec = {
     { id: 'level-latch', kind: 'latch', x: 440, y: 410, angle: 0, fixed: true, locked: true },
     // Removable support sits directly under the raised lever assembly.
     { id: 'level-lever-lock', kind: 'latch', x: 535, y: 642, angle: 0, fixed: true, locked: true },
-    // Vertical limit switch mounted on the left face of the central barrier.
-    // The falling target ball touches its sensor before reaching the lever.
-    { id: 'level-button', kind: 'button', x: 825, y: 560, angle: -Math.PI / 2, fixed: true, locked: true }
+    // High vertical limit switch: only the target ball reaches this zone during the intended approach.
+    { id: 'level-button', kind: 'button', x: 825, y: 480, angle: -Math.PI / 2, fixed: true, locked: true }
   ],
   initialSignals: [
     { id: 'level-signal-weight', sourcePartId: 'level-button', targetPartId: 'level-latch', action: 'release' },
