@@ -1,10 +1,7 @@
-import { Box, Vec2, type Body, type Fixture } from 'planck';
 import { GameApp } from './app';
 import { CanvasRenderer, type RenderFrame } from './renderer';
-import { PhysicsEngine } from './physics';
 import {
   PARTS,
-  PHYSICS_SCALE,
   remaining,
   topPartAt,
   type GameMode,
@@ -17,14 +14,7 @@ interface DeviceRuntimePart extends PartState {
   deviceActive?: boolean;
 }
 
-interface BodyData {
-  partId?: string;
-  kind?: string;
-}
-
-const pxToMeters = (value: number): number => value / PHYSICS_SCALE;
-
-function drawRoundedRect(
+function roundedRect(
   context: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -63,7 +53,7 @@ function drawButton(
   base.addColorStop(.45, '#65737c');
   base.addColorStop(1, '#303a40');
   context.fillStyle = base;
-  drawRoundedRect(context, -spec.width / 2, -spec.height / 2, spec.width, spec.height, 7);
+  roundedRect(context, -spec.width / 2, -spec.height / 2, spec.width, spec.height, 7);
   context.fill();
   context.strokeStyle = '#1c252a';
   context.lineWidth = 2.5;
@@ -74,7 +64,7 @@ function drawButton(
   cap.addColorStop(0, pressed ? '#d98b28' : '#ffd267');
   cap.addColorStop(1, pressed ? '#9c501b' : '#d67920');
   context.fillStyle = cap;
-  drawRoundedRect(context, -spec.width * .34, capY - 8, spec.width * .68, 16, 6);
+  roundedRect(context, -spec.width * .34, capY - 8, spec.width * .68, 16, 6);
   context.fill();
   context.strokeStyle = '#713b16';
   context.lineWidth = 2;
@@ -88,7 +78,6 @@ function drawButton(
   if (part.fixed && !part.locked) renderer.drawFixedBolts(context, part);
   if (part.locked) renderer.drawLevelBadge(context, part);
   context.restore();
-
   if (selected && mode === 'build') renderer.drawSelection(context, part);
 }
 
@@ -108,9 +97,8 @@ function drawLatch(
   context.shadowBlur = selected ? 16 : 9;
   context.shadowOffsetY = 6;
 
-  // Mounting foot stays fixed; the visible locking tongue swings away after release.
   context.fillStyle = '#313b42';
-  drawRoundedRect(context, -spec.width / 2, -spec.height / 2, 28, spec.height, 5);
+  roundedRect(context, -spec.width / 2, -spec.height / 2, 28, spec.height, 5);
   context.fill();
   context.strokeStyle = '#151c20';
   context.lineWidth = 2.5;
@@ -124,7 +112,7 @@ function drawLatch(
   arm.addColorStop(.45, '#5e6c74');
   arm.addColorStop(1, '#303a40');
   context.fillStyle = arm;
-  drawRoundedRect(context, 0, -spec.height * .38, spec.width - 25, spec.height * .76, 5);
+  roundedRect(context, 0, -spec.height * .38, spec.width - 25, spec.height * .76, 5);
   context.fill();
   context.strokeStyle = '#1b252b';
   context.lineWidth = 2.5;
@@ -143,7 +131,6 @@ function drawLatch(
   if (part.fixed && !part.locked) renderer.drawFixedBolts(context, part);
   if (part.locked) renderer.drawLevelBadge(context, part);
   context.restore();
-
   if (selected && mode === 'build') renderer.drawSelection(context, part);
 }
 
@@ -182,93 +169,11 @@ function drawSignalLinks(context: CanvasRenderingContext2D, frame: RenderFrame):
   context.restore();
 }
 
-function releaseLatch(engine: Record<string, any>, latchId: string): void {
-  const released = engine.__releasedLatches as Set<string>;
-  if (released.has(latchId)) return;
-  const body = (engine.bodies as Map<string, Body>).get(latchId);
-  if (!body) return;
-  for (let fixture = body.getFixtureList(); fixture; fixture = fixture.getNext()) fixture.setSensor(true);
-  released.add(latchId);
-  // A body resting on the latch may have gone to sleep; wake dynamic bodies so gravity acts immediately.
-  for (const candidate of (engine.bodies as Map<string, Body>).values()) {
-    if (candidate.getType() === 'dynamic') candidate.setAwake(true);
-  }
-}
-
-function activateButton(engine: Record<string, any>, buttonId: string): void {
-  const active = engine.__activeButtons as Set<string>;
-  if (active.has(buttonId)) return;
-  active.add(buttonId);
-  const links = (engine.source.signals ?? []) as SignalLink[];
-  for (const link of links) {
-    if (link.sourcePartId !== buttonId || link.action !== 'release') continue;
-    const target = (engine.source.parts as PartState[]).find((part) => part.id === link.targetPartId);
-    if (target?.kind === 'latch') releaseLatch(engine, target.id);
-  }
-}
-
 export function installEventSystem(): void {
-  const physicsPrototype = PhysicsEngine.prototype as unknown as Record<string, any>;
-  if (physicsPrototype.__eventSystemInstalled) return;
-  physicsPrototype.__eventSystemInstalled = true;
-
-  const originalCreateParts = physicsPrototype.createParts;
-  physicsPrototype.createParts = function createPartsWithControls(this: Record<string, any>): void {
-    this.__activeButtons = new Set<string>();
-    this.__releasedLatches = new Set<string>();
-    originalCreateParts.call(this);
-
-    for (const part of this.source.parts as PartState[]) {
-      if (part.kind !== 'button') continue;
-      const body = (this.bodies as Map<string, Body>).get(part.id);
-      if (!body) continue;
-      const spec = PARTS.button;
-      body.createFixture({
-        shape: Box(
-          pxToMeters(spec.width * .34),
-          pxToMeters(9),
-          Vec2(0, pxToMeters(spec.height / 2 + 8)),
-          0
-        ),
-        isSensor: true,
-        userData: { partId: part.id, kind: 'button-sensor' } satisfies BodyData
-      });
-    }
-  };
-
-  const originalHandleContact = physicsPrototype.handleContact;
-  physicsPrototype.handleContact = function handleControlContact(this: Record<string, any>, a: Fixture, b: Fixture): void {
-    originalHandleContact.call(this, a, b);
-    const dataA = a.getUserData() as BodyData | undefined;
-    const dataB = b.getUserData() as BodyData | undefined;
-    const buttonFixture = dataA?.kind === 'button-sensor' ? a : dataB?.kind === 'button-sensor' ? b : null;
-    const otherFixture = buttonFixture === a ? b : buttonFixture === b ? a : null;
-    if (!buttonFixture || !otherFixture) return;
-    if (otherFixture.getBody().getType() !== 'dynamic') return;
-    const buttonId = (buttonFixture.getUserData() as BodyData | undefined)?.partId;
-    if (buttonId) activateButton(this, buttonId);
-  };
-
-  const originalSnapshot = physicsPrototype.snapshot;
-  physicsPrototype.snapshot = function snapshotWithDeviceState(this: Record<string, any>): MachineSnapshot {
-    const snapshot = originalSnapshot.call(this) as MachineSnapshot;
-    const activeButtons = this.__activeButtons as Set<string> | undefined;
-    const releasedLatches = this.__releasedLatches as Set<string> | undefined;
-    for (const part of snapshot.parts as DeviceRuntimePart[]) {
-      if (part.kind === 'button') part.deviceActive = Boolean(activeButtons?.has(part.id));
-      if (part.kind === 'latch') part.deviceActive = Boolean(releasedLatches?.has(part.id));
-    }
-    return snapshot;
-  };
-
-  physicsPrototype.deviceActive = function deviceActive(this: Record<string, any>, partId: string): boolean {
-    return Boolean(
-      (this.__activeButtons as Set<string> | undefined)?.has(partId) ||
-      (this.__releasedLatches as Set<string> | undefined)?.has(partId)
-    );
-  };
-
   const rendererPrototype = CanvasRenderer.prototype as unknown as Record<string, any>;
+  if (rendererPrototype.__eventPresentationInstalled) return;
+  rendererPrototype.__eventPresentationInstalled = true;
+
   const originalDrawPart = rendererPrototype.drawPart;
   rendererPrototype.drawPart = function drawControlDevice(
     this: Record<string, any>,
@@ -295,7 +200,6 @@ export function installEventSystem(): void {
   };
 
   const appPrototype = GameApp.prototype as unknown as Record<string, any>;
-
   const originalBindControls = appPrototype.bindControls;
   appPrototype.bindControls = function bindControlsWithSignals(this: Record<string, any>): void {
     originalBindControls.call(this);
