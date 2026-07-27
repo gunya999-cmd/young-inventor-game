@@ -103,8 +103,8 @@ export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
     defaultFixed: true, canHinge: true, color: '#a96531'
   },
   wall: {
-    kind: 'wall', label: 'Пружинный отбойник', width: 155, height: 34,
-    density: 3.2, friction: 0.5, restitution: 1.08,
+    kind: 'wall', label: 'Резиновый отбойник', width: 155, height: 34,
+    density: 3.2, friction: 0.5, restitution: 0.72,
     defaultFixed: true, canHinge: false, color: '#ca3f4d'
   },
   lever: {
