@@ -5,16 +5,15 @@ const PLAYER_HINGE_LIMIT = Math.PI * 0.82;
 
 /**
  * Canonical solution used only for regression testing and level authoring.
- * Every position, angle and hinge limit is constructible through the current player UI.
+ * Every part, position, connection and hinge limit is constructible through the current player UI.
  */
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // Raised speed lever: a slightly left-shifted pivot gives the ball a longer, faster right arm.
     { id: 'solution-lever', kind: 'lever', x: 655, y: 630, angle: LEVER_START_ANGLE, fixed: false },
-    // Catch the launched ball immediately after it clears the barrier.
+    // Fixed sheave routes the falling counterweight into an upward pull on the lever's right arm.
+    { id: 'solution-sheave', kind: 'sheave', x: 600, y: 300, angle: 0, fixed: true },
     { id: 'solution-catch', kind: 'plank', x: 985, y: 420, angle: 0.10, fixed: true },
-    // Guide it from the right side toward the receiver.
     { id: 'solution-exit', kind: 'plank', x: 1285, y: 575, angle: 0.38, fixed: true }
   );
   snapshot.hinges.push({
@@ -25,6 +24,14 @@ export function createLevel07ReferenceSolution(): MachineSnapshot {
     referenceAngle: LEVER_START_ANGLE,
     lowerAngle: -PLAYER_HINGE_LIMIT,
     upperAngle: PLAYER_HINGE_LIMIT
+  });
+  snapshot.ropes.push({
+    id: 'solution-drive-rope',
+    a: { partId: 'level-weight', localX: 0, localY: 0 },
+    b: { partId: 'solution-lever', localX: 130, localY: 0 },
+    maxLength: 900,
+    pulleyPartId: 'solution-sheave',
+    ratio: 1
   });
   return snapshot;
 }
