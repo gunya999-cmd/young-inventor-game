@@ -57,9 +57,11 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    { id: 'level-weight', kind: 'weight', x: 520, y: 520, angle: 0, fixed: false, locked: true },
-    { id: 'level-latch', kind: 'latch', x: 520, y: 580, angle: 0, fixed: true, locked: true },
-    { id: 'level-lever-lock', kind: 'latch', x: 590, y: 713, angle: 0, fixed: true, locked: true },
+    // High counterweight: after the switch releases it, gravitational potential energy drives the lever.
+    { id: 'level-weight', kind: 'weight', x: 520, y: 350, angle: 0, fixed: false, locked: true },
+    { id: 'level-latch', kind: 'latch', x: 520, y: 410, angle: 0, fixed: true, locked: true },
+    // Removable support for the short left arm before the switch fires.
+    { id: 'level-lever-lock', kind: 'latch', x: 535, y: 713, angle: 0, fixed: true, locked: true },
     // Vertical limit switch mounted on the left face of the central barrier.
     // The falling target ball touches its sensor before reaching the lever.
     { id: 'level-button', kind: 'button', x: 825, y: 560, angle: -Math.PI / 2, fixed: true, locked: true }
