@@ -40,4 +40,32 @@ describe('Planck physics vertical slice', () => {
     expect(result!.position.x).toBeGreaterThan(700);
     expect(Math.abs(result!.angle)).toBeLessThanOrEqual(1.25);
   });
+
+  it('transfers motion between two masses through a fixed sheave', () => {
+    const snapshot: MachineSnapshot = {
+      parts: [
+        { id: 'heavy', kind: 'weight', x: 620, y: 350, angle: 0, fixed: false },
+        { id: 'light', kind: 'rubberball', x: 980, y: 350, angle: 0, fixed: false },
+        { id: 'sheave-1', kind: 'sheave', x: 800, y: 170, angle: 0, fixed: true }
+      ],
+      ropes: [{
+        id: 'pulley-rope',
+        a: { partId: 'heavy', localX: 0, localY: 0 },
+        b: { partId: 'light', localX: 0, localY: 0 },
+        maxLength: 520,
+        pulleyPartId: 'sheave-1',
+        ratio: 1
+      }],
+      hinges: []
+    };
+    const engine = new PhysicsEngine(snapshot);
+    const heavyBefore = engine.partTransform('heavy')!;
+    const lightBefore = engine.partTransform('light')!;
+    for (let index = 0; index < 90; index += 1) engine.step(1 / 120);
+    const heavyAfter = engine.partTransform('heavy')!;
+    const lightAfter = engine.partTransform('light')!;
+
+    expect(heavyAfter.position.y).toBeGreaterThan(heavyBefore.position.y + 5);
+    expect(lightAfter.position.y).toBeLessThan(lightBefore.position.y - 5);
+  });
 });

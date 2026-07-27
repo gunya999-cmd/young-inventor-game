@@ -1,6 +1,7 @@
 import {
   Box,
   Circle,
+  PulleyJoint,
   RevoluteJoint,
   RopeJoint,
   Vec2,
@@ -40,6 +41,21 @@ function physicsPointToPixel(point: Point): Point {
 
 function localPointToPhysics(point: Point): Point {
   return { x: pxToMeters(point.x), y: -pxToMeters(point.y) };
+}
+
+function radialContact(center: Point, target: Point, radius: number): Point {
+  const dx = target.x - center.x;
+  const dy = target.y - center.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance < 1e-6) return { x: center.x, y: center.y - radius };
+  return {
+    x: center.x + dx / distance * radius,
+    y: center.y + dy / distance * radius
+  };
+}
+
+function pointDistance(a: Point, b: Point): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
 export class PhysicsEngine {
@@ -220,6 +236,35 @@ export class PhysicsEngine {
       if (!bodyA || !bodyB || bodyA === bodyB) continue;
       const anchorA = localPointToPhysics({ x: rope.a.localX, y: rope.a.localY });
       const anchorB = localPointToPhysics({ x: rope.b.localX, y: rope.b.localY });
+
+      if (rope.pulleyPartId) {
+        const pulleyPart = this.source.parts.find((part) => part.id === rope.pulleyPartId && part.kind === 'sheave');
+        const pulleyBody = this.bodies.get(rope.pulleyPartId);
+        if (pulleyPart && pulleyBody) {
+          const center = pulleyBody.getPosition();
+          const worldAnchorA = bodyA.getWorldPoint(anchorA);
+          const worldAnchorB = bodyB.getWorldPoint(anchorB);
+          const radius = pxToMeters((PARTS.sheave.radius ?? 42) * 0.86);
+          const groundA = radialContact(center, worldAnchorA, radius);
+          const groundB = radialContact(center, worldAnchorB, radius);
+          const lengthA = Math.max(0.08, pointDistance(groundA, worldAnchorA));
+          const lengthB = Math.max(0.08, pointDistance(groundB, worldAnchorB));
+          this.world.createJoint(new PulleyJoint({
+            bodyA,
+            bodyB,
+            groundAnchorA: Vec2(groundA.x, groundA.y),
+            groundAnchorB: Vec2(groundB.x, groundB.y),
+            localAnchorA: Vec2(anchorA.x, anchorA.y),
+            localAnchorB: Vec2(anchorB.x, anchorB.y),
+            lengthA,
+            lengthB,
+            ratio: rope.ratio ?? 1,
+            collideConnected: true
+          }));
+          continue;
+        }
+      }
+
       this.world.createJoint(new RopeJoint({
         bodyA,
         bodyB,
