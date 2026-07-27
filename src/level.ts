@@ -57,9 +57,9 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    // High counterweight: after the switch releases it, gravitational potential energy drives the lever.
-    { id: 'level-weight', kind: 'weight', x: 520, y: 350, angle: 0, fixed: false, locked: true },
-    { id: 'level-latch', kind: 'latch', x: 520, y: 410, angle: 0, fixed: true, locked: true },
+    // Counterweight falls in its own clear shaft; it transfers energy through a player-routed pulley rope.
+    { id: 'level-weight', kind: 'weight', x: 440, y: 350, angle: 0, fixed: false, locked: true },
+    { id: 'level-latch', kind: 'latch', x: 440, y: 410, angle: 0, fixed: true, locked: true },
     // Removable support sits directly under the raised lever assembly.
     { id: 'level-lever-lock', kind: 'latch', x: 535, y: 642, angle: 0, fixed: true, locked: true },
     // Vertical limit switch mounted on the left face of the central barrier.
