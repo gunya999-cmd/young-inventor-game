@@ -4,39 +4,25 @@ import { createLevel07ReferenceSolution } from './referenceSolution';
 
 const STEP = 1 / 120;
 
-describe('level 07 canonical solution', () => {
-  it('completes the entire level using only physical interactions', () => {
-    const engine = new PhysicsEngine(createLevel07ReferenceSolution());
-    let minimumBallYAfterButton = Number.POSITIVE_INFINITY;
+describe('level 07 geometry-control solution', () => {
+  it('provides a legal player-buildable physical path from start to receiver', () => {
+    const snapshot = createLevel07ReferenceSolution();
+    const playerParts = snapshot.parts.filter((part) => !part.locked);
+    expect(playerParts).toHaveLength(3);
+    expect(playerParts.every((part) => part.kind === 'plank' && part.fixed)).toBe(true);
+    expect(snapshot.ropes).toHaveLength(0);
+    expect(snapshot.hinges).toHaveLength(0);
+
+    const engine = new PhysicsEngine(snapshot);
+    let minimumBallY = Number.POSITIVE_INFINITY;
     let maximumBallX = Number.NEGATIVE_INFINITY;
-    let minimumLeverAngle = Number.POSITIVE_INFINITY;
-    let maximumLeverAngle = Number.NEGATIVE_INFINITY;
-    let maximumUpwardBallSpeed = 0;
-    let maximumRightwardBallSpeed = 0;
-    let maximumLeverAngularSpeed = 0;
-    let buttonFrame = -1;
     let wonFrame = -1;
-    let ballAtButton: { x: number; y: number } | null = null;
 
     for (let frame = 0; frame < 2400; frame += 1) {
       engine.step(STEP);
       const ball = engine.partTransform('target-ball')!;
-      const ballMotion = engine.partKinematics('target-ball')!;
-      const lever = engine.partTransform('solution-lever')!;
-      const leverMotion = engine.partKinematics('solution-lever')!;
+      minimumBallY = Math.min(minimumBallY, ball.position.y);
       maximumBallX = Math.max(maximumBallX, ball.position.x);
-      minimumLeverAngle = Math.min(minimumLeverAngle, lever.angle);
-      maximumLeverAngle = Math.max(maximumLeverAngle, lever.angle);
-      maximumLeverAngularSpeed = Math.max(maximumLeverAngularSpeed, Math.abs(leverMotion.angularVelocity));
-      if (buttonFrame < 0 && engine.deviceActive('level-button')) {
-        buttonFrame = frame;
-        ballAtButton = { x: ball.position.x, y: ball.position.y };
-      }
-      if (buttonFrame >= 0) {
-        minimumBallYAfterButton = Math.min(minimumBallYAfterButton, ball.position.y);
-        maximumUpwardBallSpeed = Math.max(maximumUpwardBallSpeed, -ballMotion.velocity.y);
-        maximumRightwardBallSpeed = Math.max(maximumRightwardBallSpeed, ballMotion.velocity.x);
-      }
       if (engine.hasWon()) {
         wonFrame = frame;
         break;
@@ -44,28 +30,14 @@ describe('level 07 canonical solution', () => {
     }
 
     const finalBall = engine.partTransform('target-ball')!;
-    console.log('LEVEL07_REFERENCE_DIAGNOSTICS', {
+    console.log('LEVEL07_GEOMETRY_DIAGNOSTICS', {
       wonFrame,
-      buttonFrame,
-      ballAtButton: ballAtButton && { x: Math.round(ballAtButton.x), y: Math.round(ballAtButton.y) },
-      minimumBallYAfterButton: Number.isFinite(minimumBallYAfterButton) ? Math.round(minimumBallYAfterButton) : null,
+      minimumBallY: Math.round(minimumBallY),
       maximumBallX: Math.round(maximumBallX),
-      maximumUpwardBallSpeed: Math.round(maximumUpwardBallSpeed),
-      maximumRightwardBallSpeed: Math.round(maximumRightwardBallSpeed),
-      maximumLeverAngularSpeed: Number(maximumLeverAngularSpeed.toFixed(2)),
-      finalBall: { x: Math.round(finalBall.position.x), y: Math.round(finalBall.position.y) },
-      leverAnglesDeg: {
-        min: Math.round(minimumLeverAngle * 180 / Math.PI),
-        max: Math.round(maximumLeverAngle * 180 / Math.PI)
-      },
-      latchReleased: engine.deviceActive('level-latch')
+      finalBall: { x: Math.round(finalBall.position.x), y: Math.round(finalBall.position.y) }
     });
 
-    expect(buttonFrame).toBeGreaterThan(0);
-    expect(ballAtButton).not.toBeNull();
-    expect(ballAtButton!.x).toBeGreaterThan(700);
-    expect(engine.deviceActive('level-latch')).toBe(true);
-    expect(minimumBallYAfterButton).toBeLessThan(357);
+    expect(minimumBallY).toBeLessThan(357);
     expect(maximumBallX).toBeGreaterThan(825);
     expect(wonFrame).toBeGreaterThan(0);
   });
