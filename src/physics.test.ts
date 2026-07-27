@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { PhysicsEngine } from './physics';
+import { installSpringSystem } from './springSystem';
 import { createInitialSnapshot, type MachineSnapshot } from './model';
+
+installSpringSystem();
+
+type SpringAwareEngine = PhysicsEngine & {
+  springCompression(partId: string): number;
+};
 
 describe('Planck physics vertical slice', () => {
   it('moves the unlocked target ball under Box2D gravity', () => {
@@ -67,5 +74,36 @@ describe('Planck physics vertical slice', () => {
 
     expect(heavyAfter.position.y).toBeGreaterThan(heavyBefore.position.y + 5);
     expect(lightAfter.position.y).toBeLessThan(lightBefore.position.y - 5);
+  });
+
+  it('stores energy by compressing a spring and releases it through rebound', () => {
+    const snapshot: MachineSnapshot = {
+      parts: [
+        { id: 'spring-1', kind: 'spring', x: 900, y: 650, angle: -Math.PI / 2, fixed: true },
+        { id: 'falling-weight', kind: 'weight', x: 900, y: 475, angle: 0, fixed: false }
+      ],
+      ropes: [],
+      hinges: []
+    };
+    const engine = new PhysicsEngine(snapshot) as SpringAwareEngine;
+    const compressionSamples: number[] = [];
+    const weightYSamples: number[] = [];
+
+    for (let index = 0; index < 240; index += 1) {
+      engine.step(1 / 120);
+      compressionSamples.push(engine.springCompression('spring-1'));
+      weightYSamples.push(engine.partTransform('falling-weight')!.position.y);
+    }
+
+    const maxCompression = Math.max(...compressionSamples);
+    const maxIndex = compressionSamples.indexOf(maxCompression);
+    const compressedFrames = compressionSamples.filter((value) => value > 2).length;
+    const yAtMaxCompression = weightYSamples[maxIndex];
+    const minYAfterRelease = Math.min(...weightYSamples.slice(Math.min(maxIndex + 3, weightYSamples.length - 1)));
+
+    expect(maxCompression).toBeGreaterThan(8);
+    expect(compressedFrames).toBeGreaterThan(3);
+    expect(minYAfterRelease).toBeLessThan(yAtMaxCompression - 5);
+    expect(compressionSamples.at(-1)!).toBeLessThan(maxCompression);
   });
 });
