@@ -62,6 +62,8 @@ describe('level 07 canonical solution', () => {
     });
 
     expect(buttonFrame).toBeGreaterThan(0);
+    expect(ballAtButton).not.toBeNull();
+    expect(ballAtButton!.x).toBeGreaterThan(700);
     expect(engine.deviceActive('level-latch')).toBe(true);
     expect(minimumBallYAfterButton).toBeLessThan(357);
     expect(maximumBallX).toBeGreaterThan(825);
