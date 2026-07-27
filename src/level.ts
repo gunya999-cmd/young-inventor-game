@@ -57,10 +57,11 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    // Near the left end of the allowed lever: a large moment arm without changing gravity or adding scripted force.
-    { id: 'level-weight', kind: 'weight', x: 520, y: 555, angle: 0, fixed: false, locked: true },
-    { id: 'level-latch', kind: 'latch', x: 520, y: 615, angle: 0, fixed: true, locked: true },
-    { id: 'level-button', kind: 'button', x: 760, y: 770, angle: 0, fixed: true, locked: true }
+    // Suspended just below the left bench, then dropped onto the far left side of the player-built lever.
+    { id: 'level-weight', kind: 'weight', x: 520, y: 520, angle: 0, fixed: false, locked: true },
+    { id: 'level-latch', kind: 'latch', x: 520, y: 580, angle: 0, fixed: true, locked: true },
+    // Side-mounted limit switch. Its sensor protrudes into the shaft; the ball can trigger it and keep falling.
+    { id: 'level-button', kind: 'button', x: 735, y: 590, angle: Math.PI / 2, fixed: true, locked: true }
   ],
   initialSignals: [
     { id: 'level-signal', sourcePartId: 'level-button', targetPartId: 'level-latch', action: 'release' }
