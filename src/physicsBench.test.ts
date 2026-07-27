@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PhysicsEngine } from './physics';
 import { PHYSICS_CONFIG } from './engine/physicsConfig';
-import type { MachineSnapshot, PartState } from './model';
+import { radialContact } from './engine/coordinates';
+import { PARTS, type MachineSnapshot, type PartState, type Point } from './model';
 
 const STEP = 1 / 120;
 
@@ -18,7 +19,18 @@ function run(engine: PhysicsEngine, frames: number): void {
   for (let index = 0; index < frames; index += 1) engine.step(STEP);
 }
 
+function distance(a: Point, b: Point): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
 describe('quantitative physics calibration bench', () => {
+  it('never gives a passive collision restitution above 1.0', () => {
+    for (const part of Object.values(PARTS)) {
+      expect(part.restitution, `${part.kind} restitution`).toBeLessThanOrEqual(1);
+      expect(part.restitution, `${part.kind} restitution`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it('matches gravitational free fall over 0.5 seconds within a small numerical tolerance', () => {
     const engine = new PhysicsEngine(snapshot([
       { id: 'ball', kind: 'ball', x: 800, y: 100, angle: 0, fixed: false }
@@ -79,11 +91,19 @@ describe('quantitative physics calibration bench', () => {
     expect(Math.abs(motion.angularVelocity)).toBeGreaterThan(0.2);
   });
 
-  it('keeps a 1:1 fixed pulley displacement constraint without visible rope stretch', () => {
+  it('keeps the total 1:1 pulley rope length constant while one mass rises and the other falls', () => {
+    const heavyStart: Point = { x: 620, y: 360 };
+    const lightStart: Point = { x: 980, y: 360 };
+    const sheave: Point = { x: 800, y: 180 };
+    const radius = (PARTS.sheave.radius ?? 42) * 0.86;
+    const contactA = radialContact(sheave, heavyStart, radius);
+    const contactB = radialContact(sheave, lightStart, radius);
+    const initialLength = distance(contactA, heavyStart) + distance(contactB, lightStart);
+
     const engine = new PhysicsEngine(snapshot([
-      { id: 'heavy', kind: 'weight', x: 620, y: 360, angle: 0, fixed: false },
-      { id: 'light', kind: 'rubberball', x: 980, y: 360, angle: 0, fixed: false },
-      { id: 'sheave', kind: 'sheave', x: 800, y: 180, angle: 0, fixed: true }
+      { id: 'heavy', kind: 'weight', ...heavyStart, angle: 0, fixed: false },
+      { id: 'light', kind: 'rubberball', ...lightStart, angle: 0, fixed: false },
+      { id: 'sheave', kind: 'sheave', ...sheave, angle: 0, fixed: true }
     ], {
       ropes: [{
         id: 'rope',
@@ -94,14 +114,14 @@ describe('quantitative physics calibration bench', () => {
         ratio: 1
       }]
     }), { includeLevelGeometry: false });
-    const heavyStart = engine.partTransform('heavy')!.position.y;
-    const lightStart = engine.partTransform('light')!.position.y;
+
     run(engine, 90);
-    const heavyDelta = engine.partTransform('heavy')!.position.y - heavyStart;
-    const lightDelta = engine.partTransform('light')!.position.y - lightStart;
-    expect(heavyDelta).toBeGreaterThan(8);
-    expect(lightDelta).toBeLessThan(-8);
-    expect(Math.abs(heavyDelta + lightDelta)).toBeLessThan(2.5);
+    const heavyEnd = engine.partTransform('heavy')!.position;
+    const lightEnd = engine.partTransform('light')!.position;
+    const finalLength = distance(contactA, heavyEnd) + distance(contactB, lightEnd);
+    expect(heavyEnd.y - heavyStart.y).toBeGreaterThan(8);
+    expect(lightEnd.y - lightStart.y).toBeLessThan(-8);
+    expect(Math.abs(finalLength - initialLength)).toBeLessThan(2.5);
   });
 
   it('produces torque from an off-center load while a centered load stays nearly balanced', () => {
@@ -138,17 +158,17 @@ describe('quantitative physics calibration bench', () => {
     expect(maxUpwardSpeed).toBeLessThan(900);
   });
 
-  it('lets a slightly tilted domino topple while an upright one remains stable on the same support', () => {
+  it('respects the geometric tipping threshold of a domino', () => {
     const makeDomino = (angle: number): PhysicsEngine => new PhysicsEngine(snapshot([
       { id: 'floor', kind: 'plank', x: 800, y: 700, angle: 0, fixed: true },
-      { id: 'domino', kind: 'domino', x: 800, y: 635, angle, fixed: false }
+      { id: 'domino', kind: 'domino', x: 800, y: 632, angle, fixed: false }
     ]), { includeLevelGeometry: false });
 
     const upright = makeDomino(0);
-    const tilted = makeDomino(0.18);
+    const beyondTippingPoint = makeDomino(0.38);
     run(upright, 180);
-    run(tilted, 180);
+    run(beyondTippingPoint, 180);
     expect(Math.abs(upright.partTransform('domino')!.angle)).toBeLessThan(0.08);
-    expect(Math.abs(tilted.partTransform('domino')!.angle)).toBeGreaterThan(0.7);
+    expect(Math.abs(beyondTippingPoint.partTransform('domino')!.angle)).toBeGreaterThan(0.7);
   });
 });
