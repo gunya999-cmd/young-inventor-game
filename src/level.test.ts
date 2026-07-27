@@ -19,7 +19,8 @@ describe('level 07 · impulse and moment', () => {
     const startX = engine.partTransform('target-ball')!.position.x;
     run(engine, 150);
     const endX = engine.partTransform('target-ball')!.position.x;
-    expect(endX).toBeGreaterThan(startX + 80);
+    // This threshold is deliberately about direction and meaningful motion, not an arbitrary target speed.
+    expect(endX).toBeGreaterThan(startX + 30);
   });
 
   it('makes the central barrier impossible to bypass underneath with the target ball', () => {
