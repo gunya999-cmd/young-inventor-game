@@ -1,16 +1,5 @@
+import { Box, Vec2, World, type Body, type Fixture } from 'planck';
 import {
-  Box,
-  Circle,
-  PulleyJoint,
-  RevoluteJoint,
-  RopeJoint,
-  Vec2,
-  World,
-  type Body,
-  type Fixture
-} from 'planck';
-import {
-  PHYSICS_SCALE,
   PARTS,
   WORLD_HEIGHT,
   cloneSnapshot,
@@ -20,77 +9,78 @@ import {
   type PartState,
   type Point
 } from './model';
+import { physicsPointToPixel, pixelPointToPhysics, pxToMeters } from './engine/coordinates';
+import { createHinges, createRopes } from './engine/jointSystem';
+import { createStandardPartBody, type PhysicsBodyData } from './engine/partFactory';
+import { PHYSICS_CONFIG } from './engine/physicsConfig';
+import {
+  applySpringForce,
+  createSpringMechanism,
+  springCompressionPx,
+  type SpringMechanism
+} from './engine/springMechanism';
+import { SignalRuntime } from './engine/signalSystem';
 
-interface BodyData {
-  partId?: string;
-  kind?: PartKind | 'level' | 'basket';
-  goal?: boolean;
+interface RuntimePartState extends PartState {
+  springCompression?: number;
+  deviceActive?: boolean;
 }
 
 const MAGNETIC_KINDS = new Set<PartKind>(['ball', 'weight', 'domino', 'lever']);
-const pxToMeters = (value: number): number => value / PHYSICS_SCALE;
-const metersToPx = (value: number): number => value * PHYSICS_SCALE;
-
-function pixelPointToPhysics(point: Point): Point {
-  return { x: pxToMeters(point.x), y: pxToMeters(WORLD_HEIGHT - point.y) };
-}
-
-function physicsPointToPixel(point: Point): Point {
-  return { x: metersToPx(point.x), y: WORLD_HEIGHT - metersToPx(point.y) };
-}
-
-function localPointToPhysics(point: Point): Point {
-  return { x: pxToMeters(point.x), y: -pxToMeters(point.y) };
-}
-
-function radialContact(center: Point, target: Point, radius: number): Point {
-  const dx = target.x - center.x;
-  const dy = target.y - center.y;
-  const distance = Math.hypot(dx, dy);
-  if (distance < 1e-6) return { x: center.x, y: center.y - radius };
-  return {
-    x: center.x + dx / distance * radius,
-    y: center.y + dy / distance * radius
-  };
-}
-
-function pointDistance(a: Point, b: Point): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
 
 export class PhysicsEngine {
   readonly world: World;
   private readonly source: MachineSnapshot;
   private readonly bodies = new Map<string, Body>();
+  private readonly springs = new Map<string, SpringMechanism>();
+  private readonly signals: SignalRuntime;
   private goalReached = false;
 
   constructor(snapshot: MachineSnapshot) {
     this.source = cloneSnapshot(snapshot);
-    this.world = new World({ gravity: Vec2(0, -9.8), allowSleep: true });
+    this.world = new World({ gravity: Vec2(0, -PHYSICS_CONFIG.gravity), allowSleep: true });
     this.createLevelGeometry();
     this.createParts();
-    this.createHinges();
-    this.createRopes();
+    createHinges(this.world, this.source, this.bodies);
+    createRopes(this.world, this.source, this.bodies);
+    this.signals = new SignalRuntime(this.source, this.bodies);
     this.world.on('begin-contact', (contact) => this.handleContact(contact.getFixtureA(), contact.getFixtureB()));
   }
 
   step(seconds: number): void {
+    for (const spring of this.springs.values()) applySpringForce(spring);
     this.applyFanForces();
     this.applyMagnetForces();
-    this.world.step(seconds, 8, 3);
+    this.world.step(seconds, PHYSICS_CONFIG.velocityIterations, PHYSICS_CONFIG.positionIterations);
   }
 
   hasWon(): boolean {
     return this.goalReached;
   }
 
+  springCompression(partId: string): number {
+    const spring = this.springs.get(partId);
+    return spring ? springCompressionPx(spring) : 0;
+  }
+
+  deviceActive(partId: string): boolean {
+    return this.signals.isActive(partId);
+  }
+
   snapshot(): MachineSnapshot {
     const result = cloneSnapshot(this.source);
     result.parts = result.parts.map((part) => {
       const body = this.bodies.get(part.id);
-      if (!body) return part;
-      const position = physicsPointToPixel(body.getPosition());
-      return { ...part, x: position.x, y: position.y, angle: -body.getAngle() };
+      const runtime = { ...part } as RuntimePartState;
+      if (body) {
+        const position = physicsPointToPixel(body.getPosition());
+        runtime.x = position.x;
+        runtime.y = position.y;
+        runtime.angle = -body.getAngle();
+      }
+      if (part.kind === 'spring') runtime.springCompression = this.springCompression(part.id);
+      if (part.kind === 'button' || part.kind === 'latch') runtime.deviceActive = this.deviceActive(part.id);
+      return runtime;
     });
     return result;
   }
@@ -102,12 +92,12 @@ export class PhysicsEngine {
   }
 
   private createLevelGeometry(): void {
-    const ground = this.world.createBody({ type: 'static', userData: { kind: 'level' } satisfies BodyData });
+    const ground = this.world.createBody({ type: 'static', userData: { kind: 'level' } satisfies PhysicsBodyData });
     this.addStaticBox(ground, 800, 788, 1500, 34, 0);
     this.addStaticBox(ground, 275, 305, 420, 28, -0.08);
     this.addStaticBox(ground, 1130, 565, 230, 24, 0.04);
 
-    const basket = this.world.createBody({ type: 'static', userData: { kind: 'basket' } satisfies BodyData });
+    const basket = this.world.createBody({ type: 'static', userData: { kind: 'basket' } satisfies PhysicsBodyData });
     this.addStaticBox(basket, 1385, 687, 190, 22, 0);
     this.addStaticBox(basket, 1298, 622, 22, 145, 0);
     this.addStaticBox(basket, 1472, 622, 22, 145, 0);
@@ -115,7 +105,7 @@ export class PhysicsEngine {
     basket.createFixture({
       shape: Box(pxToMeters(72), pxToMeters(54), Vec2(sensorCenter.x, sensorCenter.y), 0),
       isSensor: true,
-      userData: { goal: true } satisfies BodyData
+      userData: { goal: true } satisfies PhysicsBodyData
     });
   }
 
@@ -130,30 +120,13 @@ export class PhysicsEngine {
 
   private createParts(): void {
     for (const part of this.source.parts) {
-      const spec = PARTS[part.kind];
-      const position = pixelPointToPhysics(part);
-      const rolling = part.kind === 'ball' || part.kind === 'rubberball';
-      const heavy = part.kind === 'weight';
-      const body = this.world.createBody({
-        type: part.fixed ? 'static' : 'dynamic',
-        position: Vec2(position.x, position.y),
-        angle: -part.angle,
-        linearDamping: rolling ? 0.035 : heavy ? 0.2 : 0.12,
-        angularDamping: rolling ? 0.035 : heavy ? 0.3 : part.kind === 'domino' ? 0.08 : 0.18,
-        bullet: rolling,
-        userData: { partId: part.id, kind: part.kind } satisfies BodyData
-      });
-      const shape = spec.radius
-        ? Circle(pxToMeters(spec.radius))
-        : Box(pxToMeters(spec.width / 2), pxToMeters(spec.height / 2));
-      body.createFixture({
-        shape,
-        density: spec.density,
-        friction: spec.friction,
-        restitution: spec.restitution,
-        userData: { partId: part.id, kind: part.kind } satisfies BodyData
-      });
-      this.bodies.set(part.id, body);
+      if (part.kind === 'spring') {
+        const spring = createSpringMechanism(this.world, part);
+        this.springs.set(part.id, spring);
+        this.bodies.set(part.id, spring.base);
+        continue;
+      }
+      this.bodies.set(part.id, createStandardPartBody(this.world, part));
     }
   }
 
@@ -207,92 +180,13 @@ export class PhysicsEngine {
     }
   }
 
-  private createHinges(): void {
-    for (const hinge of this.source.hinges) {
-      const part = this.source.parts.find((candidate) => candidate.id === hinge.partId);
-      const body = this.bodies.get(hinge.partId);
-      if (!part || !body) continue;
-      const localAnchor = localPointToPhysics({ x: hinge.localX, y: hinge.localY });
-      const worldAnchor = body.getWorldPoint(Vec2(localAnchor.x, localAnchor.y));
-      const pin = this.world.createBody({ type: 'static', position: worldAnchor });
-      this.world.createJoint(new RevoluteJoint({
-        bodyA: pin,
-        bodyB: body,
-        localAnchorA: Vec2(0, 0),
-        localAnchorB: Vec2(localAnchor.x, localAnchor.y),
-        referenceAngle: -hinge.referenceAngle,
-        enableLimit: hinge.lowerAngle !== undefined && hinge.upperAngle !== undefined,
-        lowerAngle: hinge.lowerAngle,
-        upperAngle: hinge.upperAngle,
-        collideConnected: false
-      }));
-    }
-  }
-
-  private createRopes(): void {
-    for (const rope of this.source.ropes) {
-      const bodyA = this.bodies.get(rope.a.partId);
-      const bodyB = this.bodies.get(rope.b.partId);
-      if (!bodyA || !bodyB || bodyA === bodyB) continue;
-      const anchorA = localPointToPhysics({ x: rope.a.localX, y: rope.a.localY });
-      const anchorB = localPointToPhysics({ x: rope.b.localX, y: rope.b.localY });
-
-      if (rope.pulleyPartId) {
-        const pulleyPart = this.source.parts.find((part) => part.id === rope.pulleyPartId && part.kind === 'sheave');
-        const pulleyBody = this.bodies.get(rope.pulleyPartId);
-        if (pulleyPart && pulleyBody) {
-          const center = pulleyBody.getPosition();
-          const worldAnchorA = bodyA.getWorldPoint(anchorA);
-          const worldAnchorB = bodyB.getWorldPoint(anchorB);
-          const radius = pxToMeters((PARTS.sheave.radius ?? 42) * 0.86);
-          const groundA = radialContact(center, worldAnchorA, radius);
-          const groundB = radialContact(center, worldAnchorB, radius);
-          const lengthA = Math.max(0.08, pointDistance(groundA, worldAnchorA));
-          const lengthB = Math.max(0.08, pointDistance(groundB, worldAnchorB));
-          this.world.createJoint(new PulleyJoint({
-            bodyA,
-            bodyB,
-            groundAnchorA: Vec2(groundA.x, groundA.y),
-            groundAnchorB: Vec2(groundB.x, groundB.y),
-            localAnchorA: Vec2(anchorA.x, anchorA.y),
-            localAnchorB: Vec2(anchorB.x, anchorB.y),
-            lengthA,
-            lengthB,
-            ratio: rope.ratio ?? 1,
-            collideConnected: true
-          }));
-          continue;
-        }
-      }
-
-      this.world.createJoint(new RopeJoint({
-        bodyA,
-        bodyB,
-        localAnchorA: Vec2(anchorA.x, anchorA.y),
-        localAnchorB: Vec2(anchorB.x, anchorB.y),
-        maxLength: pxToMeters(Math.max(24, rope.maxLength)),
-        collideConnected: true
-      }));
-    }
-  }
-
   private handleContact(a: Fixture, b: Fixture): void {
-    const dataA = a.getUserData() as BodyData | undefined;
-    const dataB = b.getUserData() as BodyData | undefined;
+    const dataA = a.getUserData() as PhysicsBodyData | undefined;
+    const dataB = b.getUserData() as PhysicsBodyData | undefined;
     const goal = dataA?.goal === true || dataB?.goal === true;
     const target = dataA?.partId === 'target-ball' || dataB?.partId === 'target-ball';
     if (goal && target) this.goalReached = true;
-
-    const springFixture = dataA?.kind === 'spring' ? a : dataB?.kind === 'spring' ? b : null;
-    const targetFixture = springFixture === a ? b : springFixture === b ? a : null;
-    if (!springFixture || !targetFixture) return;
-    const targetBody = targetFixture.getBody();
-    if (targetBody.getType() !== 'dynamic') return;
-    const springBody = springFixture.getBody();
-    const angle = springBody.getAngle();
-    const direction = Vec2(Math.cos(angle), Math.sin(angle));
-    const impulse = Math.max(2.2, targetBody.getMass() * 2.9);
-    targetBody.applyLinearImpulse(Vec2(direction.x * impulse, direction.y * impulse), targetBody.getWorldCenter(), true);
+    this.signals.handleContact(a, b);
   }
 }
 
