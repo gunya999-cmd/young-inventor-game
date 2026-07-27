@@ -57,9 +57,9 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    { id: 'level-weight', kind: 'weight', x: 580, y: 555, angle: 0, fixed: false, locked: true },
-    { id: 'level-latch', kind: 'latch', x: 580, y: 615, angle: 0, fixed: true, locked: true },
-    // Lowered so an initially tilted right lever arm stays clear until the target ball actually lands on it.
+    // Near the left end of the allowed lever: a large moment arm without changing gravity or adding scripted force.
+    { id: 'level-weight', kind: 'weight', x: 520, y: 555, angle: 0, fixed: false, locked: true },
+    { id: 'level-latch', kind: 'latch', x: 520, y: 615, angle: 0, fixed: true, locked: true },
     { id: 'level-button', kind: 'button', x: 760, y: 770, angle: 0, fixed: true, locked: true }
   ],
   initialSignals: [
