@@ -23,6 +23,7 @@ describe('machine model', () => {
     expect(remaining(snapshot, 'domino')).toBe(10);
     expect(remaining(snapshot, 'spring')).toBe(3);
     expect(remaining(snapshot, 'magnet')).toBe(2);
+    expect(remaining(snapshot, 'sheave')).toBe(4);
   });
 
   it('defines genuinely different physical roles for new parts', () => {
@@ -30,6 +31,8 @@ describe('machine model', () => {
     expect(PARTS.domino.height).toBeGreaterThan(PARTS.domino.width * 2);
     expect(PARTS.spring.defaultFixed).toBe(true);
     expect(PARTS.magnet.defaultFixed).toBe(true);
+    expect(PARTS.sheave.defaultFixed).toBe(true);
+    expect(PARTS.sheave.radius).toBeGreaterThan(30);
   });
 
   it('hit-tests a rotated part in local coordinates', () => {
@@ -60,6 +63,25 @@ describe('snapshot history', () => {
     const redone = history.redo();
     expect(undone?.parts).toHaveLength(1);
     expect(redone?.parts[1].x).toBe(500);
+  });
+
+  it('preserves the sheave route when undoing and redoing a pulley rope', () => {
+    const initial = createInitialSnapshot();
+    const history = new SnapshotHistory(initial);
+    history.commit({
+      ...initial,
+      ropes: [{
+        id: 'routed-rope',
+        a: { partId: 'a', localX: 0, localY: 0 },
+        b: { partId: 'b', localX: 0, localY: 0 },
+        maxLength: 300,
+        pulleyPartId: 'sheave-1',
+        ratio: 1
+      }]
+    });
+    history.undo();
+    const redone = history.redo();
+    expect(redone?.ropes[0]).toMatchObject({ pulleyPartId: 'sheave-1', ratio: 1 });
   });
 
   it('clears redo after a new branch of edits', () => {
