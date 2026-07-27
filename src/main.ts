@@ -5,6 +5,7 @@ import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
 import { installSpringSystem } from './springSystem';
 import { installEventSystem } from './eventSystem';
+import { installFinalVisuals } from './finalVisuals';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -24,6 +25,7 @@ try {
   installPulleySystem();
   installSpringSystem();
   installEventSystem();
+  installFinalVisuals();
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   new GameApp(canvas);
