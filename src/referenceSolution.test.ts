@@ -7,7 +7,7 @@ const STEP = 1 / 120;
 describe('level 07 canonical solution', () => {
   it('completes the entire level using only physical interactions', () => {
     const engine = new PhysicsEngine(createLevel07ReferenceSolution());
-    let minimumBallY = Number.POSITIVE_INFINITY;
+    let minimumBallYAfterButton = Number.POSITIVE_INFINITY;
     let maximumBallX = Number.NEGATIVE_INFINITY;
     let minimumLeverAngle = Number.POSITIVE_INFINITY;
     let maximumLeverAngle = Number.NEGATIVE_INFINITY;
@@ -18,11 +18,11 @@ describe('level 07 canonical solution', () => {
       engine.step(STEP);
       const ball = engine.partTransform('target-ball')!;
       const lever = engine.partTransform('solution-lever')!;
-      minimumBallY = Math.min(minimumBallY, ball.position.y);
       maximumBallX = Math.max(maximumBallX, ball.position.x);
       minimumLeverAngle = Math.min(minimumLeverAngle, lever.angle);
       maximumLeverAngle = Math.max(maximumLeverAngle, lever.angle);
       if (buttonFrame < 0 && engine.deviceActive('level-button')) buttonFrame = frame;
+      if (buttonFrame >= 0) minimumBallYAfterButton = Math.min(minimumBallYAfterButton, ball.position.y);
       if (engine.hasWon()) {
         wonFrame = frame;
         break;
@@ -33,7 +33,7 @@ describe('level 07 canonical solution', () => {
     console.log('LEVEL07_REFERENCE_DIAGNOSTICS', {
       wonFrame,
       buttonFrame,
-      minimumBallY: Math.round(minimumBallY),
+      minimumBallYAfterButton: Number.isFinite(minimumBallYAfterButton) ? Math.round(minimumBallYAfterButton) : null,
       maximumBallX: Math.round(maximumBallX),
       finalBall: {
         x: Math.round(finalBall.position.x),
@@ -48,7 +48,7 @@ describe('level 07 canonical solution', () => {
 
     expect(buttonFrame).toBeGreaterThan(0);
     expect(engine.deviceActive('level-latch')).toBe(true);
-    expect(minimumBallY).toBeLessThan(357);
+    expect(minimumBallYAfterButton).toBeLessThan(357);
     expect(maximumBallX).toBeGreaterThan(825);
     expect(wonFrame).toBeGreaterThan(0);
   });
