@@ -9,32 +9,17 @@ import {
   type PartState,
   type Point
 } from './model';
+import { ACTIVE_LEVEL } from './level';
 import { physicsPointToPixel, pixelPointToPhysics, pxToMeters } from './engine/coordinates';
 import { createHinges, createRopes } from './engine/jointSystem';
 import { createStandardPartBody, type PhysicsBodyData } from './engine/partFactory';
 import { PHYSICS_CONFIG } from './engine/physicsConfig';
-import {
-  applySpringForce,
-  createSpringMechanism,
-  springCompressionPx,
-  type SpringMechanism
-} from './engine/springMechanism';
+import { applySpringForce, createSpringMechanism, springCompressionPx, type SpringMechanism } from './engine/springMechanism';
 import { SignalRuntime } from './engine/signalSystem';
 
-interface RuntimePartState extends PartState {
-  springCompression?: number;
-  deviceActive?: boolean;
-}
-
-export interface PhysicsEngineOptions {
-  includeLevelGeometry?: boolean;
-}
-
-export interface PartKinematics {
-  velocity: Point;
-  angularVelocity: number;
-}
-
+interface RuntimePartState extends PartState { springCompression?: number; deviceActive?: boolean; }
+export interface PhysicsEngineOptions { includeLevelGeometry?: boolean; }
+export interface PartKinematics { velocity: Point; angularVelocity: number; }
 const MAGNETIC_KINDS = new Set<PartKind>(['ball', 'weight', 'domino', 'lever']);
 
 export class PhysicsEngine {
@@ -63,18 +48,9 @@ export class PhysicsEngine {
     this.world.step(seconds, PHYSICS_CONFIG.velocityIterations, PHYSICS_CONFIG.positionIterations);
   }
 
-  hasWon(): boolean {
-    return this.goalReached;
-  }
-
-  springCompression(partId: string): number {
-    const spring = this.springs.get(partId);
-    return spring ? springCompressionPx(spring) : 0;
-  }
-
-  deviceActive(partId: string): boolean {
-    return this.signals.isActive(partId);
-  }
+  hasWon(): boolean { return this.goalReached; }
+  springCompression(partId: string): number { const spring = this.springs.get(partId); return spring ? springCompressionPx(spring) : 0; }
+  deviceActive(partId: string): boolean { return this.signals.isActive(partId); }
 
   snapshot(): MachineSnapshot {
     const result = cloneSnapshot(this.source);
@@ -104,34 +80,38 @@ export class PhysicsEngine {
     const body = this.bodies.get(partId);
     if (!body) return null;
     const velocity = body.getLinearVelocity();
-    return {
-      velocity: { x: velocity.x * PHYSICS_SCALE, y: -velocity.y * PHYSICS_SCALE },
-      angularVelocity: -body.getAngularVelocity()
-    };
+    return { velocity: { x: velocity.x * PHYSICS_SCALE, y: -velocity.y * PHYSICS_SCALE }, angularVelocity: -body.getAngularVelocity() };
   }
 
   private createLevelGeometry(): void {
     const ground = this.world.createBody({ type: 'static', userData: { kind: 'level' } satisfies PhysicsBodyData });
-    this.addStaticBox(ground, 800, 788, 1500, 34, 0);
-    this.addStaticBox(ground, 275, 305, 420, 28, -0.08);
-    this.addStaticBox(ground, 1130, 565, 230, 24, 0.04);
+    for (const platform of ACTIVE_LEVEL.platforms) {
+      // Level angles are stored in screen coordinates. addStaticBox performs the single screen→Box2D sign conversion.
+      this.addStaticBox(ground, platform.x, platform.y, platform.width, platform.height, platform.angle);
+    }
 
-    const basket = this.world.createBody({ type: 'static', userData: { kind: 'basket' } satisfies PhysicsBodyData });
-    this.addStaticBox(basket, 1385, 687, 190, 22, 0);
-    this.addStaticBox(basket, 1298, 622, 22, 145, 0);
-    this.addStaticBox(basket, 1472, 622, 22, 145, 0);
-    const sensorCenter = pixelPointToPhysics({ x: 1385, y: 625 });
-    basket.createFixture({
-      shape: Box(pxToMeters(72), pxToMeters(54), Vec2(sensorCenter.x, sensorCenter.y), 0),
+    const receiverSpec = ACTIVE_LEVEL.receiver;
+    const receiver = this.world.createBody({ type: 'static', userData: { kind: 'basket' } satisfies PhysicsBodyData });
+    const wallHeight = receiverSpec.innerHeight + receiverSpec.floorThickness;
+    const wallY = receiverSpec.y + receiverSpec.floorThickness / 2;
+    const leftX = receiverSpec.x - receiverSpec.innerWidth / 2 - receiverSpec.wallThickness / 2;
+    const rightX = receiverSpec.x + receiverSpec.innerWidth / 2 + receiverSpec.wallThickness / 2;
+    const floorY = receiverSpec.y + receiverSpec.innerHeight / 2 + receiverSpec.floorThickness / 2;
+    this.addStaticBox(receiver, receiverSpec.x, floorY, receiverSpec.innerWidth + receiverSpec.wallThickness * 2, receiverSpec.floorThickness, 0);
+    this.addStaticBox(receiver, leftX, wallY, receiverSpec.wallThickness, wallHeight, 0);
+    this.addStaticBox(receiver, rightX, wallY, receiverSpec.wallThickness, wallHeight, 0);
+    const sensorCenter = pixelPointToPhysics({ x: receiverSpec.x, y: receiverSpec.y });
+    receiver.createFixture({
+      shape: Box(pxToMeters(receiverSpec.innerWidth / 2), pxToMeters(receiverSpec.innerHeight / 2), Vec2(sensorCenter.x, sensorCenter.y), 0),
       isSensor: true,
       userData: { goal: true } satisfies PhysicsBodyData
     });
   }
 
-  private addStaticBox(body: Body, x: number, y: number, width: number, height: number, angle: number): void {
+  private addStaticBox(body: Body, x: number, y: number, width: number, height: number, screenAngle: number): void {
     const center = pixelPointToPhysics({ x, y });
     body.createFixture({
-      shape: Box(pxToMeters(width / 2), pxToMeters(height / 2), Vec2(center.x, center.y), -angle),
+      shape: Box(pxToMeters(width / 2), pxToMeters(height / 2), Vec2(center.x, center.y), -screenAngle),
       friction: 0.82,
       restitution: 0.02
     });
@@ -158,7 +138,6 @@ export class PhysicsEngine {
       const angle = fanBody.getAngle();
       const directionX = Math.cos(angle);
       const directionY = Math.sin(angle);
-
       for (const [id, body] of this.bodies) {
         if (id === fanPart.id || body.getType() !== 'dynamic') continue;
         const position = body.getPosition();
@@ -181,7 +160,6 @@ export class PhysicsEngine {
       const magnetBody = this.bodies.get(magnetPart.id);
       if (!magnetBody) continue;
       const origin = magnetBody.getPosition();
-
       for (const targetPart of this.source.parts) {
         if (!MAGNETIC_KINDS.has(targetPart.kind)) continue;
         const targetBody = this.bodies.get(targetPart.id);
@@ -212,8 +190,5 @@ export class PhysicsEngine {
 export function endpointWorld(part: PartState, endpoint: Endpoint): Point {
   const cosine = Math.cos(part.angle);
   const sine = Math.sin(part.angle);
-  return {
-    x: part.x + endpoint.localX * cosine - endpoint.localY * sine,
-    y: part.y + endpoint.localX * sine + endpoint.localY * cosine
-  };
+  return { x: part.x + endpoint.localX * cosine - endpoint.localY * sine, y: part.y + endpoint.localX * sine + endpoint.localY * cosine };
 }
