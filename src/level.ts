@@ -59,10 +59,9 @@ export const LEVEL_07: LevelSpec = {
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
     { id: 'level-weight', kind: 'weight', x: 520, y: 520, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 520, y: 580, angle: 0, fixed: true, locked: true },
-    // A second latch acts as a removable support under the long left lever arm.
     { id: 'level-lever-lock', kind: 'latch', x: 590, y: 713, angle: 0, fixed: true, locked: true },
-    // The target ball presses this only after landing on the short right lever arm.
-    { id: 'level-button', kind: 'button', x: 760, y: 780, angle: 0, fixed: true, locked: true }
+    // Recessed into the floor so the unloaded tilted arm cannot touch the sensor at startup.
+    { id: 'level-button', kind: 'button', x: 760, y: 790, angle: 0, fixed: true, locked: true }
   ],
   initialSignals: [
     { id: 'level-signal-weight', sourcePartId: 'level-button', targetPartId: 'level-latch', action: 'release' },
