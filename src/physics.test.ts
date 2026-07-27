@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { PhysicsEngine } from './physics';
 import { createInitialSnapshot, type MachineSnapshot } from './model';
 
+const isolated = (snapshot: MachineSnapshot): PhysicsEngine => new PhysicsEngine(snapshot, { includeLevelGeometry: false });
+
 describe('Planck physics core', () => {
   it('moves the unlocked target ball under Box2D gravity', () => {
     const engine = new PhysicsEngine(createInitialSnapshot());
@@ -28,13 +30,10 @@ describe('Planck physics core', () => {
     const snapshot: MachineSnapshot = {
       parts: [{ id: 'lever-1', kind: 'lever', x: 800, y: 420, angle: 0, fixed: false }],
       ropes: [],
-      hinges: [{
-        id: 'hinge-1', partId: 'lever-1', localX: -90, localY: 0,
-        referenceAngle: 0, lowerAngle: -1.2, upperAngle: 1.2
-      }],
+      hinges: [{ id: 'hinge-1', partId: 'lever-1', localX: -90, localY: 0, referenceAngle: 0, lowerAngle: -1.2, upperAngle: 1.2 }],
       signals: []
     };
-    const engine = new PhysicsEngine(snapshot);
+    const engine = isolated(snapshot);
     for (let index = 0; index < 120; index += 1) engine.step(1 / 120);
     const result = engine.partTransform('lever-1');
     expect(result).not.toBeNull();
@@ -49,24 +48,15 @@ describe('Planck physics core', () => {
         { id: 'light', kind: 'rubberball', x: 980, y: 350, angle: 0, fixed: false },
         { id: 'sheave-1', kind: 'sheave', x: 800, y: 170, angle: 0, fixed: true }
       ],
-      ropes: [{
-        id: 'pulley-rope',
-        a: { partId: 'heavy', localX: 0, localY: 0 },
-        b: { partId: 'light', localX: 0, localY: 0 },
-        maxLength: 520,
-        pulleyPartId: 'sheave-1',
-        ratio: 1
-      }],
-      hinges: [],
-      signals: []
+      ropes: [{ id: 'pulley-rope', a: { partId: 'heavy', localX: 0, localY: 0 }, b: { partId: 'light', localX: 0, localY: 0 }, maxLength: 520, pulleyPartId: 'sheave-1', ratio: 1 }],
+      hinges: [], signals: []
     };
-    const engine = new PhysicsEngine(snapshot);
+    const engine = isolated(snapshot);
     const heavyBefore = engine.partTransform('heavy')!;
     const lightBefore = engine.partTransform('light')!;
     for (let index = 0; index < 90; index += 1) engine.step(1 / 120);
     const heavyAfter = engine.partTransform('heavy')!;
     const lightAfter = engine.partTransform('light')!;
-
     expect(heavyAfter.position.y).toBeGreaterThan(heavyBefore.position.y + 5);
     expect(lightAfter.position.y).toBeLessThan(lightBefore.position.y - 5);
   });
@@ -77,26 +67,21 @@ describe('Planck physics core', () => {
         { id: 'spring-1', kind: 'spring', x: 900, y: 650, angle: -Math.PI / 2, fixed: true },
         { id: 'falling-weight', kind: 'weight', x: 900, y: 475, angle: 0, fixed: false }
       ],
-      ropes: [],
-      hinges: [],
-      signals: []
+      ropes: [], hinges: [], signals: []
     };
-    const engine = new PhysicsEngine(snapshot);
+    const engine = isolated(snapshot);
     const compressionSamples: number[] = [];
     const weightYSamples: number[] = [];
-
     for (let index = 0; index < 240; index += 1) {
       engine.step(1 / 120);
       compressionSamples.push(engine.springCompression('spring-1'));
       weightYSamples.push(engine.partTransform('falling-weight')!.position.y);
     }
-
     const maxCompression = Math.max(...compressionSamples);
     const maxIndex = compressionSamples.indexOf(maxCompression);
     const compressedFrames = compressionSamples.filter((value) => value > 2).length;
     const yAtMaxCompression = weightYSamples[maxIndex];
     const minYAfterRelease = Math.min(...weightYSamples.slice(Math.min(maxIndex + 3, weightYSamples.length - 1)));
-
     expect(maxCompression).toBeGreaterThan(8);
     expect(compressedFrames).toBeGreaterThan(3);
     expect(minYAfterRelease).toBeLessThan(yAtMaxCompression - 5);
@@ -109,11 +94,9 @@ describe('Planck physics core', () => {
         { id: 'latch-1', kind: 'latch', x: 900, y: 520, angle: 0, fixed: true },
         { id: 'load', kind: 'weight', x: 900, y: 455, angle: 0, fixed: false }
       ],
-      ropes: [],
-      hinges: [],
-      signals: []
+      ropes: [], hinges: [], signals: []
     };
-    const engine = new PhysicsEngine(snapshot);
+    const engine = isolated(snapshot);
     for (let index = 0; index < 180; index += 1) engine.step(1 / 120);
     expect(engine.partTransform('load')!.position.y).toBeLessThan(500);
   });
@@ -126,15 +109,11 @@ describe('Planck physics core', () => {
         { id: 'latch-1', kind: 'latch', x: 900, y: 520, angle: 0, fixed: true },
         { id: 'load', kind: 'weight', x: 900, y: 455, angle: 0, fixed: false }
       ],
-      ropes: [],
-      hinges: [],
-      signals: [{
-        id: 'signal-1', sourcePartId: 'button-1', targetPartId: 'latch-1', action: 'release'
-      }]
+      ropes: [], hinges: [],
+      signals: [{ id: 'signal-1', sourcePartId: 'button-1', targetPartId: 'latch-1', action: 'release' }]
     };
-    const engine = new PhysicsEngine(snapshot);
+    const engine = isolated(snapshot);
     for (let index = 0; index < 240; index += 1) engine.step(1 / 120);
-
     expect(engine.deviceActive('button-1')).toBe(true);
     expect(engine.deviceActive('latch-1')).toBe(true);
     expect(engine.partTransform('load')!.position.y).toBeGreaterThan(600);

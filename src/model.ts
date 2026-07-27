@@ -1,3 +1,5 @@
+import { ACTIVE_LEVEL } from './level';
+
 export const WORLD_WIDTH = 1600;
 export const WORLD_HEIGHT = 900;
 export const PHYSICS_SCALE = 100;
@@ -18,10 +20,7 @@ export type PartKind =
   | 'latch';
 export type GameMode = 'build' | 'running' | 'paused';
 
-export interface Point {
-  x: number;
-  y: number;
-}
+export interface Point { x: number; y: number; }
 
 export interface PartSpec {
   kind: PartKind;
@@ -47,20 +46,14 @@ export interface PartState {
   locked?: boolean;
 }
 
-export interface Endpoint {
-  partId: string;
-  localX: number;
-  localY: number;
-}
+export interface Endpoint { partId: string; localX: number; localY: number; }
 
 export interface RopeState {
   id: string;
   a: Endpoint;
   b: Endpoint;
   maxLength: number;
-  /** Optional fixed sheave that routes the rope and transfers motion between both sides. */
   pulleyPartId?: string;
-  /** Mechanical advantage ratio. A single fixed sheave uses 1:1. */
   ratio?: number;
 }
 
@@ -75,128 +68,48 @@ export interface HingeState {
 }
 
 export type SignalAction = 'release';
-
-export interface SignalLink {
-  id: string;
-  sourcePartId: string;
-  targetPartId: string;
-  action: SignalAction;
-}
+export interface SignalLink { id: string; sourcePartId: string; targetPartId: string; action: SignalAction; }
 
 export interface MachineSnapshot {
   parts: PartState[];
   ropes: RopeState[];
   hinges: HingeState[];
-  /** Explicit causal links between control devices. Optional for old browser saves. */
   signals?: SignalLink[];
 }
 
 export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
-  ball: {
-    kind: 'ball', label: 'Стальной шар', width: 56, height: 56, radius: 28,
-    density: 1.2, friction: 0.18, restitution: 0.28,
-    defaultFixed: false, canHinge: false, color: '#596773'
-  },
-  plank: {
-    kind: 'plank', label: 'Направляющая', width: 235, height: 28,
-    density: 0.62, friction: 0.78, restitution: 0.03,
-    defaultFixed: true, canHinge: true, color: '#a96531'
-  },
-  wall: {
-    kind: 'wall', label: 'Резиновый отбойник', width: 155, height: 34,
-    density: 3.2, friction: 0.5, restitution: 0.72,
-    defaultFixed: true, canHinge: false, color: '#ca3f4d'
-  },
-  lever: {
-    kind: 'lever', label: 'Балансир', width: 300, height: 32,
-    density: 0.72, friction: 0.64, restitution: 0.04,
-    defaultFixed: false, canHinge: true, color: '#bd7436'
-  },
-  pulley: {
-    kind: 'pulley', label: 'Вентилятор', width: 92, height: 92, radius: 46,
-    density: 1.6, friction: 0.3, restitution: 0.02,
-    defaultFixed: true, canHinge: false, color: '#4b5964'
-  },
-  weight: {
-    kind: 'weight', label: 'Грузовой ящик', width: 82, height: 72,
-    density: 2.8, friction: 0.7, restitution: 0.02,
-    defaultFixed: false, canHinge: false, color: '#6f5135'
-  },
-  domino: {
-    kind: 'domino', label: 'Домино', width: 34, height: 102,
-    density: 0.56, friction: 0.86, restitution: 0.035,
-    defaultFixed: false, canHinge: false, color: '#e7d8b8'
-  },
-  rubberball: {
-    kind: 'rubberball', label: 'Резиновый мяч', width: 62, height: 62, radius: 31,
-    density: 0.74, friction: 0.24, restitution: 0.92,
-    defaultFixed: false, canHinge: false, color: '#39aee8'
-  },
-  spring: {
-    kind: 'spring', label: 'Пружинный толкатель', width: 126, height: 54,
-    density: 3.4, friction: 0.62, restitution: 0.18,
-    defaultFixed: true, canHinge: false, color: '#efb43f'
-  },
-  magnet: {
-    kind: 'magnet', label: 'Магнит', width: 104, height: 88,
-    density: 3.1, friction: 0.55, restitution: 0.04,
-    defaultFixed: true, canHinge: false, color: '#d9535d'
-  },
-  sheave: {
-    kind: 'sheave', label: 'Шкив', width: 84, height: 84, radius: 42,
-    density: 2.2, friction: 0.32, restitution: 0.02,
-    defaultFixed: true, canHinge: false, color: '#687985'
-  },
-  button: {
-    kind: 'button', label: 'Нажимная кнопка', width: 92, height: 30,
-    density: 3.0, friction: 0.72, restitution: 0.01,
-    defaultFixed: true, canHinge: false, color: '#d9a53b'
-  },
-  latch: {
-    kind: 'latch', label: 'Механическая защёлка', width: 116, height: 26,
-    density: 3.5, friction: 0.82, restitution: 0.01,
-    defaultFixed: true, canHinge: false, color: '#62727c'
-  }
+  ball: { kind:'ball',label:'Стальной шар',width:56,height:56,radius:28,density:1.2,friction:.18,restitution:.28,defaultFixed:false,canHinge:false,color:'#596773' },
+  plank: { kind:'plank',label:'Направляющая',width:235,height:28,density:.62,friction:.78,restitution:.03,defaultFixed:true,canHinge:true,color:'#a96531' },
+  wall: { kind:'wall',label:'Резиновый отбойник',width:155,height:34,density:3.2,friction:.5,restitution:.72,defaultFixed:true,canHinge:false,color:'#ca3f4d' },
+  lever: { kind:'lever',label:'Балансир',width:300,height:32,density:.72,friction:.64,restitution:.04,defaultFixed:false,canHinge:true,color:'#bd7436' },
+  pulley: { kind:'pulley',label:'Вентилятор',width:92,height:92,radius:46,density:1.6,friction:.3,restitution:.02,defaultFixed:true,canHinge:false,color:'#4b5964' },
+  weight: { kind:'weight',label:'Грузовой ящик',width:82,height:72,density:2.8,friction:.7,restitution:.02,defaultFixed:false,canHinge:false,color:'#6f5135' },
+  domino: { kind:'domino',label:'Домино',width:34,height:102,density:.56,friction:.86,restitution:.035,defaultFixed:false,canHinge:false,color:'#e7d8b8' },
+  rubberball: { kind:'rubberball',label:'Резиновый мяч',width:62,height:62,radius:31,density:.74,friction:.24,restitution:.92,defaultFixed:false,canHinge:false,color:'#39aee8' },
+  spring: { kind:'spring',label:'Пружинный толкатель',width:126,height:54,density:3.4,friction:.62,restitution:.18,defaultFixed:true,canHinge:false,color:'#efb43f' },
+  magnet: { kind:'magnet',label:'Магнит',width:104,height:88,density:3.1,friction:.55,restitution:.04,defaultFixed:true,canHinge:false,color:'#d9535d' },
+  sheave: { kind:'sheave',label:'Шкив',width:84,height:84,radius:42,density:2.2,friction:.32,restitution:.02,defaultFixed:true,canHinge:false,color:'#687985' },
+  button: { kind:'button',label:'Нажимная кнопка',width:92,height:30,density:3,friction:.72,restitution:.01,defaultFixed:true,canHinge:false,color:'#d9a53b' },
+  latch: { kind:'latch',label:'Механическая защёлка',width:116,height:26,density:3.5,friction:.82,restitution:.01,defaultFixed:true,canHinge:false,color:'#62727c' }
 };
 
-export const INVENTORY: Readonly<Record<PartKind, number>> = {
-  ball: 0,
-  plank: 6,
-  wall: 4,
-  lever: 3,
-  pulley: 3,
-  weight: 4,
-  domino: 10,
-  rubberball: 3,
-  spring: 3,
-  magnet: 2,
-  sheave: 4,
-  button: 3,
-  latch: 3
-};
-
-export const MAX_ROPES = 5;
-export const MAX_HINGES = 5;
+export const INVENTORY: Readonly<Record<PartKind, number>> = ACTIVE_LEVEL.inventory;
+export const MAX_ROPES = ACTIVE_LEVEL.maxRopes;
+export const MAX_HINGES = ACTIVE_LEVEL.maxHinges;
 
 export function createInitialSnapshot(): MachineSnapshot {
   return {
-    parts: [
-      { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true }
-    ],
+    parts: ACTIVE_LEVEL.initialParts.map((part) => ({ ...part })),
     ropes: [],
     hinges: [],
-    signals: []
+    signals: ACTIVE_LEVEL.initialSignals.map((signal) => ({ ...signal }))
   };
 }
 
 export function cloneSnapshot(snapshot: MachineSnapshot): MachineSnapshot {
   return {
     parts: snapshot.parts.map((part) => ({ ...part })),
-    ropes: snapshot.ropes.map((rope) => ({
-      ...rope,
-      a: { ...rope.a },
-      b: { ...rope.b }
-    })),
+    ropes: snapshot.ropes.map((rope) => ({ ...rope, a: { ...rope.a }, b: { ...rope.b } })),
     hinges: snapshot.hinges.map((hinge) => ({ ...hinge })),
     signals: (snapshot.signals ?? []).map((signal) => ({ ...signal }))
   };
@@ -205,10 +118,7 @@ export function cloneSnapshot(snapshot: MachineSnapshot): MachineSnapshot {
 export function rotatePoint(point: Point, angle: number): Point {
   const cosine = Math.cos(angle);
   const sine = Math.sin(angle);
-  return {
-    x: point.x * cosine - point.y * sine,
-    y: point.x * sine + point.y * cosine
-  };
+  return { x: point.x * cosine - point.y * sine, y: point.x * sine + point.y * cosine };
 }
 
 export function localToWorld(part: PartState, local: Point): Point {
@@ -256,11 +166,7 @@ export function remaining(snapshot: MachineSnapshot, kind: PartKind): number {
 export class SnapshotHistory {
   private states: MachineSnapshot[];
   private cursor = 0;
-
-  constructor(initial: MachineSnapshot) {
-    this.states = [cloneSnapshot(initial)];
-  }
-
+  constructor(initial: MachineSnapshot) { this.states = [cloneSnapshot(initial)]; }
   commit(snapshot: MachineSnapshot): void {
     const candidate = JSON.stringify(snapshot);
     if (candidate === JSON.stringify(this.states[this.cursor])) return;
@@ -268,24 +174,9 @@ export class SnapshotHistory {
     this.states.push(cloneSnapshot(snapshot));
     this.cursor = this.states.length - 1;
   }
-
-  undo(): MachineSnapshot | null {
-    if (this.cursor === 0) return null;
-    this.cursor -= 1;
-    return cloneSnapshot(this.states[this.cursor]);
-  }
-
-  redo(): MachineSnapshot | null {
-    if (this.cursor >= this.states.length - 1) return null;
-    this.cursor += 1;
-    return cloneSnapshot(this.states[this.cursor]);
-  }
-
-  reset(snapshot: MachineSnapshot): void {
-    this.states = [cloneSnapshot(snapshot)];
-    this.cursor = 0;
-  }
-
+  undo(): MachineSnapshot | null { if (this.cursor === 0) return null; this.cursor -= 1; return cloneSnapshot(this.states[this.cursor]); }
+  redo(): MachineSnapshot | null { if (this.cursor >= this.states.length - 1) return null; this.cursor += 1; return cloneSnapshot(this.states[this.cursor]); }
+  reset(snapshot: MachineSnapshot): void { this.states = [cloneSnapshot(snapshot)]; this.cursor = 0; }
   get canUndo(): boolean { return this.cursor > 0; }
   get canRedo(): boolean { return this.cursor < this.states.length - 1; }
 }
