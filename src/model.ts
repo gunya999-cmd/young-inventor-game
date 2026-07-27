@@ -12,7 +12,8 @@ export type PartKind =
   | 'domino'
   | 'rubberball'
   | 'spring'
-  | 'magnet';
+  | 'magnet'
+  | 'sheave';
 export type GameMode = 'build' | 'running' | 'paused';
 
 export interface Point {
@@ -55,6 +56,10 @@ export interface RopeState {
   a: Endpoint;
   b: Endpoint;
   maxLength: number;
+  /** Optional fixed sheave that routes the rope and transfers motion between both sides. */
+  pulleyPartId?: string;
+  /** Mechanical advantage ratio. A single fixed sheave uses 1:1. */
+  ratio?: number;
 }
 
 export interface HingeState {
@@ -123,6 +128,11 @@ export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
     kind: 'magnet', label: 'Магнит', width: 104, height: 88,
     density: 3.1, friction: 0.55, restitution: 0.04,
     defaultFixed: true, canHinge: false, color: '#d9535d'
+  },
+  sheave: {
+    kind: 'sheave', label: 'Шкив', width: 84, height: 84, radius: 42,
+    density: 2.2, friction: 0.32, restitution: 0.02,
+    defaultFixed: true, canHinge: false, color: '#687985'
   }
 };
 
@@ -136,7 +146,8 @@ export const INVENTORY: Readonly<Record<PartKind, number>> = {
   domino: 10,
   rubberball: 3,
   spring: 3,
-  magnet: 2
+  magnet: 2,
+  sheave: 4
 };
 
 export const MAX_ROPES = 5;
