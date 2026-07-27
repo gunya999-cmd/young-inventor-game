@@ -1,6 +1,6 @@
 import { createInitialSnapshot, type MachineSnapshot } from './model';
 
-const LEVER_START_ANGLE = 0.16;
+const LEVER_START_ANGLE = 0.12;
 
 /**
  * Canonical solution used only for regression testing and level authoring.
@@ -9,8 +9,8 @@ const LEVER_START_ANGLE = 0.16;
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // Slight right-down preload gives the rising right arm a useful rightward tangential velocity.
-    { id: 'solution-lever', kind: 'lever', x: 655, y: 690, angle: LEVER_START_ANGLE, fixed: false },
+    // The ball reaches this right arm shortly after tripping the side-mounted switch in the shaft.
+    { id: 'solution-lever', kind: 'lever', x: 655, y: 700, angle: LEVER_START_ANGLE, fixed: false },
     // Catch the launched ball after it clears the barrier.
     { id: 'solution-catch', kind: 'plank', x: 995, y: 430, angle: 0.10, fixed: true },
     // Continue from the right bench down into the receiver.
