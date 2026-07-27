@@ -43,7 +43,6 @@ export const LEVEL_07: LevelSpec = {
   platforms: [
     { id: 'floor', x: 800, y: 815, width: 1500, height: 30, angle: 0 },
     { id: 'start-rail', x: 275, y: 305, width: 420, height: 26, angle: 0.09 },
-    // Ends early enough to form a real drop shaft before the barrier. The ball can fall, but cannot pass right at this height.
     { id: 'left-bench', x: 610, y: 470, width: 250, height: 24, angle: 0.015 },
     { id: 'barrier', x: 825, y: 585, width: 30, height: 400, angle: 0 },
     { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: 0.04 }
@@ -58,11 +57,10 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    // The weight is deliberately left of the future centered pivot, giving it a larger moment arm after release.
     { id: 'level-weight', kind: 'weight', x: 580, y: 555, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 580, y: 615, angle: 0, fixed: true, locked: true },
-    // Mounted below the future right lever arm. The lever itself becomes the physical trigger.
-    { id: 'level-button', kind: 'button', x: 760, y: 745, angle: 0, fixed: true, locked: true }
+    // Lowered so an initially tilted right lever arm stays clear until the target ball actually lands on it.
+    { id: 'level-button', kind: 'button', x: 760, y: 770, angle: 0, fixed: true, locked: true }
   ],
   initialSignals: [
     { id: 'level-signal', sourcePartId: 'level-button', targetPartId: 'level-latch', action: 'release' }
