@@ -1,5 +1,7 @@
 import { createInitialSnapshot, type MachineSnapshot } from './model';
 
+const LEVER_START_ANGLE = 0.16;
+
 /**
  * Canonical solution used only for regression testing and level authoring.
  * It is deliberately built from the same pieces the player receives.
@@ -7,8 +9,8 @@ import { createInitialSnapshot, type MachineSnapshot } from './model';
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // Centered pivot keeps the empty lever neutral. The ball falls through the level's drop shaft onto the right arm.
-    { id: 'solution-lever', kind: 'lever', x: 655, y: 690, angle: 0, fixed: false },
+    // Slight right-down preload gives the rising right arm a useful rightward tangential velocity.
+    { id: 'solution-lever', kind: 'lever', x: 655, y: 690, angle: LEVER_START_ANGLE, fixed: false },
     // Catch the launched ball after it clears the barrier.
     { id: 'solution-catch', kind: 'plank', x: 995, y: 430, angle: 0.10, fixed: true },
     // Continue from the right bench down into the receiver.
@@ -19,7 +21,7 @@ export function createLevel07ReferenceSolution(): MachineSnapshot {
     partId: 'solution-lever',
     localX: 0,
     localY: 0,
-    referenceAngle: 0,
+    referenceAngle: LEVER_START_ANGLE,
     lowerAngle: -1.05,
     upperAngle: 0.65
   });
