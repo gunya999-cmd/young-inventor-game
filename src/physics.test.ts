@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { PhysicsEngine } from './physics';
 import { installSpringSystem } from './springSystem';
+import { installEventSystem } from './eventSystem';
 import { createInitialSnapshot, type MachineSnapshot } from './model';
 
 installSpringSystem();
+installEventSystem();
 
 type SpringAwareEngine = PhysicsEngine & {
   springCompression(partId: string): number;
+};
+
+type DeviceAwareEngine = PhysicsEngine & {
+  deviceActive(partId: string): boolean;
 };
 
 describe('Planck physics vertical slice', () => {
@@ -105,5 +111,43 @@ describe('Planck physics vertical slice', () => {
     expect(compressedFrames).toBeGreaterThan(3);
     expect(minYAfterRelease).toBeLessThan(yAtMaxCompression - 5);
     expect(compressionSamples.at(-1)!).toBeLessThan(maxCompression);
+  });
+
+  it('keeps a load supported while an untriggered latch remains closed', () => {
+    const snapshot: MachineSnapshot = {
+      parts: [
+        { id: 'latch-1', kind: 'latch', x: 900, y: 520, angle: 0, fixed: true },
+        { id: 'load', kind: 'weight', x: 900, y: 455, angle: 0, fixed: false }
+      ],
+      ropes: [],
+      hinges: [],
+      signals: []
+    };
+    const engine = new PhysicsEngine(snapshot);
+    for (let index = 0; index < 180; index += 1) engine.step(1 / 120);
+    const load = engine.partTransform('load')!;
+    expect(load.position.y).toBeLessThan(500);
+  });
+
+  it('releases a latch only after a physical body presses its linked button', () => {
+    const snapshot: MachineSnapshot = {
+      parts: [
+        { id: 'button-1', kind: 'button', x: 420, y: 700, angle: 0, fixed: true },
+        { id: 'trigger', kind: 'rubberball', x: 420, y: 590, angle: 0, fixed: false },
+        { id: 'latch-1', kind: 'latch', x: 900, y: 520, angle: 0, fixed: true },
+        { id: 'load', kind: 'weight', x: 900, y: 455, angle: 0, fixed: false }
+      ],
+      ropes: [],
+      hinges: [],
+      signals: [{
+        id: 'signal-1', sourcePartId: 'button-1', targetPartId: 'latch-1', action: 'release'
+      }]
+    };
+    const engine = new PhysicsEngine(snapshot) as DeviceAwareEngine;
+    for (let index = 0; index < 240; index += 1) engine.step(1 / 120);
+
+    expect(engine.deviceActive('button-1')).toBe(true);
+    expect(engine.deviceActive('latch-1')).toBe(true);
+    expect(engine.partTransform('load')!.position.y).toBeGreaterThan(600);
   });
 });

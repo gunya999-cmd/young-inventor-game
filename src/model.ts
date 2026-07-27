@@ -13,7 +13,9 @@ export type PartKind =
   | 'rubberball'
   | 'spring'
   | 'magnet'
-  | 'sheave';
+  | 'sheave'
+  | 'button'
+  | 'latch';
 export type GameMode = 'build' | 'running' | 'paused';
 
 export interface Point {
@@ -72,10 +74,21 @@ export interface HingeState {
   upperAngle?: number;
 }
 
+export type SignalAction = 'release';
+
+export interface SignalLink {
+  id: string;
+  sourcePartId: string;
+  targetPartId: string;
+  action: SignalAction;
+}
+
 export interface MachineSnapshot {
   parts: PartState[];
   ropes: RopeState[];
   hinges: HingeState[];
+  /** Explicit causal links between control devices. Optional for old browser saves. */
+  signals?: SignalLink[];
 }
 
 export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
@@ -133,6 +146,16 @@ export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
     kind: 'sheave', label: 'Шкив', width: 84, height: 84, radius: 42,
     density: 2.2, friction: 0.32, restitution: 0.02,
     defaultFixed: true, canHinge: false, color: '#687985'
+  },
+  button: {
+    kind: 'button', label: 'Нажимная кнопка', width: 92, height: 30,
+    density: 3.0, friction: 0.72, restitution: 0.01,
+    defaultFixed: true, canHinge: false, color: '#d9a53b'
+  },
+  latch: {
+    kind: 'latch', label: 'Механическая защёлка', width: 116, height: 26,
+    density: 3.5, friction: 0.82, restitution: 0.01,
+    defaultFixed: true, canHinge: false, color: '#62727c'
   }
 };
 
@@ -147,7 +170,9 @@ export const INVENTORY: Readonly<Record<PartKind, number>> = {
   rubberball: 3,
   spring: 3,
   magnet: 2,
-  sheave: 4
+  sheave: 4,
+  button: 3,
+  latch: 3
 };
 
 export const MAX_ROPES = 5;
@@ -159,7 +184,8 @@ export function createInitialSnapshot(): MachineSnapshot {
       { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true }
     ],
     ropes: [],
-    hinges: []
+    hinges: [],
+    signals: []
   };
 }
 
@@ -171,7 +197,8 @@ export function cloneSnapshot(snapshot: MachineSnapshot): MachineSnapshot {
       a: { ...rope.a },
       b: { ...rope.b }
     })),
-    hinges: snapshot.hinges.map((hinge) => ({ ...hinge }))
+    hinges: snapshot.hinges.map((hinge) => ({ ...hinge })),
+    signals: (snapshot.signals ?? []).map((signal) => ({ ...signal }))
   };
 }
 

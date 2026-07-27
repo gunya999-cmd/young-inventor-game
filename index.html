@@ -17,6 +17,9 @@
       .spring-icon{background:linear-gradient(145deg,#303a43,#161d23);color:#f5c655;font-size:26px}
       .magnet-icon{background:linear-gradient(90deg,#ca3f4b 0 48%,#3e83c7 52% 100%);font-size:25px}
       .sheave-icon{border-radius:50%;background:radial-gradient(circle,#d99a42 0 10%,#39464e 11% 28%,#91a0a9 29% 48%,#1b252b 49% 61%,#6d7b84 62% 78%,#151d22 79%);font-size:0}
+      .button-icon{background:linear-gradient(180deg,#ffd267 0 32%,#d1781e 33% 52%,#8a969d 53% 72%,#303a40 73%);font-size:0}
+      .latch-icon{background:linear-gradient(165deg,#a9b5bb 0 28%,#5d6b74 29% 57%,#2c363c 58% 100%);position:relative;font-size:0}
+      .latch-icon:after{content:"";width:8px;height:8px;border-radius:50%;background:#efb64e;box-shadow:-8px 0 0 #263138}
       @media(max-height:880px){.shortcut-card{display:none}.library-panel .palette-part{min-height:52px}.part-copy small{display:none}}
     </style>
   </head>
@@ -28,7 +31,7 @@
           <div>
             <p class="eyebrow">ИСПЫТАНИЕ · ЦЕПНАЯ РЕАКЦИЯ</p>
             <h1>Проведи шар в приёмник</h1>
-            <p class="mission-copy">Комбинируй импульс, рычаги, натяжение верёвки, шкивы, поток воздуха и магнитное притяжение.</p>
+            <p class="mission-copy">Комбинируй импульс, рычаги, натяжение, упругость и явные управляющие связи между механизмами.</p>
           </div>
         </section>
         <section class="run-state" aria-label="Состояние симуляции"><span id="mode-label" class="mode-chip">СБОРКА</span><b id="run-timer">0.0с</b></section>
@@ -51,20 +54,24 @@
           <button class="palette-part" data-kind="domino" type="button"><span class="palette-icon extended-icon domino-icon">••</span><span class="part-copy"><b>Домино</b><small>Запускает последовательное падение</small></span><em data-count>×10</em></button>
           <button class="palette-part" data-kind="rubberball" type="button"><span class="palette-icon extended-icon rubberball-icon">╱</span><span class="part-copy"><b>Резиновый мяч</b><small>Почти не теряет энергию при отскоке</small></span><em data-count>×3</em></button>
 
-          <p class="inventory-section-label">Передачи и активные механизмы</p>
+          <p class="inventory-section-label">Передачи и энергия</p>
           <button class="palette-part" data-kind="sheave" type="button"><span class="palette-icon extended-icon sheave-icon"></span><span class="part-copy"><b>Шкив</b><small>Меняет направление натяжения верёвки</small></span><em data-count>×4</em></button>
           <button class="palette-part" data-kind="wall" type="button"><span class="palette-icon wall-icon"></span><span class="part-copy"><b>Отбойник</b><small>Сильно отражает столкнувшиеся тела</small></span><em data-count>×4</em></button>
           <button class="palette-part" data-kind="pulley" type="button"><span class="palette-icon pulley-icon"></span><span class="part-copy"><b>Вентилятор</b><small>Создаёт постоянный поток воздуха</small></span><em data-count>×3</em></button>
-          <button class="palette-part" data-kind="spring" type="button"><span class="palette-icon extended-icon spring-icon">≋</span><span class="part-copy"><b>Толкатель</b><small>Даёт сильный импульс по направлению стрелки</small></span><em data-count>×3</em></button>
+          <button class="palette-part" data-kind="spring" type="button"><span class="palette-icon extended-icon spring-icon">≋</span><span class="part-copy"><b>Пружина</b><small>Физически сжимается, хранит и отдаёт энергию</small></span><em data-count>×3</em></button>
           <button class="palette-part" data-kind="magnet" type="button"><span class="palette-icon extended-icon magnet-icon">∩</span><span class="part-copy"><b>Магнит</b><small>Притягивает металлические подвижные детали</small></span><em data-count>×2</em></button>
+
+          <p class="inventory-section-label">Управление механизмами</p>
+          <button class="palette-part" data-kind="button" type="button"><span class="palette-icon extended-icon button-icon"></span><span class="part-copy"><b>Нажимная кнопка</b><small>Срабатывает только от физического контакта</small></span><em data-count>×3</em></button>
+          <button class="palette-part" data-kind="latch" type="button"><span class="palette-icon extended-icon latch-icon"></span><span class="part-copy"><b>Защёлка</b><small>Удерживает тело до управляющего сигнала</small></span><em data-count>×3</em></button>
         </div>
-        <section class="connections-card"><p class="eyebrow">СОЕДИНЕНИЯ</p><button id="rope-button" class="connection-button" type="button">〰 Верёвка <span>×5</span></button><button id="hinge-button" class="connection-button" type="button">⊙ Установить ось <span>×5</span></button></section>
+        <section class="connections-card"><p class="eyebrow">СОЕДИНЕНИЯ</p><button id="rope-button" class="connection-button" type="button">〰 Верёвка <span>×5</span></button><button id="hinge-button" class="connection-button" type="button">⊙ Установить ось <span>×5</span></button><button id="signal-button" class="connection-button" type="button">⚡ Управляющая связь <span>×0</span></button></section>
         <section class="shortcut-card"><p class="eyebrow">КЛАВИАТУРА</p><dl><div><dt>R</dt><dd>верёвка</dd></div><div><dt>Q / E</dt><dd>поворот</dd></div><div><dt>Ctrl+D</dt><dd>копия</dd></div><div><dt>Space</dt><dd>пуск / стоп</dd></div></dl></section>
       </aside>
 
       <section class="workspace-panel" aria-label="Рабочее поле">
         <div class="workspace-header"><div><p class="eyebrow">МЕХАНИЧЕСКИЙ СТЕНД</p><strong>Сцена 1600 × 900</strong></div><div class="workspace-tools"><label class="toggle-control"><input id="snap-toggle" type="checkbox" checked /><span>Привязка 10 px</span></label><span class="zoom-hint">Ctrl + колесо — масштаб</span></div></div>
-        <div class="canvas-frame"><canvas id="game-canvas" aria-label="Игровое поле"></canvas><div class="objective-strip" aria-hidden="true"><span class="objective-start"><i></i>СТАРТ</span><span class="objective-line"></span><span class="objective-finish"><i></i>ПРИЁМНИК</span></div><div class="build-prompt"><strong>СОБЕРИ ЦЕПНУЮ РЕАКЦИЮ</strong><span>Для шкива: выбери первый конец верёвки → шкив → второй конец</span></div><div class="state-legend"><span><i class="legend-level"></i>объект уровня</span><span><i class="legend-fixed"></i>закреплено</span><span><i class="legend-free"></i>движется</span></div><div class="canvas-corner-label">PLANCK / BOX2D · 120 Hz</div></div>
+        <div class="canvas-frame"><canvas id="game-canvas" aria-label="Игровое поле"></canvas><div class="objective-strip" aria-hidden="true"><span class="objective-start"><i></i>СТАРТ</span><span class="objective-line"></span><span class="objective-finish"><i></i>ПРИЁМНИК</span></div><div class="build-prompt"><strong>СОБЕРИ ЦЕПНУЮ РЕАКЦИЮ</strong><span>Кнопка → управляющая связь → защёлка: сигнал возникает только после физического нажатия</span></div><div class="state-legend"><span><i class="legend-level"></i>объект уровня</span><span><i class="legend-fixed"></i>закреплено</span><span><i class="legend-free"></i>движется</span></div><div class="canvas-corner-label">PLANCK / BOX2D · 120 Hz</div></div>
       </section>
 
       <aside id="inspector" class="properties-panel side-panel" aria-label="Свойства выбранной детали">
