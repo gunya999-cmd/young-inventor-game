@@ -14,6 +14,7 @@ describe('machine model', () => {
     const snapshot = createInitialSnapshot();
     expect(snapshot.parts).toHaveLength(1);
     expect(snapshot.parts[0]).toMatchObject({ id: 'target-ball', kind: 'ball', fixed: false, locked: true });
+    expect(snapshot.signals).toEqual([]);
   });
 
   it('does not consume inventory for locked level objects', () => {
@@ -24,6 +25,8 @@ describe('machine model', () => {
     expect(remaining(snapshot, 'spring')).toBe(3);
     expect(remaining(snapshot, 'magnet')).toBe(2);
     expect(remaining(snapshot, 'sheave')).toBe(4);
+    expect(remaining(snapshot, 'button')).toBe(3);
+    expect(remaining(snapshot, 'latch')).toBe(3);
   });
 
   it('defines genuinely different physical roles for new parts', () => {
@@ -33,6 +36,8 @@ describe('machine model', () => {
     expect(PARTS.magnet.defaultFixed).toBe(true);
     expect(PARTS.sheave.defaultFixed).toBe(true);
     expect(PARTS.sheave.radius).toBeGreaterThan(30);
+    expect(PARTS.button.defaultFixed).toBe(true);
+    expect(PARTS.latch.defaultFixed).toBe(true);
   });
 
   it('hit-tests a rotated part in local coordinates', () => {
@@ -82,6 +87,20 @@ describe('snapshot history', () => {
     history.undo();
     const redone = history.redo();
     expect(redone?.ropes[0]).toMatchObject({ pulleyPartId: 'sheave-1', ratio: 1 });
+  });
+
+  it('preserves an explicit button-to-latch causal link through history', () => {
+    const initial = createInitialSnapshot();
+    const history = new SnapshotHistory(initial);
+    history.commit({
+      ...initial,
+      signals: [{ id: 'signal-7', sourcePartId: 'button-1', targetPartId: 'latch-1', action: 'release' }]
+    });
+    history.undo();
+    const redone = history.redo();
+    expect(redone?.signals?.[0]).toEqual({
+      id: 'signal-7', sourcePartId: 'button-1', targetPartId: 'latch-1', action: 'release'
+    });
   });
 
   it('clears redo after a new branch of edits', () => {
