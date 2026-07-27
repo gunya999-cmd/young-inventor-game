@@ -1,6 +1,6 @@
 import { createInitialSnapshot, type MachineSnapshot } from './model';
 
-const LEVER_START_ANGLE = 0.15;
+const LEVER_START_ANGLE = 0.12;
 const PLAYER_HINGE_LIMIT = Math.PI * 0.82;
 
 /**
@@ -10,7 +10,7 @@ const PLAYER_HINGE_LIMIT = Math.PI * 0.82;
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // The pivot is shifted toward the ball. The level's removable support holds the long arm until the switch fires.
+    // Speed lever: the pivot sits left of center, so the target ball rides the long, fast right arm.
     { id: 'solution-lever', kind: 'lever', x: 655, y: 700, angle: LEVER_START_ANGLE, fixed: false },
     // Catch the launched ball after it clears the barrier.
     { id: 'solution-catch', kind: 'plank', x: 995, y: 430, angle: 0.10, fixed: true },
@@ -20,7 +20,7 @@ export function createLevel07ReferenceSolution(): MachineSnapshot {
   snapshot.hinges.push({
     id: 'solution-hinge',
     partId: 'solution-lever',
-    localX: 50,
+    localX: -50,
     localY: 0,
     referenceAngle: LEVER_START_ANGLE,
     lowerAngle: -PLAYER_HINGE_LIMIT,
