@@ -7,8 +7,8 @@ import { createInitialSnapshot, type MachineSnapshot } from './model';
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    { id: 'solution-climb-a', kind: 'plank', x: 700, y: 435, angle: -0.18, fixed: true },
-    { id: 'solution-climb-b', kind: 'plank', x: 920, y: 395, angle: -0.18, fixed: true },
+    { id: 'solution-climb-a', kind: 'plank', x: 700, y: 420, angle: -0.18, fixed: true },
+    { id: 'solution-climb-b', kind: 'plank', x: 920, y: 378, angle: -0.18, fixed: true },
     { id: 'solution-exit', kind: 'plank', x: 1260, y: 555, angle: 0.50, fixed: true }
   );
   return snapshot;
