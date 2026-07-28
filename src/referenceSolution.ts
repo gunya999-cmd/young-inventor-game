@@ -7,9 +7,10 @@ import { createInitialSnapshot, type MachineSnapshot } from './model';
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    { id: 'solution-climb', kind: 'plank', x: 700, y: 410, angle: -0.22, fixed: true },
-    // Overlap the crest so the airborne ball lands on the top face instead of striking the left end cap.
-    { id: 'solution-bridge', kind: 'plank', x: 880, y: 382, angle: 0.05, fixed: true },
+    // Its right end meets the bridge at nearly the same top-surface height.
+    { id: 'solution-climb', kind: 'plank', x: 650, y: 410, angle: -0.22, fixed: true },
+    // Only a minimal end overlap remains, avoiding both a gap and a deep collider intersection.
+    { id: 'solution-bridge', kind: 'plank', x: 880, y: 390, angle: 0.05, fixed: true },
     { id: 'solution-exit', kind: 'plank', x: 1260, y: 555, angle: 0.50, fixed: true }
   );
   return snapshot;
