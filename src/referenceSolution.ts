@@ -7,11 +7,11 @@ import { createInitialSnapshot, type MachineSnapshot } from './model';
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // The first guide converts the approach momentum into enough height to clear the barrier.
-    { id: 'solution-climb', kind: 'plank', x: 715, y: 395, angle: -0.42, fixed: true },
-    // A shallow bridge carries the ball across the barrier and toward the right bench.
-    { id: 'solution-bridge', kind: 'plank', x: 930, y: 335, angle: 0.08, fixed: true },
-    // The final guide catches the ball from the right bench and feeds the receiver.
+    // A moderate climb converts approach momentum into the height needed for the barrier.
+    { id: 'solution-climb', kind: 'plank', x: 715, y: 420, angle: -0.25, fixed: true },
+    // The bridge catches the ball at the crest and carries it to the right side.
+    { id: 'solution-bridge', kind: 'plank', x: 930, y: 375, angle: 0.06, fixed: true },
+    // The final guide picks the ball up from the right bench and feeds the receiver.
     { id: 'solution-exit', kind: 'plank', x: 1260, y: 555, angle: 0.50, fixed: true }
   );
   return snapshot;
