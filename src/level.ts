@@ -42,10 +42,11 @@ export const LEVEL_07: LevelSpec = {
   gravity: 9.81,
   platforms: [
     { id: 'floor', x: 800, y: 815, width: 1500, height: 30, angle: 0 },
-    // A longer, steeper approach gives the target ball repeatable momentum before the build zone.
     { id: 'start-rail', x: 285, y: 295, width: 440, height: 26, angle: 0.16 },
     { id: 'left-bench', x: 610, y: 470, width: 250, height: 24, angle: 0.025 },
-    { id: 'barrier', x: 825, y: 585, width: 30, height: 400, angle: 0 },
+    // The 50 px floor gap remains smaller than the 56 px target ball diameter.
+    // Above it, the player needs a meaningful but achievable lift of roughly 50 px.
+    { id: 'barrier', x: 825, y: 585, width: 30, height: 330, angle: 0 },
     { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: 0.04 }
   ],
   receiver: {
@@ -61,7 +62,6 @@ export const LEVEL_07: LevelSpec = {
     { id: 'level-weight', kind: 'weight', x: 440, y: 350, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 440, y: 410, angle: 0, fixed: true, locked: true },
     { id: 'level-lever-lock', kind: 'latch', x: 535, y: 642, angle: 0, fixed: true, locked: true },
-    // Kept above the future lever sweep. Only the ball entering the shaft should touch it.
     { id: 'level-button', kind: 'button', x: 825, y: 505, angle: -Math.PI / 2, fixed: true, locked: true }
   ],
   initialSignals: [
