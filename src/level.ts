@@ -42,8 +42,9 @@ export const LEVEL_07: LevelSpec = {
   gravity: 9.81,
   platforms: [
     { id: 'floor', x: 800, y: 815, width: 1500, height: 30, angle: 0 },
-    { id: 'start-rail', x: 275, y: 305, width: 420, height: 26, angle: 0.09 },
-    { id: 'left-bench', x: 610, y: 470, width: 250, height: 24, angle: 0.015 },
+    // A longer, steeper approach gives the target ball repeatable momentum before the build zone.
+    { id: 'start-rail', x: 285, y: 295, width: 440, height: 26, angle: 0.16 },
+    { id: 'left-bench', x: 610, y: 470, width: 250, height: 24, angle: 0.025 },
     { id: 'barrier', x: 825, y: 585, width: 30, height: 400, angle: 0 },
     { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: 0.04 }
   ],
@@ -56,14 +57,12 @@ export const LEVEL_07: LevelSpec = {
     floorThickness: 22
   },
   initialParts: [
-    { id: 'target-ball', kind: 'ball', x: 170, y: 220, angle: 0, fixed: false, locked: true },
-    // Counterweight falls in its own clear shaft; it transfers energy through a player-routed pulley rope.
+    { id: 'target-ball', kind: 'ball', x: 135, y: 190, angle: 0, fixed: false, locked: true },
     { id: 'level-weight', kind: 'weight', x: 440, y: 350, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 440, y: 410, angle: 0, fixed: true, locked: true },
-    // Removable support sits directly under the raised lever assembly.
     { id: 'level-lever-lock', kind: 'latch', x: 535, y: 642, angle: 0, fixed: true, locked: true },
-    // High vertical limit switch: only the target ball reaches this zone during the intended approach.
-    { id: 'level-button', kind: 'button', x: 825, y: 480, angle: -Math.PI / 2, fixed: true, locked: true }
+    // Kept above the future lever sweep. Only the ball entering the shaft should touch it.
+    { id: 'level-button', kind: 'button', x: 825, y: 505, angle: -Math.PI / 2, fixed: true, locked: true }
   ],
   initialSignals: [
     { id: 'level-signal-weight', sourcePartId: 'level-button', targetPartId: 'level-latch', action: 'release' },
