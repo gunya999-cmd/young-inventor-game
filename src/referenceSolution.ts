@@ -7,11 +7,11 @@ import { createInitialSnapshot, type MachineSnapshot } from './model';
 export function createLevel07ReferenceSolution(): MachineSnapshot {
   const snapshot = createInitialSnapshot();
   snapshot.parts.push(
-    // The stronger approach can now climb this single steeper segment.
-    { id: 'solution-climb', kind: 'plank', x: 720, y: 405, angle: -0.32, fixed: true },
-    // Immediately after the crest, this shallow descent carries the ball across the barrier.
-    { id: 'solution-bridge', kind: 'plank', x: 930, y: 370, angle: 0.08, fixed: true },
-    // The final guide catches the ball from the right bench and feeds the receiver.
+    // Moderate climb: high enough for the barrier, shallow enough to preserve contact.
+    { id: 'solution-climb', kind: 'plank', x: 700, y: 410, angle: -0.22, fixed: true },
+    // Nearly continuous crest that turns into a gentle downhill run across the barrier.
+    { id: 'solution-bridge', kind: 'plank', x: 920, y: 382, angle: 0.05, fixed: true },
+    // Final descent from the right bench into the receiver.
     { id: 'solution-exit', kind: 'plank', x: 1260, y: 555, angle: 0.50, fixed: true }
   );
   return snapshot;
