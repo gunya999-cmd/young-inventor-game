@@ -19,7 +19,6 @@ describe('level 07 · impulse and moment', () => {
     const startX = engine.partTransform('target-ball')!.position.x;
     run(engine, 150);
     const endX = engine.partTransform('target-ball')!.position.x;
-    // This threshold is deliberately about direction and meaningful motion, not an arbitrary target speed.
     expect(endX).toBeGreaterThan(startX + 30);
   });
 
@@ -32,13 +31,15 @@ describe('level 07 · impulse and moment', () => {
     expect(physicalGap).toBeLessThan((PARTS.ball.radius ?? 28) * 2);
   });
 
-  it('requires a meaningful lift above the left bench to clear the barrier', () => {
+  it('requires a meaningful but playable lift above the left bench', () => {
     const barrier = ACTIVE_LEVEL.platforms.find((platform) => platform.id === 'barrier')!;
     const bench = ACTIVE_LEVEL.platforms.find((platform) => platform.id === 'left-bench')!;
     const barrierTop = barrier.y - barrier.height / 2;
     const ballRadius = PARTS.ball.radius ?? 28;
     const requiredCenterHeight = barrierTop - ballRadius;
-    expect(bench.y - requiredCenterHeight).toBeGreaterThan(80);
+    const requiredLift = bench.y - requiredCenterHeight;
+    expect(requiredLift).toBeGreaterThan(40);
+    expect(requiredLift).toBeLessThan(70);
   });
 
   it('keeps the supplied weight on its latch before the control button is activated', () => {
