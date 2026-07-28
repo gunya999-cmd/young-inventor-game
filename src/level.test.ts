@@ -38,8 +38,8 @@ describe('level 07 · impulse and moment', () => {
     const ballRadius = PARTS.ball.radius ?? 28;
     const requiredCenterHeight = barrierTop - ballRadius;
     const requiredLift = bench.y - requiredCenterHeight;
-    expect(requiredLift).toBeGreaterThan(40);
-    expect(requiredLift).toBeLessThan(70);
+    expect(requiredLift).toBeGreaterThan(55);
+    expect(requiredLift).toBeLessThan(75);
   });
 
   it('keeps the supplied weight on its latch before the control button is activated', () => {
