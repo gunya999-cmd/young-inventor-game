@@ -42,8 +42,8 @@ export const LEVEL_07: LevelSpec = {
   gravity: 9.81,
   platforms: [
     { id: 'floor', x: 800, y: 815, width: 1500, height: 30, angle: 0 },
-    { id: 'start-rail', x: 285, y: 295, width: 440, height: 26, angle: 0.16 },
-    { id: 'left-bench', x: 610, y: 465, width: 250, height: 24, angle: 0.025 },
+    { id: 'start-rail', x: 285, y: 295, width: 440, height: 26, angle: 0.24 },
+    { id: 'left-bench', x: 610, y: 465, width: 250, height: 24, angle: 0.055 },
     { id: 'barrier', x: 825, y: 585, width: 30, height: 320, angle: 0 },
     { id: 'right-bench', x: 1080, y: 510, width: 300, height: 24, angle: 0.04 }
   ],
@@ -56,11 +56,10 @@ export const LEVEL_07: LevelSpec = {
     floorThickness: 22
   },
   initialParts: [
-    { id: 'target-ball', kind: 'ball', x: 135, y: 190, angle: 0, fixed: false, locked: true },
+    { id: 'target-ball', kind: 'ball', x: 115, y: 170, angle: 0, fixed: false, locked: true },
     { id: 'level-weight', kind: 'weight', x: 440, y: 350, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 440, y: 410, angle: 0, fixed: true, locked: true },
     { id: 'level-lever-lock', kind: 'latch', x: 535, y: 642, angle: 0, fixed: true, locked: true },
-    // Mounted low in the shaft so its solid housing cannot obstruct the crossing path.
     { id: 'level-button', kind: 'button', x: 825, y: 610, angle: -Math.PI / 2, fixed: true, locked: true }
   ],
   initialSignals: [
