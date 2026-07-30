@@ -1,12 +1,25 @@
 import { GameApp } from './app';
-import { addRope, movePart, removePart, rotatePart, upsertHinge } from './editorState';
+import {
+  addRope,
+  clearPlayerParts,
+  decodeSnapshot,
+  duplicatePart,
+  encodeSnapshot,
+  movePart,
+  removePart,
+  rotatePart,
+  togglePartFixed,
+  upsertHinge
+} from './editorState';
 import { endpointWorld } from './physics';
 import {
   MAX_HINGES,
   MAX_ROPES,
   PARTS,
+  SnapshotHistory,
   clampLocalPoint,
   containsPoint,
+  remaining,
   topPartAt,
   worldToLocal,
   type Endpoint,
@@ -15,6 +28,7 @@ import {
   type RopeState
 } from './model';
 
+const SAVE_KEY = 'young-inventor:desktop:v1';
 type Internals = Record<string, any>;
 
 function normalizeDegrees(value: number): number {
@@ -110,7 +124,7 @@ export function installEditorUiIntegration(): void {
       return;
     }
     const local = clampLocalPoint(part, worldToLocal(part, point));
-    const next = upsertHinge(this.snapshot, {
+    this.snapshot = upsertHinge(this.snapshot, {
       id: existing?.id ?? `hinge-${this.nextId++}`,
       partId: part.id,
       localX: local.x,
@@ -119,7 +133,6 @@ export function installEditorUiIntegration(): void {
       lowerAngle: -Math.PI * 0.82,
       upperAngle: Math.PI * 0.82
     });
-    this.snapshot = next;
     this.hingeTool = false;
     this.commit(`Ось установлена ${Math.round(local.x)} px от центра.`);
   };
@@ -196,9 +209,34 @@ export function installEditorUiIntegration(): void {
     this.ropePulleyId = null;
     this.renderer.pulleyPreviewId = null;
     this.ropeTool = false;
-    this.commit(pulleyPart
-      ? 'Верёвка проведена через шкив.'
-      : 'Верёвка соединяет выбранные точки.');
+    this.commit(pulleyPart ? 'Верёвка проведена через шкив.' : 'Верёвка соединяет выбранные точки.');
+  };
+
+  prototype.duplicateSelected = function duplicateSelected(this: Internals): void {
+    if (this.mode !== 'build') return;
+    const source = this.selectedPart() as PartState | null;
+    if (!source || source.locked || remaining(this.snapshot, source.kind) <= 0) return;
+    const id = `${source.kind}-${this.nextId++}`;
+    const next = duplicatePart(this.snapshot, source.id, id);
+    if (next.parts.length === this.snapshot.parts.length) return;
+    this.snapshot = next;
+    this.selectedId = id;
+    this.commit(`${PARTS[source.kind].label} продублирован без соединений.`);
+  };
+
+  prototype.toggleFixed = function toggleFixed(this: Internals): void {
+    if (this.mode !== 'build') return;
+    const part = this.selectedPart() as PartState | null;
+    if (!part || part.locked) return;
+    if (this.snapshot.hinges.some((hinge: { partId: string }) => hinge.partId === part.id)) {
+      this.setStatus('Деталь закреплена осью. Сначала удали ось.');
+      return;
+    }
+    const next = togglePartFixed(this.snapshot, part.id);
+    if (JSON.stringify(next) === JSON.stringify(this.snapshot)) return;
+    this.snapshot = next;
+    const updated = this.selectedPart() as PartState;
+    this.commit(updated.fixed ? 'Деталь закреплена неподвижно.' : 'Крепление снято: деталь станет подвижной.');
   };
 
   prototype.deleteSelected = function deleteSelected(this: Internals): void {
@@ -210,5 +248,43 @@ export function installEditorUiIntegration(): void {
     this.snapshot = next;
     this.selectedId = null;
     this.commit('Деталь и все её соединения удалены.');
+  };
+
+  prototype.clearAddedParts = function clearAddedParts(this: Internals): void {
+    if (this.mode !== 'build') return;
+    const next = clearPlayerParts(this.snapshot);
+    if (JSON.stringify(next) === JSON.stringify(this.snapshot)) return;
+    this.snapshot = next;
+    this.selectedId = null;
+    this.cancelTools();
+    this.commit('Все добавленные детали и соединения убраны.');
+  };
+
+  prototype.save = function save(this: Internals): void {
+    if (this.mode !== 'build') return;
+    localStorage.setItem(SAVE_KEY, encodeSnapshot(this.snapshot));
+    this.setStatus('Конструкция сохранена в браузере.');
+    this.updateUi();
+  };
+
+  prototype.load = function load(this: Internals): void {
+    if (this.mode !== 'build') return;
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const loaded = decodeSnapshot(raw);
+    if (!loaded) {
+      localStorage.removeItem(SAVE_KEY);
+      this.setStatus('Сохранение повреждено и удалено.');
+      this.updateUi();
+      return;
+    }
+    this.snapshot = loaded;
+    this.runtimeSnapshot = decodeSnapshot(raw) ?? loaded;
+    this.history = new SnapshotHistory(this.snapshot);
+    this.reseedNextId();
+    this.selectedId = null;
+    this.cancelTools();
+    this.setStatus('Сохранённая конструкция загружена и проверена.');
+    this.updateUi();
   };
 }
