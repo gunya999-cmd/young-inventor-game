@@ -7,6 +7,7 @@ import { installSpringSystem } from './springSystem';
 import { installEventSystem } from './eventSystem';
 import { installFinalVisuals } from './finalVisuals';
 import { installLevelVisuals } from './levelVisuals';
+import { installCompletionGuard } from './gameFlowGuard';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -31,6 +32,7 @@ try {
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   new GameApp(canvas);
+  installCompletionGuard();
 } catch (error) {
   showFatalError(error);
 }
