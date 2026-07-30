@@ -8,6 +8,7 @@ import { installEventSystem } from './eventSystem';
 import { installFinalVisuals } from './finalVisuals';
 import { installLevelVisuals } from './levelVisuals';
 import { installCompletionGuard } from './gameFlowGuard';
+import { installEditorUiIntegration } from './editorUiIntegration';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -29,6 +30,7 @@ try {
   installEventSystem();
   installFinalVisuals();
   installLevelVisuals();
+  installEditorUiIntegration();
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   new GameApp(canvas);
