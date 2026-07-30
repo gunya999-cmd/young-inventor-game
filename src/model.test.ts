@@ -11,14 +11,16 @@ import {
 import { ACTIVE_LEVEL } from './level';
 
 describe('machine model', () => {
-  it('starts from the authored level 07 state with four immutable level objects', () => {
+  it('starts from the authored level 07 state with five immutable level objects', () => {
     const snapshot = createInitialSnapshot();
-    expect(snapshot.parts).toHaveLength(4);
+    expect(snapshot.parts).toHaveLength(5);
     expect(snapshot.parts.find((part) => part.id === 'target-ball')).toMatchObject({ kind: 'ball', fixed: false, locked: true });
     expect(snapshot.parts.find((part) => part.id === 'level-weight')).toMatchObject({ kind: 'weight', fixed: false, locked: true });
     expect(snapshot.parts.find((part) => part.id === 'level-button')).toMatchObject({ kind: 'button', fixed: true, locked: true });
     expect(snapshot.parts.find((part) => part.id === 'level-latch')).toMatchObject({ kind: 'latch', fixed: true, locked: true });
+    expect(snapshot.parts.find((part) => part.id === 'level-lever-lock')).toMatchObject({ kind: 'latch', fixed: true, locked: true });
     expect(snapshot.signals).toEqual(ACTIVE_LEVEL.initialSignals);
+    expect(snapshot.signals).toHaveLength(2);
   });
 
   it('offers only the focused mechanisms intended for this level', () => {
@@ -42,6 +44,7 @@ describe('machine model', () => {
     expect(PARTS.spring.defaultFixed).toBe(true);
     expect(PARTS.sheave.defaultFixed).toBe(true);
     expect(PARTS.sheave.radius).toBeGreaterThan(30);
+    expect(PARTS.weight.density).toBeGreaterThan(PARTS.lever.density * 8);
     for (const spec of Object.values(PARTS)) expect(spec.restitution).toBeLessThanOrEqual(1);
   });
 

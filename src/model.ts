@@ -81,9 +81,11 @@ export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
   ball: { kind:'ball',label:'Стальной шар',width:56,height:56,radius:28,density:1.2,friction:.18,restitution:.28,defaultFixed:false,canHinge:false,color:'#596773' },
   plank: { kind:'plank',label:'Направляющая',width:235,height:28,density:.62,friction:.78,restitution:.03,defaultFixed:true,canHinge:true,color:'#a96531' },
   wall: { kind:'wall',label:'Резиновый отбойник',width:155,height:34,density:3.2,friction:.5,restitution:.72,defaultFixed:true,canHinge:false,color:'#ca3f4d' },
-  lever: { kind:'lever',label:'Балансир',width:300,height:32,density:.72,friction:.64,restitution:.04,defaultFixed:false,canHinge:true,color:'#bd7436' },
+  // Visually this is a timber beam: keep its inertia low relative to the steel counterweight.
+  lever: { kind:'lever',label:'Балансир',width:300,height:32,density:.35,friction:.64,restitution:.04,defaultFixed:false,canHinge:true,color:'#bd7436' },
   pulley: { kind:'pulley',label:'Вентилятор',width:92,height:92,radius:46,density:1.6,friction:.3,restitution:.02,defaultFixed:true,canHinge:false,color:'#4b5964' },
-  weight: { kind:'weight',label:'Грузовой ящик',width:82,height:72,density:2.8,friction:.7,restitution:.02,defaultFixed:false,canHinge:false,color:'#6f5135' },
+  // The crate acts as an intentional counterweight, not as a light empty box.
+  weight: { kind:'weight',label:'Тяжёлый противовес',width:82,height:72,density:4.0,friction:.7,restitution:.02,defaultFixed:false,canHinge:false,color:'#6f5135' },
   domino: { kind:'domino',label:'Домино',width:34,height:102,density:.56,friction:.86,restitution:.035,defaultFixed:false,canHinge:false,color:'#e7d8b8' },
   rubberball: { kind:'rubberball',label:'Резиновый мяч',width:62,height:62,radius:31,density:.74,friction:.24,restitution:.92,defaultFixed:false,canHinge:false,color:'#39aee8' },
   spring: { kind:'spring',label:'Пружинный толкатель',width:126,height:54,density:3.4,friction:.62,restitution:.18,defaultFixed:true,canHinge:false,color:'#efb43f' },
