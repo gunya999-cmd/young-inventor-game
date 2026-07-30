@@ -1,13 +1,17 @@
-import { createInitialSnapshot, cloneSnapshot, SnapshotHistory, type MachineSnapshot } from './model';
+import { createInitialSnapshot, cloneSnapshot, SnapshotHistory, type MachineSnapshot, type Point } from './model';
 import { createLevel07ReferenceSolution } from './referenceSolution';
 
 type Internals = Record<string, any>;
 
 export interface BrowserSmokeBridge {
   loadEditorFixture(): void;
+  loadPointerFixture(): void;
   loadReferenceSolution(): void;
   snapshot(): MachineSnapshot;
   mode(): string;
+  screenPoint(point: Point): Point;
+  partCenter(partId: string): Point | null;
+  rotationHandle(partId: string): Point | null;
 }
 
 declare global {
@@ -28,6 +32,7 @@ function installSnapshot(app: Internals, snapshot: MachineSnapshot, selectedId: 
   app.accumulator = 0;
   app.selectedId = selectedId;
   app.cancelTools();
+  app.renderer.resetCamera();
   document.querySelector<HTMLElement>('#result-card')?.classList.remove('visible');
   app.updateUi();
 }
@@ -43,6 +48,14 @@ export function installBrowserSmokeBridge(app: unknown): void {
       });
       installSnapshot(internals, snapshot, 'e2e-plank');
     },
+    loadPointerFixture(): void {
+      const snapshot = createInitialSnapshot();
+      snapshot.parts.push(
+        { id: 'pointer-plank-a', kind: 'plank', x: 590, y: 430, angle: 0, fixed: true },
+        { id: 'pointer-plank-b', kind: 'plank', x: 930, y: 520, angle: 0, fixed: true }
+      );
+      installSnapshot(internals, snapshot, null);
+    },
     loadReferenceSolution(): void {
       installSnapshot(internals, createLevel07ReferenceSolution(), null);
     },
@@ -51,6 +64,17 @@ export function installBrowserSmokeBridge(app: unknown): void {
     },
     mode(): string {
       return String(internals.mode);
+    },
+    screenPoint(point: Point): Point {
+      return internals.renderer.worldToScreen(point);
+    },
+    partCenter(partId: string): Point | null {
+      const part = internals.snapshot.parts.find((candidate: { id: string }) => candidate.id === partId);
+      return part ? internals.renderer.worldToScreen({ x: part.x, y: part.y }) : null;
+    },
+    rotationHandle(partId: string): Point | null {
+      const part = internals.snapshot.parts.find((candidate: { id: string }) => candidate.id === partId);
+      return part ? internals.renderer.worldToScreen(internals.renderer.rotationHandle(part)) : null;
     }
   };
 }
