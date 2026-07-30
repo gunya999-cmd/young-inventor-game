@@ -9,6 +9,7 @@ import { installFinalVisuals } from './finalVisuals';
 import { installLevelVisuals } from './levelVisuals';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
+import { installBrowserSmokeBridge } from './e2eBridge';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -33,8 +34,9 @@ try {
   installEditorUiIntegration();
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
-  new GameApp(canvas);
+  const app = new GameApp(canvas);
   installCompletionGuard();
+  installBrowserSmokeBridge(app);
 } catch (error) {
   showFatalError(error);
 }
