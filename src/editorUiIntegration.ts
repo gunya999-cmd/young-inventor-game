@@ -1,6 +1,19 @@
 import { GameApp } from './app';
-import { movePart, removePart, rotatePart, upsertHinge } from './editorState';
-import { PARTS, clampLocalPoint, containsPoint, worldToLocal, type PartState, type Point } from './model';
+import { addRope, movePart, removePart, rotatePart, upsertHinge } from './editorState';
+import { endpointWorld } from './physics';
+import {
+  MAX_HINGES,
+  MAX_ROPES,
+  PARTS,
+  clampLocalPoint,
+  containsPoint,
+  topPartAt,
+  worldToLocal,
+  type Endpoint,
+  type PartState,
+  type Point,
+  type RopeState
+} from './model';
 
 type Internals = Record<string, any>;
 
@@ -9,6 +22,10 @@ function normalizeDegrees(value: number): number {
   if (result > 180) result -= 360;
   if (result < -180) result += 360;
   return result;
+}
+
+function distance(a: Point, b: Point): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
 export function installEditorUiIntegration(): void {
@@ -88,7 +105,7 @@ export function installEditorUiIntegration(): void {
       return;
     }
     const existing = this.snapshot.hinges.find((hinge: { partId: string }) => hinge.partId === part.id);
-    if (!existing && this.snapshot.hinges.length >= 2) {
+    if (!existing && this.snapshot.hinges.length >= MAX_HINGES) {
       this.setStatus('Все доступные оси уже использованы.');
       return;
     }
@@ -105,6 +122,83 @@ export function installEditorUiIntegration(): void {
     this.snapshot = next;
     this.hingeTool = false;
     this.commit(`Ось установлена ${Math.round(local.x)} px от центра.`);
+  };
+
+  prototype.chooseRopePoint = function chooseRopePoint(this: Internals, point: Point): void {
+    const part = topPartAt(this.snapshot, point);
+    if (!part || part.kind === 'wall') {
+      this.setStatus('Верёвка: выбери точку на детали или закреплённом элементе.');
+      return;
+    }
+
+    if (part.kind === 'sheave') {
+      if (!this.ropeStart) {
+        this.setStatus('Сначала выбери первый конец верёвки, затем шкив.');
+        return;
+      }
+      this.ropePulleyId = part.id;
+      this.renderer.pulleyPreviewId = part.id;
+      this.setStatus('Шкив включён в трассу. Теперь выбери вторую деталь.');
+      this.updateUi();
+      return;
+    }
+
+    const local = clampLocalPoint(part, worldToLocal(part, point));
+    const endpoint: Endpoint = { partId: part.id, localX: local.x, localY: local.y };
+    if (!this.ropeStart) {
+      this.ropeStart = endpoint;
+      this.ropePulleyId = null;
+      this.renderer.pulleyPreviewId = null;
+      this.setStatus('Начало верёвки выбрано. Укажи второй конец или сначала шкив.');
+      this.updateUi();
+      return;
+    }
+    if (this.ropeStart.partId === endpoint.partId) {
+      this.setStatus('Концы верёвки должны находиться на разных деталях.');
+      return;
+    }
+    if (this.snapshot.ropes.length >= MAX_ROPES) {
+      this.setStatus('Все доступные верёвки уже использованы.');
+      return;
+    }
+
+    const startPart = this.snapshot.parts.find((candidate: PartState) => candidate.id === this.ropeStart.partId);
+    if (!startPart) {
+      this.cancelTools();
+      return;
+    }
+    const startWorld = endpointWorld(startPart, this.ropeStart);
+    const endWorld = endpointWorld(part, endpoint);
+    const pulleyPart = this.ropePulleyId
+      ? this.snapshot.parts.find((candidate: PartState) => candidate.id === this.ropePulleyId && candidate.kind === 'sheave')
+      : undefined;
+
+    const rope: RopeState = {
+      id: `rope-${this.nextId++}`,
+      a: { ...this.ropeStart },
+      b: endpoint,
+      maxLength: pulleyPart
+        ? Math.max(30, (distance(startWorld, pulleyPart) + distance(pulleyPart, endWorld)) * 1.01)
+        : Math.max(30, distance(startWorld, endWorld) * 1.035)
+    };
+    if (pulleyPart) {
+      rope.pulleyPartId = pulleyPart.id;
+      rope.ratio = 1;
+    }
+
+    const next = addRope(this.snapshot, rope);
+    if (next.ropes.length === this.snapshot.ropes.length) {
+      this.setStatus('Верёвку не удалось создать: проверь выбранные детали и шкив.');
+      return;
+    }
+    this.snapshot = next;
+    this.ropeStart = null;
+    this.ropePulleyId = null;
+    this.renderer.pulleyPreviewId = null;
+    this.ropeTool = false;
+    this.commit(pulleyPart
+      ? 'Верёвка проведена через шкив.'
+      : 'Верёвка соединяет выбранные точки.');
   };
 
   prototype.deleteSelected = function deleteSelected(this: Internals): void {
