@@ -47,6 +47,7 @@ export function installDeviceSettingsUi(appInstance: unknown): void {
   const label = panel.querySelector<HTMLElement>('#device-power-label')!;
   const output = panel.querySelector<HTMLOutputElement>('#device-power-value')!;
   let visiblePartId: string | null = null;
+  let lastPower = -1;
 
   const selectedPart = (): PartState | null => {
     if (!app.selectedId) return null;
@@ -56,21 +57,27 @@ export function installDeviceSettingsUi(appInstance: unknown): void {
   const refresh = (): void => {
     const part = selectedPart();
     const visible = app.mode === 'build' && Boolean(part && !part.locked && POWERED_PART_KINDS.has(part.kind));
-    panel.hidden = !visible;
+    if (panel.hidden === visible) panel.hidden = !visible;
     if (!visible || !part) {
       visiblePartId = null;
+      lastPower = -1;
       return;
     }
-    label.textContent = LABELS[part.kind] ?? `${PARTS[part.kind].label}: мощность`;
-    if (visiblePartId !== part.id || document.activeElement !== input) input.value = String(devicePower(part));
-    output.value = `${Math.round(devicePower(part) * 100)}%`;
+    const power = devicePower(part);
+    const nextLabel = LABELS[part.kind] ?? `${PARTS[part.kind].label}: мощность`;
+    if (label.textContent !== nextLabel) label.textContent = nextLabel;
+    if (visiblePartId !== part.id || (document.activeElement !== input && power !== lastPower)) input.value = String(power);
+    const nextOutput = `${Math.round(power * 100)}%`;
+    if (output.value !== nextOutput) output.value = nextOutput;
     visiblePartId = part.id;
+    lastPower = power;
   };
 
   input.addEventListener('input', () => {
     const part = selectedPart();
     if (!part || part.locked || !POWERED_PART_KINDS.has(part.kind)) return;
     part.power = clampDevicePower(Number(input.value));
+    lastPower = part.power;
     output.value = `${Math.round(part.power * 100)}%`;
   });
 
@@ -83,8 +90,6 @@ export function installDeviceSettingsUi(appInstance: unknown): void {
     app.updateUi();
   });
 
-  const observer = new MutationObserver(refresh);
-  observer.observe(inspector, { subtree: true, childList: true, characterData: true, attributes: true });
   window.setInterval(refresh, 180);
   refresh();
 }
