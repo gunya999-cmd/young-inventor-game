@@ -25,8 +25,17 @@ function dampingFor(part: PartState): { linear: number; angular: number } {
   }
   return {
     linear: PHYSICS_CONFIG.defaultLinearDamping,
-    angular: part.kind === 'domino' ? 0.05 : PHYSICS_CONFIG.defaultAngularDamping
+    angular: part.kind === 'domino' ? 0.07 : PHYSICS_CONFIG.defaultAngularDamping
   };
+}
+
+function needsContinuousCollision(part: PartState): boolean {
+  return !part.fixed && (
+    part.kind === 'ball' ||
+    part.kind === 'rubberball' ||
+    part.kind === 'domino' ||
+    part.kind === 'weight'
+  );
 }
 
 export function createStandardPartBody(world: World, part: PartState): Body {
@@ -39,7 +48,9 @@ export function createStandardPartBody(world: World, part: PartState): Body {
     angle: -part.angle,
     linearDamping: damping.linear,
     angularDamping: damping.angular,
-    bullet: part.kind === 'ball' || part.kind === 'rubberball',
+    bullet: needsContinuousCollision(part),
+    allowSleep: true,
+    awake: !part.fixed,
     userData: { partId: part.id, kind: part.kind } satisfies PhysicsBodyData
   });
 
