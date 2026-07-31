@@ -18,6 +18,12 @@ function dampingFor(part: PartState): { linear: number; angular: number } {
       angular: PHYSICS_CONFIG.rollingAngularDamping
     };
   }
+  if (part.kind === 'lever') {
+    return {
+      linear: PHYSICS_CONFIG.leverLinearDamping,
+      angular: PHYSICS_CONFIG.leverAngularDamping
+    };
+  }
   if (part.kind === 'weight') {
     return {
       linear: PHYSICS_CONFIG.heavyLinearDamping,
