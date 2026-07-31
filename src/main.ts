@@ -12,6 +12,7 @@ import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
 import { installSignalEditor } from './signalEditor';
 import { installDeviceSettingsUi } from './deviceSettingsUi';
+import { installLevelEditor } from './levelEditor';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -39,6 +40,7 @@ try {
   const app = new GameApp(canvas);
   installSignalEditor(app);
   installDeviceSettingsUi(app);
+  installLevelEditor(app);
   installCompletionGuard();
   installBrowserSmokeBridge(app);
 } catch (error) {
