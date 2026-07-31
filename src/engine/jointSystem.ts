@@ -2,6 +2,18 @@ import { PulleyJoint, RevoluteJoint, RopeJoint, Vec2, type Body, type World } fr
 import { PARTS, type MachineSnapshot, type PartState } from '../model';
 import { localPointToPhysics, pointDistance, pxToMeters, radialContact } from './coordinates';
 
+const MIN_ROPE_LENGTH_METERS = pxToMeters(24);
+const ROPE_STARTUP_SLACK_METERS = pxToMeters(1.5);
+const MIN_PULLEY_SEGMENT_METERS = pxToMeters(8);
+
+function finite(value: number, fallback: number): number {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function safeRatio(value: number | undefined): number {
+  return Math.max(0.25, Math.min(4, finite(value ?? 1, 1)));
+}
+
 export function createHinges(world: World, snapshot: MachineSnapshot, bodies: Map<string, Body>): void {
   for (const hinge of snapshot.hinges) {
     const part = snapshot.parts.find((candidate) => candidate.id === hinge.partId);
@@ -11,15 +23,20 @@ export function createHinges(world: World, snapshot: MachineSnapshot, bodies: Ma
     const localAnchor = localPointToPhysics({ x: hinge.localX, y: hinge.localY });
     const worldAnchor = body.getWorldPoint(Vec2(localAnchor.x, localAnchor.y));
     const pin = world.createBody({ type: 'static', position: worldAnchor });
+    const hasLimits = hinge.lowerAngle !== undefined && hinge.upperAngle !== undefined;
+    // Editor angles use clockwise-positive screen coordinates; Planck uses counter-clockwise world coordinates.
+    const lowerAngle = hasLimits ? -finite(hinge.upperAngle, 0) : 0;
+    const upperAngle = hasLimits ? -finite(hinge.lowerAngle, 0) : 0;
+
     world.createJoint(new RevoluteJoint({
       bodyA: pin,
       bodyB: body,
       localAnchorA: Vec2(0, 0),
       localAnchorB: Vec2(localAnchor.x, localAnchor.y),
-      referenceAngle: -hinge.referenceAngle,
-      enableLimit: hinge.lowerAngle !== undefined && hinge.upperAngle !== undefined,
-      lowerAngle: hinge.lowerAngle,
-      upperAngle: hinge.upperAngle,
+      referenceAngle: -finite(hinge.referenceAngle, 0),
+      enableLimit: hasLimits,
+      lowerAngle: Math.min(lowerAngle, upperAngle),
+      upperAngle: Math.max(lowerAngle, upperAngle),
       collideConnected: false
     }));
   }
@@ -46,8 +63,8 @@ export function createRopes(world: World, snapshot: MachineSnapshot, bodies: Map
         const radius = pxToMeters((PARTS.sheave.radius ?? 42) * 0.86);
         const groundA = radialContact(center, worldAnchorA, radius);
         const groundB = radialContact(center, worldAnchorB, radius);
-        const lengthA = Math.max(0.08, pointDistance(groundA, worldAnchorA));
-        const lengthB = Math.max(0.08, pointDistance(groundB, worldAnchorB));
+        const lengthA = Math.max(MIN_PULLEY_SEGMENT_METERS, pointDistance(groundA, worldAnchorA));
+        const lengthB = Math.max(MIN_PULLEY_SEGMENT_METERS, pointDistance(groundB, worldAnchorB));
         world.createJoint(new PulleyJoint({
           bodyA,
           bodyB,
@@ -57,20 +74,24 @@ export function createRopes(world: World, snapshot: MachineSnapshot, bodies: Map
           localAnchorB: Vec2(anchorB.x, anchorB.y),
           lengthA,
           lengthB,
-          ratio: rope.ratio ?? 1,
-          collideConnected: true
+          ratio: safeRatio(rope.ratio),
+          collideConnected: false
         }));
         continue;
       }
     }
 
+    const currentLength = pointDistance(bodyA.getWorldPoint(anchorA), bodyB.getWorldPoint(anchorB));
+    const requestedLength = pxToMeters(Math.max(24, finite(rope.maxLength, 24)));
+    // Never start a simulation with an already-overstretched rope: the single-frame correction creates violent impulses.
+    const maxLength = Math.max(MIN_ROPE_LENGTH_METERS, requestedLength, currentLength + ROPE_STARTUP_SLACK_METERS);
     world.createJoint(new RopeJoint({
       bodyA,
       bodyB,
       localAnchorA: Vec2(anchorA.x, anchorA.y),
       localAnchorB: Vec2(anchorB.x, anchorB.y),
-      maxLength: pxToMeters(Math.max(24, rope.maxLength)),
-      collideConnected: true
+      maxLength,
+      collideConnected: false
     }));
   }
 }
