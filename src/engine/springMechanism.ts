@@ -25,22 +25,14 @@ export function createSpringMechanism(world: World, part: PartState): SpringMech
     userData: { partId: part.id, kind: 'spring-base' } satisfies PhysicsBodyData
   });
   base.createFixture({
-    shape: Box(
-      pxToMeters(13),
-      pxToMeters(spec.height * 0.43),
-      Vec2(pxToMeters(-spec.width / 2 + 15), 0),
-      0
-    ),
+    shape: Box(pxToMeters(13), pxToMeters(spec.height * 0.43), Vec2(pxToMeters(-spec.width / 2 + 15), 0), 0),
     friction: 0.72,
     restitution: 0.02,
     userData: { partId: part.id, kind: 'spring-base' } satisfies PhysicsBodyData
   });
 
   const restOffset = pxToMeters(spec.width / 2 - config.plungerHalfWidthPx - 3);
-  const plungerPosition = Vec2(
-    basePosition.x + direction.x * restOffset,
-    basePosition.y + direction.y * restOffset
-  );
+  const plungerPosition = Vec2(basePosition.x + direction.x * restOffset, basePosition.y + direction.y * restOffset);
   const plunger = world.createBody({
     type: 'dynamic',
     position: plungerPosition,
@@ -53,10 +45,7 @@ export function createSpringMechanism(world: World, part: PartState): SpringMech
     userData: { partId: part.id, kind: 'spring-plunger' } satisfies PhysicsBodyData
   });
   plunger.createFixture({
-    shape: Box(
-      pxToMeters(config.plungerHalfWidthPx),
-      pxToMeters(config.plungerHalfHeightPx)
-    ),
+    shape: Box(pxToMeters(config.plungerHalfWidthPx), pxToMeters(config.plungerHalfHeightPx)),
     density: 3.1,
     friction: 0.68,
     restitution: 0.03,
@@ -74,11 +63,12 @@ export function createSpringMechanism(world: World, part: PartState): SpringMech
   return { part, base, plunger, joint };
 }
 
-export function applySpringForce(mechanism: SpringMechanism): void {
+export function applySpringForce(mechanism: SpringMechanism, enabled = true): void {
   const config = PHYSICS_CONFIG.spring;
   const translation = mechanism.joint.getJointTranslation();
   const speed = mechanism.joint.getJointSpeed();
-  const springForce = -config.stiffness * translation;
+  const stiffness = enabled ? config.stiffness : 0;
+  const springForce = -stiffness * translation;
   const dampingForce = -config.damping * speed;
   const magnitude = Math.max(-config.maxForce, Math.min(config.maxForce, springForce + dampingForce));
   const angle = mechanism.base.getAngle();
