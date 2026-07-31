@@ -174,7 +174,8 @@ export class PhysicsEngine {
   private handleContact(a: Fixture, b: Fixture): void {
     const dataA = a.getUserData() as PhysicsBodyData | undefined, dataB = b.getUserData() as PhysicsBodyData | undefined;
     const goal = dataA?.goal === true || dataB?.goal === true;
-    const target = dataA?.partId === 'target-ball' || dataB?.partId === 'target-ball';
+    const targetId = ACTIVE_LEVEL.targetPartId ?? 'target-ball';
+    const target = dataA?.partId === targetId || dataB?.partId === targetId;
     if (goal && target) this.goalReached = true;
     this.signals.handleContact(a, b);
   }
