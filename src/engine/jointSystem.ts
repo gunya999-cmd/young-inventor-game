@@ -24,9 +24,11 @@ export function createHinges(world: World, snapshot: MachineSnapshot, bodies: Ma
     const worldAnchor = body.getWorldPoint(Vec2(localAnchor.x, localAnchor.y));
     const pin = world.createBody({ type: 'static', position: worldAnchor });
     const hasLimits = hinge.lowerAngle !== undefined && hinge.upperAngle !== undefined;
+    const editorLower = finite(hinge.lowerAngle ?? 0, 0);
+    const editorUpper = finite(hinge.upperAngle ?? 0, 0);
     // Editor angles use clockwise-positive screen coordinates; Planck uses counter-clockwise world coordinates.
-    const lowerAngle = hasLimits ? -finite(hinge.upperAngle, 0) : 0;
-    const upperAngle = hasLimits ? -finite(hinge.lowerAngle, 0) : 0;
+    const lowerAngle = hasLimits ? -editorUpper : 0;
+    const upperAngle = hasLimits ? -editorLower : 0;
 
     world.createJoint(new RevoluteJoint({
       bodyA: pin,
@@ -83,7 +85,7 @@ export function createRopes(world: World, snapshot: MachineSnapshot, bodies: Map
 
     const currentLength = pointDistance(bodyA.getWorldPoint(anchorA), bodyB.getWorldPoint(anchorB));
     const requestedLength = pxToMeters(Math.max(24, finite(rope.maxLength, 24)));
-    // Never start a simulation with an already-overstretched rope: the single-frame correction creates violent impulses.
+    // Avoid a large first-frame correction when stored endpoints are farther apart than the stored length.
     const maxLength = Math.max(MIN_ROPE_LENGTH_METERS, requestedLength, currentLength + ROPE_STARTUP_SLACK_METERS);
     world.createJoint(new RopeJoint({
       bodyA,
