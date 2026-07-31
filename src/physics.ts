@@ -16,6 +16,7 @@ import { createStandardPartBody, type PhysicsBodyData } from './engine/partFacto
 import { PHYSICS_CONFIG } from './engine/physicsConfig';
 import { applySpringForce, createSpringMechanism, springCompressionPx, type SpringMechanism } from './engine/springMechanism';
 import { SignalRuntime } from './engine/signalSystem';
+import { DrivetrainRuntime } from './engine/drivetrain';
 
 interface RuntimePartState extends PartState { springCompression?: number; deviceActive?: boolean; }
 export interface PhysicsEngineOptions { includeLevelGeometry?: boolean; }
@@ -28,6 +29,7 @@ export class PhysicsEngine {
   private readonly bodies = new Map<string, Body>();
   private readonly springs = new Map<string, SpringMechanism>();
   private readonly signals: SignalRuntime;
+  private readonly drivetrain: DrivetrainRuntime;
   private goalReached = false;
 
   constructor(snapshot: MachineSnapshot, options: PhysicsEngineOptions = {}) {
@@ -37,12 +39,14 @@ export class PhysicsEngine {
     this.createParts();
     createHinges(this.world, this.source, this.bodies);
     createRopes(this.world, this.source, this.bodies);
+    this.drivetrain = new DrivetrainRuntime(this.world, this.source, this.bodies);
     this.signals = new SignalRuntime(this.source, this.bodies);
     this.world.on('begin-contact', (contact) => this.handleContact(contact.getFixtureA(), contact.getFixtureB()));
   }
 
   step(seconds: number): void {
     for (const spring of this.springs.values()) applySpringForce(spring);
+    this.drivetrain.step();
     this.applyFanForces();
     this.applyMagnetForces();
     this.world.step(seconds, PHYSICS_CONFIG.velocityIterations, PHYSICS_CONFIG.positionIterations);
@@ -85,10 +89,7 @@ export class PhysicsEngine {
 
   private createLevelGeometry(): void {
     const ground = this.world.createBody({ type: 'static', userData: { kind: 'level' } satisfies PhysicsBodyData });
-    for (const platform of ACTIVE_LEVEL.platforms) {
-      // Level angles are stored in screen coordinates. addStaticBox performs the single screen→Box2D sign conversion.
-      this.addStaticBox(ground, platform.x, platform.y, platform.width, platform.height, platform.angle);
-    }
+    for (const platform of ACTIVE_LEVEL.platforms) this.addStaticBox(ground, platform.x, platform.y, platform.width, platform.height, platform.angle);
 
     const receiverSpec = ACTIVE_LEVEL.receiver;
     const receiver = this.world.createBody({ type: 'static', userData: { kind: 'basket' } satisfies PhysicsBodyData });

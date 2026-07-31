@@ -57,7 +57,6 @@ export const LEVEL_07: LevelSpec = {
   },
   initialParts: [
     { id: 'target-ball', kind: 'ball', x: 115, y: 170, angle: 0, fixed: false, locked: true },
-    // The counterweight now sits in a separate lower-left shaft, clear of the approach ramp.
     { id: 'level-weight', kind: 'weight', x: 330, y: 650, angle: 0, fixed: false, locked: true },
     { id: 'level-latch', kind: 'latch', x: 330, y: 710, angle: 0, fixed: true, locked: true },
     { id: 'level-lever-lock', kind: 'latch', x: 535, y: 642, angle: 0, fixed: true, locked: true },
@@ -79,6 +78,8 @@ export const LEVEL_07: LevelSpec = {
     spring: 1,
     magnet: 0,
     sheave: 2,
+    motor: 1,
+    gear: 3,
     button: 0,
     latch: 0
   },
