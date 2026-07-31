@@ -63,14 +63,16 @@ export function createSpringMechanism(world: World, part: PartState): SpringMech
   return { part, base, plunger, joint };
 }
 
-export function applySpringForce(mechanism: SpringMechanism, enabled = true): void {
+export function applySpringForce(mechanism: SpringMechanism, enabled = true, power = 1): void {
   const config = PHYSICS_CONFIG.spring;
   const translation = mechanism.joint.getJointTranslation();
   const speed = mechanism.joint.getJointSpeed();
-  const stiffness = enabled ? config.stiffness : 0;
+  const safePower = Math.max(0.25, Math.min(2, power));
+  const stiffness = enabled ? config.stiffness * safePower : 0;
   const springForce = -stiffness * translation;
   const dampingForce = -config.damping * speed;
-  const magnitude = Math.max(-config.maxForce, Math.min(config.maxForce, springForce + dampingForce));
+  const maxForce = config.maxForce * safePower;
+  const magnitude = Math.max(-maxForce, Math.min(maxForce, springForce + dampingForce));
   const angle = mechanism.base.getAngle();
   const direction = Vec2(Math.cos(angle), Math.sin(angle));
   mechanism.plunger.applyForceToCenter(Vec2(direction.x * magnitude, direction.y * magnitude), true);

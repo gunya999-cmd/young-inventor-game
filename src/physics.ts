@@ -1,5 +1,5 @@
 import { Box, Vec2, World, type Body, type Fixture } from 'planck';
-import { PARTS, PHYSICS_SCALE, cloneSnapshot, type Endpoint, type MachineSnapshot, type PartKind, type PartState, type Point } from './model';
+import { PARTS, PHYSICS_SCALE, cloneSnapshot, devicePower, type Endpoint, type MachineSnapshot, type PartKind, type PartState, type Point } from './model';
 import { ACTIVE_LEVEL } from './level';
 import { physicsPointToPixel, pixelPointToPhysics, pxToMeters } from './engine/coordinates';
 import { createHinges, createRopes } from './engine/jointSystem';
@@ -36,7 +36,7 @@ export class PhysicsEngine {
   }
 
   step(seconds: number): void {
-    for (const spring of this.springs.values()) applySpringForce(spring, this.powered(spring.part.id));
+    for (const spring of this.springs.values()) applySpringForce(spring, this.powered(spring.part.id), devicePower(spring.part));
     this.drivetrain.step();
     this.applyConveyorForces();
     this.applyFanForces();
@@ -115,6 +115,7 @@ export class PhysicsEngine {
       if (part.kind !== 'conveyor' || !this.powered(part.id)) continue;
       const conveyor = this.bodies.get(part.id);
       if (!conveyor) continue;
+      const power = devicePower(part);
       const origin = conveyor.getPosition(), angle = conveyor.getAngle(), dx = Math.cos(angle), dy = Math.sin(angle);
       const halfWidth = pxToMeters(PARTS.conveyor.width / 2 + 18), height = pxToMeters(PARTS.conveyor.height / 2 + 70);
       for (const [id, body] of this.bodies) {
@@ -122,8 +123,9 @@ export class PhysicsEngine {
         const p = body.getPosition(), rx = p.x - origin.x, ry = p.y - origin.y;
         const along = rx * dx + ry * dy, normal = -rx * dy + ry * dx;
         if (Math.abs(along) > halfWidth || normal < 0 || normal > height) continue;
-        const velocity = body.getLinearVelocity(), target = 3.2, current = velocity.x * dx + velocity.y * dy;
-        const force = Math.max(-35, Math.min(35, (target - current) * body.getMass() * 9));
+        const velocity = body.getLinearVelocity(), target = 3.2 * power, current = velocity.x * dx + velocity.y * dy;
+        const maxForce = 35 * power;
+        const force = Math.max(-maxForce, Math.min(maxForce, (target - current) * body.getMass() * 9));
         body.applyForceToCenter(Vec2(dx * force, dy * force), true);
       }
     }
@@ -134,6 +136,7 @@ export class PhysicsEngine {
       if (fanPart.kind !== 'pulley' || !this.powered(fanPart.id)) continue;
       const fanBody = this.bodies.get(fanPart.id);
       if (!fanBody) continue;
+      const power = devicePower(fanPart);
       const origin = fanBody.getPosition(), angle = fanBody.getAngle(), directionX = Math.cos(angle), directionY = Math.sin(angle);
       for (const [id, body] of this.bodies) {
         if (id === fanPart.id || body.getType() !== 'dynamic') continue;
@@ -142,7 +145,7 @@ export class PhysicsEngine {
         if (forward < .2 || forward > 4.6) continue;
         const sideways = Math.abs(-deltaX * directionY + deltaY * directionX), halfWidth = .45 + forward * .32;
         if (sideways > halfWidth) continue;
-        const strength = 23 * (1 - forward / 5.2) * (1 - sideways / Math.max(halfWidth, .01));
+        const strength = 23 * power * (1 - forward / 5.2) * (1 - sideways / Math.max(halfWidth, .01));
         body.applyForceToCenter(Vec2(directionX * strength, directionY * strength), true);
       }
     }
@@ -153,6 +156,7 @@ export class PhysicsEngine {
       if (magnetPart.kind !== 'magnet' || !this.powered(magnetPart.id)) continue;
       const magnetBody = this.bodies.get(magnetPart.id);
       if (!magnetBody) continue;
+      const power = devicePower(magnetPart);
       const origin = magnetBody.getPosition();
       for (const targetPart of this.source.parts) {
         if (!MAGNETIC_KINDS.has(targetPart.kind)) continue;
@@ -161,7 +165,7 @@ export class PhysicsEngine {
         const position = targetBody.getPosition(), deltaX = origin.x - position.x, deltaY = origin.y - position.y;
         const distance = Math.hypot(deltaX, deltaY);
         if (distance < .18 || distance > 3.8) continue;
-        const falloff = Math.pow(1 - distance / 3.8, 1.45), force = targetBody.getMass() * 26 * falloff;
+        const falloff = Math.pow(1 - distance / 3.8, 1.45), force = targetBody.getMass() * 26 * power * falloff;
         targetBody.applyForceToCenter(Vec2(deltaX / distance * force, deltaY / distance * force), true);
       }
     }

@@ -19,6 +19,8 @@ export interface PartSpec {
 export interface PartState {
   id: string; kind: PartKind; x: number; y: number; angle: number; fixed: boolean;
   locked?: boolean;
+  /** Normalized device output. 1 is the authored/default power. */
+  power?: number;
 }
 export interface Endpoint { partId: string; localX: number; localY: number; }
 export interface RopeState {
@@ -32,6 +34,17 @@ export type SignalAction = 'release' | 'activate';
 export interface SignalLink { id: string; sourcePartId: string; targetPartId: string; action: SignalAction; }
 export interface MachineSnapshot {
   parts: PartState[]; ropes: RopeState[]; hinges: HingeState[]; signals?: SignalLink[];
+}
+
+export const POWERED_PART_KINDS = new Set<PartKind>(['magnet', 'conveyor', 'pulley', 'spring']);
+export const MIN_DEVICE_POWER = 0.25;
+export const MAX_DEVICE_POWER = 2;
+export function clampDevicePower(value: unknown): number {
+  const numeric = typeof value === 'number' && Number.isFinite(value) ? value : 1;
+  return Math.max(MIN_DEVICE_POWER, Math.min(MAX_DEVICE_POWER, numeric));
+}
+export function devicePower(part: PartState): number {
+  return POWERED_PART_KINDS.has(part.kind) ? clampDevicePower(part.power) : 1;
 }
 
 export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
@@ -58,10 +71,10 @@ export const INVENTORY: Readonly<Record<PartKind, number>> = ACTIVE_LEVEL.invent
 export const MAX_ROPES = ACTIVE_LEVEL.maxRopes;
 export const MAX_HINGES = ACTIVE_LEVEL.maxHinges;
 export function createInitialSnapshot(): MachineSnapshot {
-  return { parts: ACTIVE_LEVEL.initialParts.map(p=>({...p})), ropes:[], hinges:[], signals:ACTIVE_LEVEL.initialSignals.map(s=>({...s})) };
+  return { parts: ACTIVE_LEVEL.initialParts.map(p=>({...p, power: POWERED_PART_KINDS.has(p.kind) ? clampDevicePower(p.power) : p.power})), ropes:[], hinges:[], signals:ACTIVE_LEVEL.initialSignals.map(s=>({...s})) };
 }
 export function cloneSnapshot(snapshot: MachineSnapshot): MachineSnapshot {
-  return { parts:snapshot.parts.map(p=>({...p})), ropes:snapshot.ropes.map(r=>({...r,a:{...r.a},b:{...r.b}})), hinges:snapshot.hinges.map(h=>({...h})), signals:(snapshot.signals??[]).map(s=>({...s})) };
+  return { parts:snapshot.parts.map(p=>({...p, power: POWERED_PART_KINDS.has(p.kind) ? clampDevicePower(p.power) : p.power})), ropes:snapshot.ropes.map(r=>({...r,a:{...r.a},b:{...r.b}})), hinges:snapshot.hinges.map(h=>({...h})), signals:(snapshot.signals??[]).map(s=>({...s})) };
 }
 export function rotatePoint(point: Point, angle: number): Point { const c=Math.cos(angle),s=Math.sin(angle); return {x:point.x*c-point.y*s,y:point.x*s+point.y*c}; }
 export function localToWorld(part: PartState, local: Point): Point { const r=rotatePoint(local,part.angle); return {x:part.x+r.x,y:part.y+r.y}; }

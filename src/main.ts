@@ -11,6 +11,7 @@ import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
 import { installSignalEditor } from './signalEditor';
+import { installDeviceSettingsUi } from './deviceSettingsUi';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -37,6 +38,7 @@ try {
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   const app = new GameApp(canvas);
   installSignalEditor(app);
+  installDeviceSettingsUi(app);
   installCompletionGuard();
   installBrowserSmokeBridge(app);
 } catch (error) {
