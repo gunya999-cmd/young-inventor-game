@@ -2,6 +2,7 @@ import { Box, Circle, Vec2, type Body, type World } from 'planck';
 import { PARTS, type PartKind, type PartState } from '../model';
 import { pixelPointToPhysics, pxToMeters } from './coordinates';
 import { PHYSICS_CONFIG } from './physicsConfig';
+import { CONTACT_TUNING } from './contactTuning';
 
 export interface PhysicsBodyData {
   partId?: string;
@@ -29,6 +30,15 @@ function dampingFor(part: PartState): { linear: number; angular: number } {
   };
 }
 
+function contactFor(part: PartState): { friction: number; restitution: number } {
+  const spec = PARTS[part.kind];
+  if (part.kind === 'ball') return { friction: CONTACT_TUNING.steelBallFriction, restitution: CONTACT_TUNING.steelBallRestitution };
+  if (part.kind === 'rubberball') return { friction: CONTACT_TUNING.rubberBallFriction, restitution: CONTACT_TUNING.rubberBallRestitution };
+  if (part.kind === 'domino') return { friction: CONTACT_TUNING.dominoFriction, restitution: CONTACT_TUNING.dominoRestitution };
+  if (part.kind === 'plank' || part.kind === 'lever') return { friction: Math.min(spec.friction, CONTACT_TUNING.guideFriction), restitution: spec.restitution };
+  return { friction: spec.friction, restitution: spec.restitution };
+}
+
 function needsContinuousCollision(part: PartState): boolean {
   return !part.fixed && (
     part.kind === 'ball' ||
@@ -42,6 +52,7 @@ export function createStandardPartBody(world: World, part: PartState): Body {
   const spec = PARTS[part.kind];
   const position = pixelPointToPhysics(part);
   const damping = dampingFor(part);
+  const contact = contactFor(part);
   const body = world.createBody({
     type: part.fixed ? 'static' : 'dynamic',
     position: Vec2(position.x, position.y),
@@ -61,8 +72,8 @@ export function createStandardPartBody(world: World, part: PartState): Body {
   body.createFixture({
     shape,
     density: spec.density,
-    friction: spec.friction,
-    restitution: spec.restitution,
+    friction: contact.friction,
+    restitution: contact.restitution,
     userData: { partId: part.id, kind: part.kind } satisfies PhysicsBodyData
   });
 
