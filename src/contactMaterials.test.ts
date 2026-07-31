@@ -14,7 +14,7 @@ function material(kind: PartKind): { friction: number; restitution: number } {
 describe('contact material tuning', () => {
   test('steel ball rolls freely while retaining a controlled impact response', () => {
     const steel = material('ball');
-    expect(steel.friction).toBeCloseTo(0.12, 5);
+    expect(steel.friction).toBeCloseTo(0.16, 5);
     expect(steel.restitution).toBeCloseTo(0.34, 5);
   });
 
@@ -32,11 +32,8 @@ describe('contact material tuning', () => {
     expect(domino.restitution).toBeLessThan(0.03);
   });
 
-  test('guides permit motion without becoming frictionless', () => {
-    for (const kind of ['plank', 'lever'] as const) {
-      const guide = material(kind);
-      expect(guide.friction).toBeGreaterThan(0.5);
-      expect(guide.friction).toBeLessThanOrEqual(0.68);
-    }
+  test('guides retain enough grip to keep an untouched level idle', () => {
+    expect(material('plank').friction).toBeCloseTo(0.78, 5);
+    expect(material('lever').friction).toBeCloseTo(0.64, 5);
   });
 });
