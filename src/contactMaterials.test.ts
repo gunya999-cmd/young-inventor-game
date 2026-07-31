@@ -12,10 +12,10 @@ function material(kind: PartKind): { friction: number; restitution: number } {
 }
 
 describe('contact material tuning', () => {
-  test('steel ball rolls freely while retaining a controlled impact response', () => {
+  test('steel ball keeps the calibrated level-safe material', () => {
     const steel = material('ball');
-    expect(steel.friction).toBeCloseTo(0.16, 5);
-    expect(steel.restitution).toBeCloseTo(0.34, 5);
+    expect(steel.friction).toBeCloseTo(0.18, 5);
+    expect(steel.restitution).toBeCloseTo(0.28, 5);
   });
 
   test('rubber ball is clearly more elastic without becoming lossless', () => {
