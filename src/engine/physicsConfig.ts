@@ -10,8 +10,10 @@ export const PHYSICS_CONFIG = {
   rollingAngularDamping: 0.025,
   defaultLinearDamping: 0.08,
   defaultAngularDamping: 0.12,
-  heavyLinearDamping: 0.12,
-  heavyAngularDamping: 0.18,
+  leverLinearDamping: 0.045,
+  leverAngularDamping: 0.065,
+  heavyLinearDamping: 0.075,
+  heavyAngularDamping: 0.12,
   spring: {
     travelPx: 48,
     stiffness: 125,
