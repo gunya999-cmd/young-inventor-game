@@ -16,6 +16,8 @@ export type PartKind =
   | 'spring'
   | 'magnet'
   | 'sheave'
+  | 'motor'
+  | 'gear'
   | 'button'
   | 'latch';
 export type GameMode = 'build' | 'running' | 'paused';
@@ -81,16 +83,16 @@ export const PARTS: Readonly<Record<PartKind, PartSpec>> = {
   ball: { kind:'ball',label:'Стальной шар',width:56,height:56,radius:28,density:1.2,friction:.18,restitution:.28,defaultFixed:false,canHinge:false,color:'#596773' },
   plank: { kind:'plank',label:'Направляющая',width:235,height:28,density:.62,friction:.78,restitution:.03,defaultFixed:true,canHinge:true,color:'#a96531' },
   wall: { kind:'wall',label:'Резиновый отбойник',width:155,height:34,density:3.2,friction:.5,restitution:.72,defaultFixed:true,canHinge:false,color:'#ca3f4d' },
-  // Visually this is a timber beam: keep its inertia low relative to the steel counterweight.
   lever: { kind:'lever',label:'Балансир',width:300,height:32,density:.35,friction:.64,restitution:.04,defaultFixed:false,canHinge:true,color:'#bd7436' },
   pulley: { kind:'pulley',label:'Вентилятор',width:92,height:92,radius:46,density:1.6,friction:.3,restitution:.02,defaultFixed:true,canHinge:false,color:'#4b5964' },
-  // The crate acts as an intentional counterweight, not as a light empty box.
   weight: { kind:'weight',label:'Тяжёлый противовес',width:82,height:72,density:4.0,friction:.7,restitution:.02,defaultFixed:false,canHinge:false,color:'#6f5135' },
   domino: { kind:'domino',label:'Домино',width:34,height:102,density:.56,friction:.86,restitution:.035,defaultFixed:false,canHinge:false,color:'#e7d8b8' },
   rubberball: { kind:'rubberball',label:'Резиновый мяч',width:62,height:62,radius:31,density:.74,friction:.24,restitution:.92,defaultFixed:false,canHinge:false,color:'#39aee8' },
   spring: { kind:'spring',label:'Пружинный толкатель',width:126,height:54,density:3.4,friction:.62,restitution:.18,defaultFixed:true,canHinge:false,color:'#efb43f' },
   magnet: { kind:'magnet',label:'Магнит',width:104,height:88,density:3.1,friction:.55,restitution:.04,defaultFixed:true,canHinge:false,color:'#d9535d' },
   sheave: { kind:'sheave',label:'Шкив',width:84,height:84,radius:42,density:2.2,friction:.32,restitution:.02,defaultFixed:true,canHinge:false,color:'#687985' },
+  motor: { kind:'motor',label:'Электромотор',width:96,height:96,radius:48,density:2.8,friction:.42,restitution:.01,defaultFixed:true,canHinge:false,color:'#d65f45' },
+  gear: { kind:'gear',label:'Шестерня',width:88,height:88,radius:44,density:2.1,friction:.72,restitution:.01,defaultFixed:true,canHinge:false,color:'#d1a643' },
   button: { kind:'button',label:'Нажимная кнопка',width:92,height:30,density:3,friction:.72,restitution:.01,defaultFixed:true,canHinge:false,color:'#d9a53b' },
   latch: { kind:'latch',label:'Механическая защёлка',width:116,height:26,density:3.5,friction:.82,restitution:.01,defaultFixed:true,canHinge:false,color:'#62727c' }
 };
