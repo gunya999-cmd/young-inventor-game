@@ -24,7 +24,7 @@ function expectFinite(engine: PhysicsEngine, ids: string[]): void {
 }
 
 describe('joint stability', () => {
-  test('an initially short rope does not create an explosive correction impulse', () => {
+  test('an initially short rope does not create a violent startup correction', () => {
     const snapshot: MachineSnapshot = {
       parts: [
         { id: 'a', kind: 'weight', x: 500, y: 300, angle: 0, fixed: false },
@@ -41,10 +41,14 @@ describe('joint stability', () => {
     const engine = new PhysicsEngine(snapshot, { includeLevelGeometry: false });
     simulate(engine, 3);
     expectFinite(engine, ['a', 'b']);
+    const transformA = engine.partTransform('a')!;
+    const transformB = engine.partTransform('b')!;
     const speedA = engine.partKinematics('a')!;
     const speedB = engine.partKinematics('b')!;
-    expect(Math.hypot(speedA.velocity.x, speedA.velocity.y)).toBeLessThan(1800);
-    expect(Math.hypot(speedB.velocity.x, speedB.velocity.y)).toBeLessThan(1800);
+    expect(Math.abs(speedA.velocity.x)).toBeLessThan(30);
+    expect(Math.abs(speedB.velocity.x)).toBeLessThan(30);
+    expect(Math.abs(speedA.velocity.y - speedB.velocity.y)).toBeLessThan(5);
+    expect(Math.abs((transformB.position.x - transformA.position.x) - 400)).toBeLessThan(5);
   });
 
   test('a loaded pulley remains finite and keeps both loads bounded', () => {
