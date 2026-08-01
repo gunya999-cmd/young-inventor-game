@@ -1,4 +1,4 @@
-import { ACTIVE_LEVEL } from './level';
+import { ACTIVE_LEVEL, CUSTOM_LEVEL_STORAGE_KEY } from './level';
 import { getLevelPresentation } from './levelPresentation';
 
 function text(selector:string,value:string):void{
@@ -7,10 +7,12 @@ function text(selector:string,value:string):void{
 }
 
 export function installActiveLevelUi():void{
+ const customActive=Boolean(localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY));
+ const canonicalLevel01=ACTIVE_LEVEL.id==='first-ramp'&&!customActive;
  const number=String(ACTIVE_LEVEL.number).padStart(2,'0');
- const presentation=getLevelPresentation(ACTIVE_LEVEL);
+ const presentation=getLevelPresentation(ACTIVE_LEVEL,!customActive);
  const root=document.querySelector<HTMLElement>('#app');
- if(root)root.dataset.levelId=ACTIVE_LEVEL.id;
+ if(root)root.dataset.levelId=customActive?'custom':ACTIVE_LEVEL.id;
 
  document.title=`Машина изобретателя · ${ACTIVE_LEVEL.title}`;
  text('.mission-summary .level-number',number);
@@ -31,10 +33,11 @@ export function installActiveLevelUi():void{
   }));
  }
 
- if(ACTIVE_LEVEL.id==='first-ramp'){
+ if(canonicalLevel01){
   text('.library-panel .panel-heading h2','Направляющие');
   text('.library-panel .panel-badge','3 ШТ.');
-  document.querySelector<HTMLElement>('.connections-card')!.hidden=true;
+  const connections=document.querySelector<HTMLElement>('.connections-card');
+  if(connections)connections.hidden=true;
   for(const button of document.querySelectorAll<HTMLButtonElement>('.palette-part')){
    button.hidden=button.dataset.kind!=='plank';
   }
