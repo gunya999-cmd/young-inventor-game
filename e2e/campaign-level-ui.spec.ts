@@ -15,9 +15,9 @@ test('campaign selection updates all visible level copy after reload',async({pag
  await expect(page.locator('.mission-summary h1')).toHaveText('Первый маршрут');
  await expect(page.locator('.mission-summary .mission-copy')).toContainText('тремя направляющими');
  await expect(page.locator('.task-card .eyebrow')).toHaveText('ЗАДАЧА');
- await expect(page.locator('.task-card h2')).toHaveText('Построй непрерывный спуск');
- await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('ровно три направляющие');
- await expect(page.locator('.build-prompt span')).toContainText('3 направляющие');
+ await expect(page.locator('.task-card h2')).toHaveText('Проложи свой первый маршрут');
+ await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('три рельса');
+ await expect(page.locator('.build-prompt span')).toContainText('3 рельса');
  await expect(page.locator('.principles-row')).toContainText('наклон');
  await expect(page).toHaveTitle(/Первый маршрут/);
 

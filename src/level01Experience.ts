@@ -2,10 +2,23 @@ import { ACTIVE_LEVEL, CUSTOM_LEVEL_STORAGE_KEY } from './level';
 import { evaluateBuildReadiness, type BuildReadiness } from './levelRules';
 import { getLevelPresentation } from './levelPresentation';
 import type { MachineSnapshot } from './model';
+import {
+  LEVEL01_BONUSES,
+  level01AttemptNumber,
+  level01CollectedCount,
+  level01HintVisible,
+  loadLevel01Best,
+  resetLevel01Attempt,
+  saveLevel01Best,
+  scoreLevel01,
+  setLevel01HintVisible,
+  updateLevel01Bonuses
+} from './level01Gameplay';
 
 type AppInternals={
  snapshot:MachineSnapshot;
  runtimeSnapshot:MachineSnapshot;
+ runStartSnapshot:MachineSnapshot;
  mode:string;
  completed:boolean;
  elapsed:number;
@@ -16,7 +29,7 @@ type AppInternals={
 };
 
 const COACH_KEY='young-inventor:level-01:coach-collapsed:v1';
-const FAILED_TRIAL_SECONDS=21;
+const FAILED_TRIAL_SECONDS=14;
 
 function hideAdvancedControls():void{
  const propertyGroups=[...document.querySelectorAll<HTMLElement>('.property-group')];
@@ -26,6 +39,8 @@ function hideAdvancedControls():void{
  }
  const project=document.querySelector<HTMLElement>('.project-actions');
  if(project)project.hidden=true;
+ const camera=document.querySelector<HTMLElement>('#camera-button');
+ if(camera)camera.hidden=true;
 }
 
 function ensureTakeaway():HTMLElement|null{
@@ -41,13 +56,31 @@ function ensureTakeaway():HTMLElement|null{
  return takeaway;
 }
 
+function ensureResultScore():HTMLElement|null{
+ const card=document.querySelector<HTMLElement>('#result-card');
+ if(!card)return null;
+ let score=card.querySelector<HTMLElement>('.level01-result-score');
+ if(!score){
+  score=document.createElement('div');
+  score.className='level01-result-score';
+  const takeaway=card.querySelector('.level-takeaway');
+  card.insertBefore(score,takeaway??card.querySelector('#result-time'));
+ }
+ return score;
+}
+
 function failedTrialMessage(snapshot:MachineSnapshot):string{
  const ball=snapshot.parts.find(part=>part.id===ACTIVE_LEVEL.targetPartId);
  const x=ball?.x??0;
- if(x<520)return 'Шар потерялся у первого стыка. Подними начало первого рельса и слегка перекрой им стартовую площадку.';
- if(x<880)return 'Шар дошёл до середины. Проверь стык между рельсами 1 и 2: там не должно быть ступеньки или зазора.';
- if(x<1240)return 'Почти получилось. Сделай переход с рельса 3 на финишную площадку более плавным.';
- return 'Шар дошёл до финиша, но не попал в приёмник. Чуть направь последний рельс вниз к зелёной зоне.';
+ if(x<520)return 'Шар потерял скорость у первого перехода. Подними начало первого рельса и немного перекрой стартовую площадку.';
+ if(x<880)return 'Маршрут работает до середины. Сделай переход между первыми рельсами плавнее — без ступеньки и большого зазора.';
+ if(x<1240)return 'Почти готово. Последний рельс должен мягко вывести шар на финишную платформу.';
+ return 'Шар добрался до финиша. Чуть направь последний рельс вниз и ближе к зелёному приёмнику.';
+}
+
+function scoreMarkup(score:ReturnType<typeof scoreLevel01>,best:ReturnType<typeof saveLevel01Best>):string{
+ const medal=(earned:boolean,icon:string,title:string,copy:string)=>`<article class="result-medal${earned?' earned':''}"><i>${earned?icon:'○'}</i><div><b>${title}</b><span>${copy}</span></div></article>`;
+ return `<div class="result-score-head"><strong>${score.medals}/3</strong><span>инженерных наград</span><small>Рекорд: ${best.bestTime.toFixed(1)}с · бонусы ${best.bestBonuses}/${score.total}</small></div><div class="result-medals">${medal(score.smooth,'≈','Плавный маршрут','стыки без резких ступенек')}${medal(score.explorer,'✦','Исследователь',`собрано ${score.collected}/${score.total} бонусов`)}${medal(score.fast,'⚡','Быстрый запуск','финиш быстрее 7,5 секунды')}</div>`;
 }
 
 export function installLevel01Experience(appInstance:unknown):void{
@@ -58,28 +91,40 @@ export function installLevel01Experience(appInstance:unknown):void{
  const presentation=getLevelPresentation(ACTIVE_LEVEL);
  hideAdvancedControls();
 
+ const resultAgain=document.querySelector<HTMLButtonElement>('#result-again');
+ if(resultAgain)resultAgain.textContent='Улучшить маршрут';
+
  const stats=document.createElement('div');
  stats.className='level-brief-stats';
- stats.innerHTML=`<span><b>3</b> направляющие</span><span><b>${ACTIVE_LEVEL.parTime??12}с</b> цель на ★★★</span><span><b>1</b> понятная задача</span>`;
+ stats.innerHTML=`<span><b>3</b> рельса</span><span><b>3</b> бонуса на пути</span><span><b>7.5с</b> быстрый финиш</span>`;
  document.querySelector('.task-card')?.appendChild(stats);
+
+ const hud=document.createElement('section');
+ hud.id='level01-hud';
+ hud.className='level01-hud';
+ hud.innerHTML=`<div class="hud-route"><small>МИССИЯ</small><strong>Доставь шар в приёмник</strong></div><div class="hud-stat"><i>✦</i><b data-bonus-count>0/${LEVEL01_BONUSES.length}</b><span>бонусы</span></div><div class="hud-stat"><i>↻</i><b data-attempt>1</b><span>попытка</span></div><div class="hud-best"><small>ЛУЧШЕЕ</small><strong data-best>—</strong></div>`;
+ frame.appendChild(hud);
 
  const coach=document.createElement('section');
  coach.id='level-coach';
  coach.className='level-coach';
  coach.innerHTML=`
-  <header><div><small>КАК НАЧАТЬ</small><strong>Собери маршрут</strong></div><button id="level-coach-toggle" type="button" aria-label="Свернуть подсказки">−</button></header>
+  <header><div><small>ПЕРВЫЙ ЗАПУСК</small><strong>Собери свой маршрут</strong></div><button id="level-coach-toggle" type="button" aria-label="Свернуть подсказки">−</button></header>
   <div class="coach-progress"><span></span><b>0/3</b></div>
   <ol>
-   <li data-step="place"><i>1</i><div><b>Перетащи 3 рельса</b><span>Положи по одному рельсу в широкие зоны 1, 2 и 3 на поле.</span></div></li>
-   <li data-step="rotate"><i>2</i><div><b>Сделай плавный спуск</b><span>Выбирай рельс и поворачивай круглой ручкой или клавишами Q / E.</span></div></li>
-   <li data-step="test"><i>3</i><div><b>Испытай конструкцию</b><span>Когда путь готов, нажми «Испытать маршрут» и наблюдай за шаром.</span></div></li>
+   <li data-step="place"><i>1</i><div><b>Перетащи три рельса</b><span>Перекрой большой разрыв между стартом и финишем. Точных мест нет — решение выбираешь ты.</span></div></li>
+   <li data-step="rotate"><i>2</i><div><b>Настрой траекторию</b><span>Поворачивай рельсы ручкой или Q / E. Фиолетовые искры — необязательные бонусы.</span></div></li>
+   <li data-step="test"><i>3</i><div><b>Испытай и улучши</b><span>Запусти шар. После финиша попробуй собрать больше бонусов или пройти быстрее.</span></div></li>
   </ol>
-  <p class="coach-note">Совет: стыки лучше слегка перекрывать — шар не любит ступеньки.</p>
-  <p class="coach-feedback" hidden></p>`;
+  <p class="coach-note">Секрет надёжности: небольшой нахлёст между рельсами лучше идеально ровного, но разорванного стыка.</p>
+  <p class="coach-feedback" hidden></p>
+  <div class="coach-actions"><button id="level-hint-button" type="button" hidden>Показать пример маршрута</button></div>`;
  frame.appendChild(coach);
 
  const feedback=coach.querySelector<HTMLElement>('.coach-feedback')!;
+ const hintButton=coach.querySelector<HTMLButtonElement>('#level-hint-button')!;
  let runAttempted=false;
+ let failedAttempts=0;
  let attentionTimer=0;
  const collapsed=localStorage.getItem(COACH_KEY)==='1';
  coach.classList.toggle('collapsed',collapsed);
@@ -95,11 +140,22 @@ export function installLevel01Experience(appInstance:unknown):void{
   window.clearTimeout(attentionTimer);
   attentionTimer=window.setTimeout(()=>coach.classList.remove('attention'),850);
  };
- syncToggle();
+ const syncHud=()=>{
+  const count=hud.querySelector<HTMLElement>('[data-bonus-count]');if(count)count.textContent=`${level01CollectedCount()}/${LEVEL01_BONUSES.length}`;
+  const attempt=hud.querySelector<HTMLElement>('[data-attempt]');if(attempt)attempt.textContent=String(level01AttemptNumber());
+  const best=hud.querySelector<HTMLElement>('[data-best]');const record=loadLevel01Best();if(best)best.textContent=record?`${record.bestTime.toFixed(1)}с · ${record.bestMedals}/3`:'первый запуск';
+ };
+ syncToggle();syncHud();
  toggle.addEventListener('click',()=>{
   coach.classList.toggle('collapsed');
   localStorage.setItem(COACH_KEY,coach.classList.contains('collapsed')?'1':'0');
   syncToggle();
+ });
+ hintButton.addEventListener('click',()=>{
+  const visible=!level01HintVisible();
+  setLevel01HintVisible(visible);
+  hintButton.textContent=visible?'Скрыть пример':'Показать пример маршрута';
+  app.setStatus(visible?'Показан один из возможных маршрутов. Его не обязательно повторять точно.':'Пример скрыт — снова ищи собственное решение.');
  });
 
  const render=(readiness:BuildReadiness=evaluateBuildReadiness(ACTIVE_LEVEL,app.snapshot))=>{
@@ -120,6 +176,7 @@ export function installLevel01Experience(appInstance:unknown):void{
   coach.classList.toggle('ready',readiness.ready&&!test);
   coach.classList.toggle('complete',app.completed);
   document.querySelector<HTMLButtonElement>('#run-button')?.classList.toggle('level-ready',readiness.ready);
+  syncHud();
  };
 
  const originalUpdate=app.updateUi.bind(app);
@@ -136,22 +193,35 @@ export function installLevel01Experience(appInstance:unknown):void{
   feedback.hidden=true;
   feedback.textContent='';
   runAttempted=true;
+  resetLevel01Attempt();
+  syncHud();
   originalStart();
   render(readiness);
  };
 
  const watchTrial=()=>{
-  if(app.mode==='running'&&!app.completed&&app.elapsed>=FAILED_TRIAL_SECONDS){
-   const message=failedTrialMessage(app.runtimeSnapshot);
-   app.stop();
-   app.setStatus(message);
-   feedback.textContent=message;
-   feedback.hidden=false;
-   coach.classList.remove('collapsed');
-   localStorage.setItem(COACH_KEY,'0');
-   syncToggle();
-   flashCoach();
-   render();
+  if(app.mode==='running'&&!app.completed){
+   const collectedNow=updateLevel01Bonuses(app.runtimeSnapshot);
+   if(collectedNow.length){
+    syncHud();
+    const total=level01CollectedCount();
+    app.setStatus(`Инженерный бонус ${total}/${LEVEL01_BONUSES.length}! Продолжай следить за траекторией.`);
+    hud.classList.remove('bonus-pulse');void hud.offsetWidth;hud.classList.add('bonus-pulse');
+   }
+   if(app.elapsed>=FAILED_TRIAL_SECONDS){
+    const message=failedTrialMessage(app.runtimeSnapshot);
+    app.stop();
+    failedAttempts+=1;
+    app.setStatus(message);
+    feedback.textContent=message;
+    feedback.hidden=false;
+    hintButton.hidden=failedAttempts<1;
+    coach.classList.remove('collapsed');
+    localStorage.setItem(COACH_KEY,'0');
+    syncToggle();
+    flashCoach();
+    render();
+   }
   }
   requestAnimationFrame(watchTrial);
  };
@@ -159,14 +229,17 @@ export function installLevel01Experience(appInstance:unknown):void{
 
  const takeaway=ensureTakeaway();
  if(takeaway)takeaway.innerHTML=`<small>ЧТО ТЫ СЕЙЧАС ПРОВЕРИЛ</small><strong>${presentation.takeaway}</strong>`;
+ const resultScore=ensureResultScore();
  window.addEventListener('tim-level-complete',()=>{
   feedback.hidden=true;
+  const score=scoreLevel01(app.runStartSnapshot,app.elapsed);
+  const best=saveLevel01Best(score,app.elapsed);
+  if(resultScore)resultScore.innerHTML=scoreMarkup(score,best);
   coach.classList.remove('collapsed');
   localStorage.setItem(COACH_KEY,'0');
-  syncToggle();
-  render();
+  syncToggle();syncHud();render();
  });
 
- app.setStatus('Шаг 1 из 3: перетащи на поле три направляющие и соедини старт с финишем.');
+ app.setStatus('Построй собственную траекторию из трёх рельсов. Бонусные искры собирать необязательно.');
  render();
 }
