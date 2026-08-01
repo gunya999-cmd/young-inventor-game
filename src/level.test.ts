@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIVE_LEVEL } from './level';
+import { ACTIVE_LEVEL, resolveCampaignLevelRequest } from './level';
 import { PARTS, createInitialSnapshot } from './model';
 import { PhysicsEngine } from './physics';
 
@@ -8,6 +8,20 @@ const STEP = 1 / 120;
 function run(engine: PhysicsEngine, frames: number): void {
   for (let index = 0; index < frames; index += 1) engine.step(STEP);
 }
+
+describe('direct campaign level links',()=>{
+  it('resolves both level number and stable level id',()=>{
+    expect(resolveCampaignLevelRequest('1')?.id).toBe('first-ramp');
+    expect(resolveCampaignLevelRequest('first-ramp')?.number).toBe(1);
+    expect(resolveCampaignLevelRequest('7')?.id).toBe('impulse-and-moment');
+  });
+
+  it('ignores unknown or empty requests',()=>{
+    expect(resolveCampaignLevelRequest('')).toBeNull();
+    expect(resolveCampaignLevelRequest('999')).toBeNull();
+    expect(resolveCampaignLevelRequest('unknown')).toBeNull();
+  });
+});
 
 describe('level 07 · impulse and moment', () => {
   it('uses one authored screen-space angle convention for the start rail', () => {
