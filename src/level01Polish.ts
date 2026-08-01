@@ -15,6 +15,12 @@ function roundedRect(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:n
   ctx.beginPath();ctx.moveTo(x+radius,y);ctx.arcTo(x+w,y,x+w,y+h,radius);ctx.arcTo(x+w,y+h,x,y+h,radius);ctx.arcTo(x,y+h,x,y,radius);ctx.arcTo(x,y,x+w,y,radius);ctx.closePath();
 }
 
+function drawCleanWorkshop(ctx:CanvasRenderingContext2D):void{
+  const bg=ctx.createLinearGradient(0,0,1600,900);bg.addColorStop(0,'#fbfcff');bg.addColorStop(.52,'#f6f8fc');bg.addColorStop(1,'#f0f5f8');ctx.fillStyle=bg;ctx.fillRect(0,0,1600,900);
+  const left=ctx.createRadialGradient(160,170,20,160,170,360);left.addColorStop(0,'rgba(103,122,229,.07)');left.addColorStop(1,'rgba(103,122,229,0)');ctx.fillStyle=left;ctx.fillRect(0,0,620,520);
+  const right=ctx.createRadialGradient(1380,610,20,1380,610,360);right.addColorStop(0,'rgba(57,174,128,.065)');right.addColorStop(1,'rgba(57,174,128,0)');ctx.fillStyle=right;ctx.fillRect(980,250,620,650);
+}
+
 function drawModernRail(ctx:CanvasRenderingContext2D,x:number,y:number,width:number,height:number,angle:number,selected=false,ghost=false):void{
   ctx.save();ctx.translate(x,y);ctx.rotate(angle);
   if(ghost){
@@ -81,8 +87,7 @@ function drawLevel01Scene(ctx:CanvasRenderingContext2D):void{
   const start=ACTIVE_LEVEL.platforms.find(item=>item.id==='start-ramp');
   const finish=ACTIVE_LEVEL.platforms.find(item=>item.id==='finish-ramp');
   ctx.save();
-  const glow=ctx.createLinearGradient(0,0,1600,900);glow.addColorStop(0,'rgba(103,126,232,.035)');glow.addColorStop(.64,'rgba(103,126,232,0)');glow.addColorStop(1,'rgba(61,179,132,.035)');ctx.fillStyle=glow;ctx.fillRect(0,0,1600,900);
-  ctx.strokeStyle='rgba(71,88,116,.1)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(40,805);ctx.lineTo(1560,805);ctx.stroke();
+  ctx.strokeStyle='rgba(71,88,116,.09)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(50,805);ctx.lineTo(1550,805);ctx.stroke();
   if(start)drawModernRail(ctx,start.x,start.y,start.width,start.height,start.angle,false);
   if(finish)drawModernRail(ctx,finish.x,finish.y,finish.width,finish.height,finish.angle,false);
   for(const bonus of LEVEL01_BONUSES)drawBonus(ctx,bonus.x,bonus.y,isLevel01BonusCollected(bonus.id));
@@ -97,8 +102,13 @@ function patchRenderer():void{
   const proto=CanvasRenderer.prototype as unknown as RendererInternals;
   if(proto.__level01Polish2Installed)return;
   proto.__level01Polish2Installed=true;
+  const previousWorkshop=proto.drawWorkshop;
   const previousLevel=proto.drawLevel;
   const previousPart=proto.drawPart;
+  proto.drawWorkshop=function polishedWorkshop(this:RendererInternals,ctx:CanvasRenderingContext2D):void{
+    if(!isCanonicalLevel01()){previousWorkshop.call(this,ctx);return;}
+    drawCleanWorkshop(ctx);
+  };
   proto.drawLevel=function polishedLevel(this:RendererInternals,ctx:CanvasRenderingContext2D):void{
     if(!isCanonicalLevel01()){previousLevel.call(this,ctx);return;}
     drawLevel01Scene(ctx);
