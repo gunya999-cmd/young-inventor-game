@@ -1,6 +1,7 @@
 import './style.css';
 import './gamefeel.css';
 import './level01Experience.css';
+import './bowlingBall3d.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -10,6 +11,7 @@ import { installFinalVisuals } from './finalVisuals';
 import { installLevelVisuals } from './levelVisuals';
 import { installActiveLevelUi } from './levelUi';
 import { installLevel01Experience } from './level01Experience';
+import { installBowlingBall3D } from './bowlingBall3d';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -41,6 +43,7 @@ try {
   installLevelVisuals();
   installActiveLevelUi();
   installEditorUiIntegration();
+  installBowlingBall3D();
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   const app = new GameApp(canvas);
