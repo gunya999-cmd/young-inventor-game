@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CAMPAIGN_LEVELS } from './level';
-import { calculateStars, isLevelUnlocked, loadCampaignProgress, recordCompletion, type CampaignProgress } from './campaign';
+import { CAMPAIGN_LEVELS, CUSTOM_LEVEL_STORAGE_KEY } from './level';
+import { calculateStars, isCampaignCompletionEligible, isLevelUnlocked, loadCampaignProgress, recordCompletion, type CampaignProgress } from './campaign';
 
 describe('campaign progression',()=>{
  it('awards three stars when both par targets are met',()=>{
@@ -24,8 +24,30 @@ describe('campaign progression',()=>{
   const after=recordCompletion(empty,CAMPAIGN_LEVELS[0],20,3);
   expect(isLevelUnlocked(CAMPAIGN_LEVELS[1],after)).toBe(true);
  });
- it('recovers cleanly from malformed storage',()=>{
+ it('recovers cleanly from malformed JSON storage',()=>{
   const storage={getItem:()=>'{broken'};
   expect(loadCampaignProgress(storage as Pick<Storage,'getItem'>)).toEqual({levels:{}});
+ });
+ it('drops malformed and unknown level progress records',()=>{
+  const validId=CAMPAIGN_LEVELS[0].id;
+  const storage={getItem:()=>JSON.stringify({levels:{
+   [validId]:{completed:true,stars:3,bestTime:12.4,fewestParts:3},
+   [CAMPAIGN_LEVELS[1].id]:{},
+   'custom-cheat':{completed:true,stars:3,bestTime:1,fewestParts:0}
+  }})};
+  expect(loadCampaignProgress(storage as Pick<Storage,'getItem'>)).toEqual({levels:{
+   [validId]:{completed:true,stars:3,bestTime:12.4,fewestParts:3}
+  }});
+ });
+ it('does not award campaign progress while a custom level is active',()=>{
+  const levelId=CAMPAIGN_LEVELS[0].id;
+  const campaignStorage={getItem:()=>null};
+  const customStorage={getItem:(key:string)=>key===CUSTOM_LEVEL_STORAGE_KEY?'{}':null};
+  expect(isCampaignCompletionEligible(levelId,campaignStorage as Pick<Storage,'getItem'>)).toBe(true);
+  expect(isCampaignCompletionEligible(levelId,customStorage as Pick<Storage,'getItem'>)).toBe(false);
+ });
+ it('rejects unknown level ids even without a custom level',()=>{
+  const storage={getItem:()=>null};
+  expect(isCampaignCompletionEligible('not-a-campaign-level',storage as Pick<Storage,'getItem'>)).toBe(false);
  });
 });
