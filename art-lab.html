@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#e8edf3" />
+    <meta name="description" content="Изолированная WebGL-лаборатория графики деталей для Машины изобретателя." />
+    <title>Art Lab · Машина изобретателя</title>
+  </head>
+  <body>
+    <main class="art-lab-shell">
+      <header class="art-lab-header">
+        <div>
+          <small>VISUAL R&D · LEVEL 01</small>
+          <h1>Графика деталей</h1>
+          <p>Изолированный WebGL-прототип. Физика и основной интерфейс игры здесь не меняются.</p>
+        </div>
+        <a href="/?level=1" class="back-link">← Вернуться в игру</a>
+      </header>
+
+      <section class="art-stage" aria-label="WebGL-просмотр деталей">
+        <canvas id="art-canvas" data-renderer="webgl-orthographic"></canvas>
+        <div class="art-stage-badge"><i></i><span>REAL 3D · ORTHOGRAPHIC</span></div>
+        <div class="part-label label-ball"><b>Шар</b><span>металл / композит</span></div>
+        <div class="part-label label-rail"><b>Рельс</b><span>алюминий / резиновая дорожка</span></div>
+        <div class="part-label label-goal"><b>Приёмник</b><span>корпус / мягкая посадочная зона</span></div>
+      </section>
+
+      <aside class="art-controls">
+        <div class="control-copy">
+          <small>ПРОВЕРКА ТРАНСФОРМАЦИИ</small>
+          <strong>Поворот рельса</strong>
+          <p>Это настоящая 3D-геометрия. Поворот выполняется вокруг оси физического объекта, без смены заранее нарисованного спрайта.</p>
+        </div>
+        <label class="angle-control">
+          <span><b>Угол</b><output id="art-angle-output">−12°</output></span>
+          <input id="art-angle" type="range" min="-55" max="55" step="1" value="-12" />
+        </label>
+        <div class="material-stats" aria-label="Материалы прототипа">
+          <span><i class="swatch aluminium"></i><b>Алюминий</b><small>metalness .82</small></span>
+          <span><i class="swatch rubber"></i><b>Резина</b><small>roughness .72</small></span>
+          <span><i class="swatch polymer"></i><b>Полимер</b><small>soft-touch</small></span>
+          <span><i class="swatch led"></i><b>LED</b><small>emissive</small></span>
+        </div>
+      </aside>
+
+      <div id="art-fatal" class="art-fatal" hidden></div>
+    </main>
+    <script type="module" src="/src/artLab.ts"></script>
+  </body>
+</html>
