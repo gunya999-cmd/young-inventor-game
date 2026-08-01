@@ -13,6 +13,8 @@ import { installBrowserSmokeBridge } from './e2eBridge';
 import { installSignalEditor } from './signalEditor';
 import { installDeviceSettingsUi } from './deviceSettingsUi';
 import { installLevelEditor } from './levelEditor';
+import { installCampaign } from './campaign';
+import { installCampaignCompletionHook } from './campaignHook';
 
 function showFatalError(error: unknown): void {
   const panel = document.querySelector<HTMLElement>('#fatal-error');
@@ -38,6 +40,8 @@ try {
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
   const app = new GameApp(canvas);
+  installCampaignCompletionHook(app);
+  installCampaign();
   installSignalEditor(app);
   installDeviceSettingsUi(app);
   installLevelEditor(app);
