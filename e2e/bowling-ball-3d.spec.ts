@@ -34,3 +34,15 @@ test('Bowling Ball is a real Three.js object synchronized with Planck', async ({
   expect(finish.y).not.toBe(start.y);
   expect(finish.angle).not.toBe(start.angle);
 });
+
+test('Bowling Ball asset lab renders a large touch-rotatable 3D preview', async ({ page }) => {
+  await page.goto('/?asset=bowling-ball');
+  const lab = page.locator('.bowling-ball-lab');
+  const preview = lab.locator('canvas');
+  await expect(lab).toBeVisible();
+  await expect(lab.locator('h1')).toHaveText('Bowling Ball');
+  await expect(preview).toBeVisible();
+  const box = await preview.boundingBox();
+  expect(box?.width ?? 0).toBeGreaterThan(500);
+  expect(box?.height ?? 0).toBeGreaterThan(400);
+});
