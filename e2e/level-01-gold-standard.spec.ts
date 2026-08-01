@@ -3,12 +3,13 @@ import { expect, test } from '@playwright/test';
 const SELECTED_LEVEL_KEY='young-inventor:campaign:selected:v1';
 const CUSTOM_LEVEL_KEY='young-inventor:custom-level:v1';
 
-test('level 01 teaches build, rotation and test as a focused first experience',async({page})=>{
+test('level 01 teaches, rewards and completes as a focused modern first experience',async({page})=>{
  const consoleErrors:string[]=[];
  page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
  page.on('pageerror',error=>consoleErrors.push(error.message));
  await page.addInitScript(({selectedKey,customKey})=>{
   localStorage.removeItem(customKey);
+  localStorage.removeItem('young-inventor:level-01:best:v2');
   localStorage.setItem(selectedKey,'first-ramp');
  },{selectedKey:SELECTED_LEVEL_KEY,customKey:CUSTOM_LEVEL_KEY});
  await page.goto('/?e2e=1');
@@ -17,11 +18,13 @@ test('level 01 teaches build, rotation and test as a focused first experience',a
 
  await expect(page.locator('.mission-summary .level-number')).toHaveText('01');
  await expect(page.locator('.mission-summary h1')).toHaveText('Первый маршрут');
- await expect(page.locator('.task-card h2')).toHaveText('Построй непрерывный спуск');
  await expect(page.locator('.palette-part:visible')).toHaveCount(1);
  await expect(page.locator('.palette-part[data-kind="plank"]')).toBeVisible();
  await expect(page.locator('.palette-part[data-kind="plank"] [data-count]')).toHaveText('×3');
  await expect(page.locator('.connections-card')).toBeHidden();
+ await expect(page.locator('#level01-hud')).toBeVisible();
+ await expect(page.locator('[data-bonus-count]')).toHaveText('0/3');
+ await expect(page.locator('[data-best]')).toContainText('первый запуск');
  await expect(page.locator('#level-coach')).toBeVisible();
  await expect(page.locator('.coach-progress b')).toHaveText('0/3');
 
@@ -37,8 +40,12 @@ test('level 01 teaches build, rotation and test as a focused first experience',a
  await expect(page.locator('#mode-label')).toHaveText('СИМУЛЯЦИЯ');
  await expect(page.locator('.coach-progress b')).toHaveText('3/3');
  await expect(page.locator('#result-card')).toHaveClass(/visible/,{timeout:25_000});
- await expect(page.locator('#result-card h2')).toHaveText('Первый маршрут работает!');
- await expect(page.locator('.level-takeaway')).toContainText('Наклон превращает высоту в скорость');
+ await expect(page.locator('#result-card h2')).toHaveText('Маршрут работает!');
+ await expect(page.locator('[data-bonus-count]')).toHaveText('3/3');
+ await expect(page.locator('.result-medal.earned')).toHaveCount(3);
+ await expect(page.locator('.level01-result-score')).toContainText('3/3');
+ await expect(page.locator('.level-takeaway')).toContainText('Один и тот же финиш можно получить разными траекториями');
+ await expect(page.locator('[data-best]')).toContainText('/3');
  await expect(page.locator('#fatal-error')).toBeHidden();
  expect(consoleErrors).toEqual([]);
 });
@@ -61,5 +68,6 @@ test('a custom level may reuse the first-ramp id without inheriting tutorial res
  await expect(page.locator('.palette-part[data-kind="lever"]')).toBeVisible();
  await expect(page.locator('.connections-card')).toBeVisible();
  await expect(page.locator('#level-coach')).toHaveCount(0);
+ await expect(page.locator('#level01-hud')).toHaveCount(0);
  await expect(page.locator('#run-button')).toHaveText('▶ Запустить');
 });
