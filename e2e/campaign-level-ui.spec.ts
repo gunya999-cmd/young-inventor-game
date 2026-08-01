@@ -29,7 +29,7 @@ test('campaign selection updates all visible level copy after reload',async({pag
  await expect(page.locator('.task-card .eyebrow')).toHaveText('ЗАДАЧА');
  await expect(page.locator('.task-card h2')).toHaveText('Воздушный поток');
  await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('Используй вентилятор');
- await expect(page.locator('.principles-row')).toContainText('механика');
+ await expect(page.locator('.principles-row')).toContainText('поток');
  await expect(page).toHaveTitle(/Воздушный поток/);
 
  await page.locator('#campaign-open').click();
