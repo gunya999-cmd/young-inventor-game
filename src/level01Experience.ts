@@ -1,4 +1,4 @@
-import { ACTIVE_LEVEL } from './level';
+import { ACTIVE_LEVEL, CUSTOM_LEVEL_STORAGE_KEY } from './level';
 import { evaluateBuildReadiness, type BuildReadiness } from './levelRules';
 import { getLevelPresentation } from './levelPresentation';
 import type { MachineSnapshot } from './model';
@@ -38,7 +38,7 @@ function ensureTakeaway():HTMLElement|null{
 }
 
 export function installLevel01Experience(appInstance:unknown):void{
- if(ACTIVE_LEVEL.id!=='first-ramp')return;
+ if(ACTIVE_LEVEL.id!=='first-ramp'||localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY))return;
  const app=appInstance as AppInternals;
  const frame=document.querySelector<HTMLElement>('.canvas-frame');
  if(!frame)return;
