@@ -1,3 +1,10 @@
+.desktop-app[data-level-id="first-ramp"] .palette-part:not([data-kind="plank"]),
+.desktop-app[data-level-id="first-ramp"] .inventory-section-label,
+.desktop-app[data-level-id="first-ramp"] .connections-card,
+.desktop-app[data-level-id="first-ramp"] .property-group[hidden],
+.desktop-app[data-level-id="first-ramp"] .project-actions[hidden] {
+  display: none !important;
+}
 .desktop-app[data-level-id="first-ramp"] .library-panel {
   background: linear-gradient(180deg,rgba(252,249,242,.98),rgba(243,237,226,.98));
 }
