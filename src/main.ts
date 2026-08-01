@@ -2,6 +2,7 @@ import './style.css';
 import './gamefeel.css';
 import './level01Experience.css';
 import './bowlingBall3d.css';
+import './bowlingBallLab.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -12,6 +13,7 @@ import { installLevelVisuals } from './levelVisuals';
 import { installActiveLevelUi } from './levelUi';
 import { installLevel01Experience } from './level01Experience';
 import { installBowlingBall3D } from './bowlingBall3d';
+import { installBowlingBallLab } from './bowlingBallLab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -55,6 +57,7 @@ try {
   installLevelEditor(app);
   installCompletionGuard();
   installBrowserSmokeBridge(app);
+  installBowlingBallLab();
 } catch (error) {
   showFatalError(error);
 }
