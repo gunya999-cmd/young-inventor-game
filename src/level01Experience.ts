@@ -5,20 +5,24 @@ import type { MachineSnapshot } from './model';
 
 type AppInternals={
  snapshot:MachineSnapshot;
+ runtimeSnapshot:MachineSnapshot;
  mode:string;
  completed:boolean;
+ elapsed:number;
  start:()=>void;
+ stop:()=>void;
  updateUi:()=>void;
  setStatus:(message:string)=>void;
 };
 
 const COACH_KEY='young-inventor:level-01:coach-collapsed:v1';
+const FAILED_TRIAL_SECONDS=21;
 
 function hideAdvancedControls():void{
  const propertyGroups=[...document.querySelectorAll<HTMLElement>('.property-group')];
  for(const group of propertyGroups){
   const title=group.querySelector('h3')?.textContent?.trim();
-  if(title==='Положение'||title==='Крепление')group.hidden=true;
+  if(title==='Положение'||title==='Крепление'||title==='Действия')group.hidden=true;
  }
  const project=document.querySelector<HTMLElement>('.project-actions');
  if(project)project.hidden=true;
@@ -35,6 +39,15 @@ function ensureTakeaway():HTMLElement|null{
   card.insertBefore(takeaway,time);
  }
  return takeaway;
+}
+
+function failedTrialMessage(snapshot:MachineSnapshot):string{
+ const ball=snapshot.parts.find(part=>part.id===ACTIVE_LEVEL.targetPartId);
+ const x=ball?.x??0;
+ if(x<520)return 'Шар потерялся у первого стыка. Подними начало первого рельса и слегка перекрой им стартовую площадку.';
+ if(x<880)return 'Шар дошёл до середины. Проверь стык между рельсами 1 и 2: там не должно быть ступеньки или зазора.';
+ if(x<1240)return 'Почти получилось. Сделай переход с рельса 3 на финишную площадку более плавным.';
+ return 'Шар дошёл до финиша, но не попал в приёмник. Чуть направь последний рельс вниз к зелёной зоне.';
 }
 
 export function installLevel01Experience(appInstance:unknown):void{
@@ -57,13 +70,15 @@ export function installLevel01Experience(appInstance:unknown):void{
   <header><div><small>КАК НАЧАТЬ</small><strong>Собери маршрут</strong></div><button id="level-coach-toggle" type="button" aria-label="Свернуть подсказки">−</button></header>
   <div class="coach-progress"><span></span><b>0/3</b></div>
   <ol>
-   <li data-step="place"><i>1</i><div><b>Перетащи 3 рельса</b><span>Возьми направляющие слева и перекрой ими большой разрыв.</span></div></li>
+   <li data-step="place"><i>1</i><div><b>Перетащи 3 рельса</b><span>Положи по одному рельсу в широкие зоны 1, 2 и 3 на поле.</span></div></li>
    <li data-step="rotate"><i>2</i><div><b>Сделай плавный спуск</b><span>Выбирай рельс и поворачивай круглой ручкой или клавишами Q / E.</span></div></li>
    <li data-step="test"><i>3</i><div><b>Испытай конструкцию</b><span>Когда путь готов, нажми «Испытать маршрут» и наблюдай за шаром.</span></div></li>
   </ol>
-  <p class="coach-note">Совет: стыки лучше слегка перекрывать — шар не любит ступеньки.</p>`;
+  <p class="coach-note">Совет: стыки лучше слегка перекрывать — шар не любит ступеньки.</p>
+  <p class="coach-feedback" hidden></p>`;
  frame.appendChild(coach);
 
+ const feedback=coach.querySelector<HTMLElement>('.coach-feedback')!;
  let runAttempted=false;
  let attentionTimer=0;
  const collapsed=localStorage.getItem(COACH_KEY)==='1';
@@ -74,6 +89,11 @@ export function installLevel01Experience(appInstance:unknown):void{
   const isCollapsed=coach.classList.contains('collapsed');
   toggle.textContent=isCollapsed?'?':'−';
   toggle.setAttribute('aria-label',isCollapsed?'Показать подсказки':'Свернуть подсказки');
+ };
+ const flashCoach=()=>{
+  coach.classList.add('attention');
+  window.clearTimeout(attentionTimer);
+  attentionTimer=window.setTimeout(()=>coach.classList.remove('attention'),850);
  };
  syncToggle();
  toggle.addEventListener('click',()=>{
@@ -110,19 +130,37 @@ export function installLevel01Experience(appInstance:unknown):void{
   if(!readiness.ready){
    app.setStatus(readiness.message);
    render(readiness);
-   coach.classList.add('attention');
-   window.clearTimeout(attentionTimer);
-   attentionTimer=window.setTimeout(()=>coach.classList.remove('attention'),850);
+   flashCoach();
    return;
   }
+  feedback.hidden=true;
+  feedback.textContent='';
   runAttempted=true;
   originalStart();
   render(readiness);
  };
 
+ const watchTrial=()=>{
+  if(app.mode==='running'&&!app.completed&&app.elapsed>=FAILED_TRIAL_SECONDS){
+   const message=failedTrialMessage(app.runtimeSnapshot);
+   app.stop();
+   app.setStatus(message);
+   feedback.textContent=message;
+   feedback.hidden=false;
+   coach.classList.remove('collapsed');
+   localStorage.setItem(COACH_KEY,'0');
+   syncToggle();
+   flashCoach();
+   render();
+  }
+  requestAnimationFrame(watchTrial);
+ };
+ requestAnimationFrame(watchTrial);
+
  const takeaway=ensureTakeaway();
  if(takeaway)takeaway.innerHTML=`<small>ЧТО ТЫ СЕЙЧАС ПРОВЕРИЛ</small><strong>${presentation.takeaway}</strong>`;
  window.addEventListener('tim-level-complete',()=>{
+  feedback.hidden=true;
   coach.classList.remove('collapsed');
   localStorage.setItem(COACH_KEY,'0');
   syncToggle();
