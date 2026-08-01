@@ -11,6 +11,15 @@ export interface LevelPresentation {
  takeaway:string;
 }
 
+const CONCEPTS:Record<string,string[]>={
+ balance:['рычаг','ось','момент'],
+ 'rope-work':['натяжение','шкив','противовес'],
+ 'spring-step':['упругость','импульс','домино'],
+ airflow:['поток','траектория','импульс'],
+ automation:['сигнал','переключатель','цепочка'],
+ 'impulse-and-moment':['импульс','момент','натяжение','упругость']
+};
+
 const PRESENTATIONS:Record<string,LevelPresentation>={
  'first-ramp':{
   eyebrow:'ПЕРВАЯ ИНЖЕНЕРНАЯ ЗАДАЧА',
@@ -30,7 +39,7 @@ export function getLevelPresentation(level:LevelSpec):LevelPresentation{
   taskTitle:level.title,
   taskBody:level.subtitle,
   buildPrompt:level.subtitle,
-  concepts:['механика','траектория'],
+  concepts:CONCEPTS[level.id]??['механика','траектория'],
   successTitle:'Механизм сработал',
   successBody:'Контрольный объект достиг приёмника.',
   takeaway:'Проверь, какое физическое действие оказалось ключевым для решения.'
