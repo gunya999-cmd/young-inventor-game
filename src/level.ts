@@ -20,7 +20,26 @@ function campaignLevel(number:number,id:string,title:string,subtitle:string,avai
   initialParts:[{id:'target-ball',kind:'ball',x:105,y:175,angle:0,fixed:false,locked:true}],initialSignals:[],inventory:inventory(available),maxRopes:number>=3?2:1,maxHinges:number>=2?2:1,targetPartId:'target-ball',parTime,parParts};
 }
 
-export const LEVEL_01=campaignLevel(1,'first-ramp','Первый запуск','Доставь шар в приёмник, используя только направляющие.',{plank:4},18,3);
+/**
+ * Level 01 is intentionally authored separately from the campaign template.
+ * It is the interaction tutorial and therefore has one readable problem:
+ * bridge a single large drop with exactly three movable guide rails.
+ */
+export const LEVEL_01:LevelSpec={
+ id:'first-ramp',number:1,title:'Первый маршрут',
+ subtitle:'Соедини стартовую площадку с финишем тремя направляющими и проведи шар в приёмник.',
+ gravity:9.81,
+ platforms:[
+  {id:'floor',x:800,y:820,width:1560,height:30,angle:0},
+  {id:'left-safety',x:32,y:470,width:24,height:700,angle:0},
+  {id:'right-safety',x:1568,y:470,width:24,height:700,angle:0},
+  {id:'start-ramp',x:270,y:260,width:380,height:24,angle:.14},
+  {id:'finish-ramp',x:1160,y:500,width:300,height:24,angle:.07}
+ ],
+ receiver:{x:1400,y:610,innerWidth:150,innerHeight:110,wallThickness:22,floorThickness:22},
+ initialParts:[{id:'target-ball',kind:'ball',x:105,y:170,angle:0,fixed:false,locked:true}],
+ initialSignals:[],inventory:inventory({plank:3}),maxRopes:0,maxHinges:0,targetPartId:'target-ball',parTime:12,parParts:3
+};
 export const LEVEL_02=campaignLevel(2,'balance','Равновесие','Используй балансир и ось, чтобы передать шару импульс.',{plank:3,lever:1,weight:1},22,4);
 export const LEVEL_03=campaignLevel(3,'rope-work','Верёвочная работа','Проведи шар через механизм с верёвкой и шкивом.',{plank:3,lever:1,sheave:2,weight:1},28,5);
 export const LEVEL_04=campaignLevel(4,'spring-step','Пружинный шаг','Подбрось шар пружиной на следующую секцию.',{plank:3,spring:1,domino:4},26,5);

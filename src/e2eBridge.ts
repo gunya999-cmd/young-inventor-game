@@ -1,5 +1,6 @@
 import { createInitialSnapshot, cloneSnapshot, SnapshotHistory, type MachineSnapshot, type Point } from './model';
-import { createLevel07ReferenceSolution } from './referenceSolution';
+import { ACTIVE_LEVEL } from './level';
+import { createCampaignReferenceSolution } from './campaignReferenceSolutions';
 
 type Internals = Record<string, any>;
 
@@ -57,7 +58,7 @@ export function installBrowserSmokeBridge(app: unknown): void {
       installSnapshot(internals, snapshot, null);
     },
     loadReferenceSolution(): void {
-      installSnapshot(internals, createLevel07ReferenceSolution(), null);
+      installSnapshot(internals, createCampaignReferenceSolution(ACTIVE_LEVEL), null);
     },
     snapshot(): MachineSnapshot {
       return cloneSnapshot(internals.snapshot);

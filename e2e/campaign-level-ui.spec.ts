@@ -12,14 +12,14 @@ test('campaign selection updates all visible level copy after reload',async({pag
  await page.reload();
  await expect(page.locator('#fatal-error')).toBeHidden();
  await expect(page.locator('.mission-summary .level-number')).toHaveText('01');
- await expect(page.locator('.mission-summary h1')).toHaveText('Первый запуск');
- await expect(page.locator('.mission-summary .mission-copy')).toContainText('Доставь шар в приёмник');
+ await expect(page.locator('.mission-summary h1')).toHaveText('Первый маршрут');
+ await expect(page.locator('.mission-summary .mission-copy')).toContainText('тремя направляющими');
  await expect(page.locator('.task-card .eyebrow')).toHaveText('ЗАДАЧА');
- await expect(page.locator('.task-card h2')).toHaveText('Первый запуск');
- await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('используя только направляющие');
- await expect(page.locator('.build-prompt span')).toContainText('используя только направляющие');
+ await expect(page.locator('.task-card h2')).toHaveText('Построй непрерывный спуск');
+ await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('ровно три направляющие');
+ await expect(page.locator('.build-prompt span')).toContainText('3 направляющие');
  await expect(page.locator('.principles-row')).toContainText('наклон');
- await expect(page).toHaveTitle(/Первый запуск/);
+ await expect(page).toHaveTitle(/Первый маршрут/);
 
  await page.evaluate((key)=>localStorage.setItem(key,'airflow'),SELECTED_LEVEL_KEY);
  await page.reload();
