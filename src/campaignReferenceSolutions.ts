@@ -35,7 +35,7 @@ function createIntroRoute(level:LevelSpec):MachineSnapshot{
 }
 
 export function createCampaignReferenceSolution(level:LevelSpec):MachineSnapshot{
- if(level.id===LEVEL_01.id)return createLevel01Route(level);
- if(level.id===LEVEL_07.id)return createLevel07ReferenceSolution();
+ if(level===LEVEL_01)return createLevel01Route(level);
+ if(level===LEVEL_07)return createLevel07ReferenceSolution();
  return createIntroRoute(level);
 }
