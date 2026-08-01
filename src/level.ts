@@ -57,8 +57,8 @@ export function normalizeLevel(value:unknown,fallback:LevelSpec=LEVEL_07):LevelS
 }
 
 function loadActiveLevel():LevelSpec{
- if(typeof localStorage==='undefined')return LEVEL_01;
- const custom=localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY); if(custom){try{return normalizeLevel(JSON.parse(custom))??LEVEL_01;}catch{/* ignore */}}
- const selected=localStorage.getItem(SELECTED_LEVEL_STORAGE_KEY); return CAMPAIGN_LEVELS.find(level=>level.id===selected)??LEVEL_01;
+ if(typeof localStorage==='undefined')return LEVEL_07;
+ const custom=localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY); if(custom){try{return normalizeLevel(JSON.parse(custom))??LEVEL_07;}catch{/* ignore */}}
+ const selected=localStorage.getItem(SELECTED_LEVEL_STORAGE_KEY); return CAMPAIGN_LEVELS.find(level=>level.id===selected)??LEVEL_07;
 }
 export const ACTIVE_LEVEL=loadActiveLevel();
