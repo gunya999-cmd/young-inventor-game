@@ -198,6 +198,17 @@
   font-size: 7px;
   line-height: 1.4;
 }
+.coach-feedback {
+  margin: 9px 0 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(191,132,65,.3);
+  border-radius: 8px;
+  color: #79532c;
+  background: rgba(248,229,194,.72);
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.4;
+}
 .level-coach.ready {
   border-color: rgba(82,143,98,.5);
   box-shadow: 0 16px 36px rgba(65,105,72,.16),0 0 0 3px rgba(93,151,106,.08);
@@ -219,7 +230,8 @@
 .level-coach.collapsed header > div,
 .level-coach.collapsed .coach-progress,
 .level-coach.collapsed ol,
-.level-coach.collapsed .coach-note {
+.level-coach.collapsed .coach-note,
+.level-coach.collapsed .coach-feedback {
   display: none;
 }
 .level-coach.collapsed header {
