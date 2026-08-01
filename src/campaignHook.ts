@@ -1,4 +1,5 @@
 import { ACTIVE_LEVEL } from './level';
+import { isCampaignCompletionEligible } from './campaign';
 import type { MachineSnapshot } from './model';
 
 interface CampaignAppBridge {
@@ -14,7 +15,7 @@ export function installCampaignCompletionHook(appInstance:unknown):void{
   const wasVisible=document.querySelector('#result-card')?.classList.contains('visible')??false;
   original();
   const isVisible=document.querySelector('#result-card')?.classList.contains('visible')??false;
-  if(wasVisible||!isVisible)return;
+  if(wasVisible||!isVisible||!isCampaignCompletionEligible(ACTIVE_LEVEL.id))return;
   const usedParts=app.runStartSnapshot.parts.filter(part=>!part.locked).length;
   window.dispatchEvent(new CustomEvent('tim-level-complete',{detail:{elapsed:app.elapsed,usedParts,levelId:ACTIVE_LEVEL.id}}));
  };
