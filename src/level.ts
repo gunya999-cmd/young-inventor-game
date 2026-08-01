@@ -30,7 +30,9 @@ export const LEVEL_01:LevelSpec={
  subtitle:'Соедини стартовую площадку с финишем тремя направляющими и проведи шар в приёмник.',
  gravity:9.81,
  platforms:[
-  {id:'floor',x:800,y:820,width:1500,height:30,angle:0},
+  {id:'floor',x:800,y:820,width:1560,height:30,angle:0},
+  {id:'left-safety',x:32,y:470,width:24,height:700,angle:0},
+  {id:'right-safety',x:1568,y:470,width:24,height:700,angle:0},
   {id:'start-ramp',x:270,y:260,width:380,height:24,angle:.14},
   {id:'finish-ramp',x:1160,y:500,width:300,height:24,angle:.07}
  ],
