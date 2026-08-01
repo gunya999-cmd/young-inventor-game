@@ -42,3 +42,24 @@ test('level 01 teaches build, rotation and test as a focused first experience',a
  await expect(page.locator('#fatal-error')).toBeHidden();
  expect(consoleErrors).toEqual([]);
 });
+
+test('a custom level may reuse the first-ramp id without inheriting tutorial restrictions',async({page})=>{
+ await page.addInitScript((customKey)=>{
+  localStorage.setItem(customKey,JSON.stringify({
+   id:'first-ramp',number:99,title:'Мой эксперимент',subtitle:'Пользовательская механика.',gravity:9.81,
+   platforms:[{id:'floor',x:800,y:815,width:1500,height:30,angle:0}],
+   receiver:{x:1380,y:680,innerWidth:150,innerHeight:105,wallThickness:22,floorThickness:22},
+   initialParts:[{id:'target-ball',kind:'ball',x:200,y:200,angle:0,fixed:false}],
+   initialSignals:[],inventory:{plank:1,lever:1},maxRopes:1,maxHinges:1,targetPartId:'target-ball',parTime:30,parParts:4
+  }));
+ },CUSTOM_LEVEL_KEY);
+ await page.goto('/?e2e=1');
+ await expect(page.locator('#fatal-error')).toBeHidden();
+ await expect(page.locator('.mission-summary h1')).toHaveText('Мой эксперимент');
+ await expect(page.locator('.task-card h2')).toHaveText('Мой эксперимент');
+ await expect(page.locator('.palette-part[data-kind="plank"]')).toBeVisible();
+ await expect(page.locator('.palette-part[data-kind="lever"]')).toBeVisible();
+ await expect(page.locator('.connections-card')).toBeVisible();
+ await expect(page.locator('#level-coach')).toHaveCount(0);
+ await expect(page.locator('#run-button')).toHaveText('▶ Запустить');
+});
