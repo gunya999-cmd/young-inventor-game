@@ -36,28 +36,33 @@ function showFatalError(error: unknown): void {
 window.addEventListener('error', (event) => showFatalError(event.error ?? event.message));
 window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
-try {
-  installExtendedParts();
-  installPulleySystem();
-  installSpringSystem();
-  installEventSystem();
-  installFinalVisuals();
-  installLevelVisuals();
-  installActiveLevelUi();
-  installEditorUiIntegration();
-  installBowlingBall3D();
-  const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
-  if (!canvas) throw new Error('Canvas игрового поля не найден.');
-  const app = new GameApp(canvas);
-  installCampaignCompletionHook(app);
-  installCampaign();
-  installLevel01Experience(app);
-  installSignalEditor(app);
-  installDeviceSettingsUi(app);
-  installLevelEditor(app);
-  installCompletionGuard();
-  installBrowserSmokeBridge(app);
+const assetPreview = new URLSearchParams(location.search).get('asset');
+
+if (assetPreview === 'bowling-ball') {
   installBowlingBallLab();
-} catch (error) {
-  showFatalError(error);
+} else {
+  try {
+    installExtendedParts();
+    installPulleySystem();
+    installSpringSystem();
+    installEventSystem();
+    installFinalVisuals();
+    installLevelVisuals();
+    installActiveLevelUi();
+    installEditorUiIntegration();
+    installBowlingBall3D();
+    const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
+    if (!canvas) throw new Error('Canvas игрового поля не найден.');
+    const app = new GameApp(canvas);
+    installCampaignCompletionHook(app);
+    installCampaign();
+    installLevel01Experience(app);
+    installSignalEditor(app);
+    installDeviceSettingsUi(app);
+    installLevelEditor(app);
+    installCompletionGuard();
+    installBrowserSmokeBridge(app);
+  } catch (error) {
+    showFatalError(error);
+  }
 }
