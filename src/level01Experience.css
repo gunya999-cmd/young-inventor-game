@@ -69,7 +69,7 @@
   position: absolute;
   z-index: 14;
   top: 54px;
-  left: 16px;
+  right: 16px;
   width: min(292px,31%);
   padding: 12px;
   border: 1px solid rgba(157,126,82,.32);
@@ -258,7 +258,7 @@
 }
 @keyframes level-coach-nudge {
   0%,100% { transform: translateX(0); }
-  45% { transform: translateX(5px); }
+  45% { transform: translateX(-5px); }
 }
 @media(max-width:1260px){
   .level-coach { width: 250px; }
