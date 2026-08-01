@@ -1,5 +1,5 @@
 import { CanvasRenderer } from './renderer';
-import { ACTIVE_LEVEL, type LevelPlatform } from './level';
+import { ACTIVE_LEVEL, CUSTOM_LEVEL_STORAGE_KEY, type LevelPlatform } from './level';
 import { WORLD_HEIGHT, WORLD_WIDTH } from './model';
 
 type Internals = Record<string, any>;
@@ -43,7 +43,7 @@ export function installLevelVisuals():void{
 
   proto.drawWorkshop=function drawLevelBoard(this:Internals,ctx:CanvasRenderingContext2D):void{
     const board=ctx.createLinearGradient(0,0,WORLD_WIDTH,WORLD_HEIGHT);board.addColorStop(0,'#f8f4e9');board.addColorStop(.5,'#f2eddf');board.addColorStop(1,'#ece5d6');ctx.fillStyle=board;ctx.fillRect(0,0,WORLD_WIDTH,WORLD_HEIGHT);
-    ctx.save();ctx.strokeStyle='rgba(116,119,111,.07)';ctx.lineWidth=1;for(let x=0;x<=WORLD_WIDTH;x+=25){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD_HEIGHT);ctx.stroke();}for(let y=0;y<=WORLD_HEIGHT;y+=25){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD_WIDTH,y);ctx.stroke();}ctx.strokeStyle='rgba(116,105,87,.105)';ctx.lineWidth=1.4;for(let x=0;x<=WORLD_WIDTH;x+=100){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD_HEIGHT);ctx.stroke();}for(let y=0;y<=WORLD_HEIGHT;y+=100){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD_WIDTH,y);ctx.stroke();}ctx.restore();
+    ctx.save();ctx.strokeStyle='rgba(116,119,111,.07)';ctx.lineWidth=1;for(let x=0;x<=WORLD_WIDTH;x+=25){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD_HEIGHT);ctx.stroke();}for(let y=0;y<=WORLD_HEIGHT;y+=25){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD_WIDTH,y);ctx.stroke();}ctx.strokeStyle='rgba(116,105,87,.105)';ctx.lineWidth=1.4;for(let x=0;x<=WORLD_WIDTH;x+=100){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD_HEIGHT);ctx.stroke();}for(let y=0;y<=WORLD_HEIGHT;y+=100){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(x?x:0,y);ctx.stroke();}ctx.restore();
     ctx.fillStyle='rgba(118,105,85,.15)';for(let y=37;y<WORLD_HEIGHT;y+=50){for(let x=37;x<WORLD_WIDTH;x+=50){ctx.beginPath();ctx.arc(x,y,2.2,0,Math.PI*2);ctx.fill();}}
     ctx.strokeStyle='rgba(112,92,65,.22)';ctx.lineWidth=2;roundedRect(ctx,14,14,WORLD_WIDTH-28,WORLD_HEIGHT-28,16);ctx.stroke();
     ctx.fillStyle='rgba(91,88,80,.56)';ctx.font='800 13px system-ui';ctx.fillText(`УРОВЕНЬ ${String(ACTIVE_LEVEL.number).padStart(2,'0')} · ${ACTIVE_LEVEL.title.toUpperCase()}`,32,45);ctx.fillStyle='rgba(124,116,104,.46)';ctx.font='700 10px system-ui';ctx.fillText('Монтажная панель · g = 9.81 м/с² · 120 Hz',32,63);
@@ -52,7 +52,8 @@ export function installLevelVisuals():void{
   };
 
   proto.drawLevel=function drawSharedLevel(this:Internals,ctx:CanvasRenderingContext2D):void{
-    if(ACTIVE_LEVEL.id==='first-ramp')drawLevel01Guidance(ctx);
+    const canonicalLevel01=ACTIVE_LEVEL.id==='first-ramp'&&!localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY);
+    if(canonicalLevel01)drawLevel01Guidance(ctx);
     for(const platform of ACTIVE_LEVEL.platforms)drawPlatform(ctx,platform);
     const r=ACTIVE_LEVEL.receiver;const wallHeight=r.innerHeight+r.floorThickness;const wallY=r.y+r.floorThickness/2;const leftX=r.x-r.innerWidth/2-r.wallThickness/2;const rightX=r.x+r.innerWidth/2+r.wallThickness/2;const floorY=r.y+r.innerHeight/2+r.floorThickness/2;
     ctx.save();ctx.translate(r.x,r.y);ctx.shadowColor='rgba(59,93,67,.12)';ctx.shadowBlur=18;ctx.shadowOffsetY=7;ctx.fillStyle='rgba(205,226,207,.48)';roundedRect(ctx,-r.innerWidth/2,-r.innerHeight/2,r.innerWidth,r.innerHeight,12);ctx.fill();ctx.shadowColor='transparent';ctx.strokeStyle='#668b70';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#55735d';ctx.font='850 12px system-ui';ctx.textAlign='center';ctx.fillText('ПРИЁМНИК',0,r.innerHeight/2+62);ctx.restore();
