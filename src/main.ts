@@ -1,6 +1,7 @@
 import './style.css';
 import './gamefeel.css';
 import './level01Experience.css';
+import './threeRailLayer.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -10,6 +11,7 @@ import { installFinalVisuals } from './finalVisuals';
 import { installLevelVisuals } from './levelVisuals';
 import { installActiveLevelUi } from './levelUi';
 import { installLevel01Experience } from './level01Experience';
+import { installThreeRailVisuals } from './threeRailLayer';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -47,6 +49,7 @@ try {
   installCampaignCompletionHook(app);
   installCampaign();
   installLevel01Experience(app);
+  installThreeRailVisuals();
   installSignalEditor(app);
   installDeviceSettingsUi(app);
   installLevelEditor(app);
