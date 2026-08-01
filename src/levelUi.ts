@@ -22,7 +22,7 @@ export function installActiveLevelUi():void{
  text('.mission-summary h1',ACTIVE_LEVEL.title);
  text('.mission-summary .mission-copy',ACTIVE_LEVEL.subtitle);
  text('.task-card h2',ACTIVE_LEVEL.title);
- text('.task-card > p',ACTIVE_LEVEL.subtitle);
+ text('.task-card > p:not(.eyebrow)',ACTIVE_LEVEL.subtitle);
  text('.build-prompt span',ACTIVE_LEVEL.subtitle);
 
  const concepts=document.querySelector<HTMLElement>('.principles-row');
