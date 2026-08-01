@@ -75,8 +75,17 @@ export function normalizeLevel(value:unknown,fallback:LevelSpec=LEVEL_07):LevelS
   parTime:finite(raw.parTime)?clamp(raw.parTime,1,600):fallback.parTime,parParts:finite(raw.parParts)?clamp(Math.round(raw.parParts),1,99):fallback.parParts};
 }
 
+export function resolveCampaignLevelRequest(requested:string|null):LevelSpec|null{
+ const value=requested?.trim();
+ if(!value)return null;
+ const numeric=Number(value);
+ return CAMPAIGN_LEVELS.find(level=>level.id===value||(Number.isInteger(numeric)&&level.number===numeric))??null;
+}
+
 function loadActiveLevel():LevelSpec{
- if(typeof localStorage==='undefined')return LEVEL_07;
+ const requested=typeof location==='undefined'?null:resolveCampaignLevelRequest(new URLSearchParams(location.search).get('level'));
+ if(typeof localStorage==='undefined')return requested??LEVEL_07;
+ if(requested){localStorage.removeItem(CUSTOM_LEVEL_STORAGE_KEY);return requested;}
  const custom=localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY); if(custom){try{return normalizeLevel(JSON.parse(custom))??LEVEL_07;}catch{/* ignore */}}
  const selected=localStorage.getItem(SELECTED_LEVEL_STORAGE_KEY); return CAMPAIGN_LEVELS.find(level=>level.id===selected)??LEVEL_07;
 }
