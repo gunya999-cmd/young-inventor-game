@@ -4,11 +4,12 @@ const SELECTED_LEVEL_KEY='young-inventor:campaign:selected:v1';
 const CUSTOM_LEVEL_KEY='young-inventor:custom-level:v1';
 
 test('campaign selection updates all visible level copy after reload',async({page})=>{
- await page.addInitScript(({selectedKey,customKey})=>{
+ await page.goto('/?e2e=1');
+ await page.evaluate(({selectedKey,customKey})=>{
   localStorage.removeItem(customKey);
   localStorage.setItem(selectedKey,'first-ramp');
  },{selectedKey:SELECTED_LEVEL_KEY,customKey:CUSTOM_LEVEL_KEY});
- await page.goto('/?e2e=1');
+ await page.reload();
  await expect(page.locator('#fatal-error')).toBeHidden();
  await expect(page.locator('.mission-summary .level-number')).toHaveText('01');
  await expect(page.locator('.mission-summary h1')).toHaveText('Первый запуск');
