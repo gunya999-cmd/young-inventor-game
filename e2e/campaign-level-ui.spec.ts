@@ -14,7 +14,9 @@ test('campaign selection updates all visible level copy after reload',async({pag
  await expect(page.locator('.mission-summary .level-number')).toHaveText('01');
  await expect(page.locator('.mission-summary h1')).toHaveText('Первый запуск');
  await expect(page.locator('.mission-summary .mission-copy')).toContainText('Доставь шар в приёмник');
+ await expect(page.locator('.task-card .eyebrow')).toHaveText('ЗАДАЧА');
  await expect(page.locator('.task-card h2')).toHaveText('Первый запуск');
+ await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('используя только направляющие');
  await expect(page.locator('.build-prompt span')).toContainText('используя только направляющие');
  await expect(page.locator('.principles-row')).toContainText('наклон');
  await expect(page).toHaveTitle(/Первый запуск/);
@@ -24,7 +26,9 @@ test('campaign selection updates all visible level copy after reload',async({pag
  await expect(page.locator('#fatal-error')).toBeHidden();
  await expect(page.locator('.mission-summary .level-number')).toHaveText('05');
  await expect(page.locator('.mission-summary h1')).toHaveText('Воздушный поток');
+ await expect(page.locator('.task-card .eyebrow')).toHaveText('ЗАДАЧА');
  await expect(page.locator('.task-card h2')).toHaveText('Воздушный поток');
+ await expect(page.locator('.task-card > p:not(.eyebrow)')).toContainText('Используй вентилятор');
  await expect(page.locator('.principles-row')).toContainText('поток');
  await expect(page).toHaveTitle(/Воздушный поток/);
 
