@@ -13,6 +13,6 @@ test('level query opens Level 01 even when Safari-style stored state points else
  await expect(page.locator('#fatal-error')).toBeHidden();
  await expect(page.locator('.mission-summary .level-number')).toHaveText('01');
  await expect(page.locator('.mission-summary h1')).toHaveText('Первый маршрут');
- await expect(page.locator('body')).toHaveClass(/level01-game-shell/);
+ await expect(page.locator('#level01-hud')).toBeVisible();
  await expect.poll(()=>page.evaluate((key)=>localStorage.getItem(key),CUSTOM_LEVEL_KEY)).toBeNull();
 });

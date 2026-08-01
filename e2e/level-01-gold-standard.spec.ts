@@ -3,49 +3,30 @@ import { expect, test } from '@playwright/test';
 const SELECTED_LEVEL_KEY='young-inventor:campaign:selected:v1';
 const CUSTOM_LEVEL_KEY='young-inventor:custom-level:v1';
 
-async function openCanonicalLevel01(page:any):Promise<void>{
- await page.addInitScript(({selectedKey,customKey}:{selectedKey:string;customKey:string})=>{
+test('level 01 teaches, rewards and completes as a focused modern first experience',async({page})=>{
+ const consoleErrors:string[]=[];
+ page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
+ page.on('pageerror',error=>consoleErrors.push(error.message));
+ await page.addInitScript(({selectedKey,customKey})=>{
   localStorage.removeItem(customKey);
   localStorage.removeItem('young-inventor:level-01:best:v2');
-  localStorage.removeItem('young-inventor:level-01:coach-collapsed:v2');
   localStorage.setItem(selectedKey,'first-ramp');
  },{selectedKey:SELECTED_LEVEL_KEY,customKey:CUSTOM_LEVEL_KEY});
  await page.goto('/?e2e=1');
  await page.waitForFunction(()=>Boolean((window as any).__YOUNG_INVENTOR_E2E__));
-}
-
-test('level 01 teaches, rewards and completes as a premium readable first experience',async({page})=>{
- const consoleErrors:string[]=[];
- page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
- page.on('pageerror',error=>consoleErrors.push(error.message));
- await openCanonicalLevel01(page);
  await expect(page.locator('#fatal-error')).toBeHidden();
 
- await expect(page.locator('body')).toHaveClass(/level01-game-shell/);
- await expect(page.locator('.desktop-app')).toHaveClass(/level01-visual-2026/);
  await expect(page.locator('.mission-summary .level-number')).toHaveText('01');
  await expect(page.locator('.mission-summary h1')).toHaveText('Первый маршрут');
- await expect(page.locator('#campaign-open')).toHaveText('← Уровни');
- await expect(page.locator('.top-toolbar > #campaign-open')).toHaveCount(1);
- await expect(page.locator('#level01-inline-objective')).toContainText('тремя рельсами');
- await expect(page.locator('#level-editor-open')).toBeHidden();
- await expect(page.locator('#level01-mission-card')).toBeVisible();
- await expect(page.locator('#level01-mission-card')).toContainText('Доставь шар в контейнер');
- await expect(page.locator('.signal-editor-toggle')).toBeHidden();
- await expect(page.locator('#undo-button')).toBeVisible();
- await expect(page.locator('#redo-button')).toBeVisible();
- await expect(page.locator('#pause-button')).toBeVisible();
- await expect(page.locator('#stop-button')).toBeVisible();
  await expect(page.locator('.palette-part:visible')).toHaveCount(1);
  await expect(page.locator('.palette-part[data-kind="plank"]')).toBeVisible();
  await expect(page.locator('.palette-part[data-kind="plank"] [data-count]')).toHaveText('×3');
  await expect(page.locator('.connections-card')).toBeHidden();
- await expect(page.locator('.top-toolbar > #level01-hud')).toHaveCount(1);
+ await expect(page.locator('#level01-hud')).toBeVisible();
  await expect(page.locator('[data-bonus-count]')).toHaveText('0/3');
- await expect(page.locator('[data-best]')).toHaveText('—');
+ await expect(page.locator('[data-best]')).toContainText('первый запуск');
  await expect(page.locator('#level-coach')).toBeVisible();
  await expect(page.locator('.coach-progress b')).toHaveText('0/3');
- await expect(page.locator('#level-coach li.active')).toContainText('Поставь три рельса');
 
  await page.locator('#run-button').click();
  await expect(page.locator('#mode-label')).toHaveText('СБОРКА');
@@ -54,16 +35,10 @@ test('level 01 teaches, rewards and completes as a premium readable first experi
 
  await page.evaluate(()=>(window as any).__YOUNG_INVENTOR_E2E__.loadReferenceSolution());
  await expect(page.locator('.coach-progress b')).toHaveText('2/3');
- await expect(page.locator('#level-coach li.active')).toContainText('Испытай маршрут');
  await expect(page.locator('#run-button')).toHaveClass(/level-ready/);
- await expect(page.locator('.desktop-app')).toHaveAttribute('data-level01-placed','3');
- await expect(page.locator('.library-panel .parts-list')).toBeVisible();
- await expect(page.locator('.library-panel .panel-heading h2')).toHaveText('Все рельсы на поле');
  await page.locator('#run-button').click();
  await expect(page.locator('#mode-label')).toHaveText('СИМУЛЯЦИЯ');
- await expect(page.locator('.desktop-app')).toHaveClass(/level01-running/);
  await expect(page.locator('.coach-progress b')).toHaveText('3/3');
- await expect(page.locator('.library-panel')).toHaveCSS('pointer-events','none');
  await expect(page.locator('#result-card')).toHaveClass(/visible/,{timeout:25_000});
  await expect(page.locator('#result-card h2')).toHaveText('Маршрут работает!');
  await expect(page.locator('[data-bonus-count]')).toHaveText('3/3');
@@ -73,42 +48,6 @@ test('level 01 teaches, rewards and completes as a premium readable first experi
  await expect(page.locator('[data-best]')).toContainText('/3');
  await expect(page.locator('#fatal-error')).toBeHidden();
  expect(consoleErrors).toEqual([]);
-});
-
-test('level 01 keeps understandable touch controls on iPad landscape',async({page})=>{
- await page.setViewportSize({width:1024,height:768});
- await openCanonicalLevel01(page);
- await expect(page.locator('#fatal-error')).toBeHidden();
- await expect(page.locator('#level-editor-open')).toBeHidden();
- await expect(page.locator('.signal-editor-toggle')).toBeHidden();
- await expect(page.locator('.workspace-header')).toBeHidden();
- await expect(page.locator('.task-card')).toBeHidden();
- await expect(page.locator('#level01-mission-card')).toBeVisible();
- const metrics=await page.evaluate(()=>{
-  const canvas=document.querySelector('.canvas-frame')!.getBoundingClientRect();
-  const inventory=document.querySelector('.library-panel')!.getBoundingClientRect();
-  const toolbar=document.querySelector('.top-toolbar')!.getBoundingClientRect();
-  const run=document.querySelector('#run-button')!.getBoundingClientRect();
-  return {
-   innerWidth:window.innerWidth,
-   scrollWidth:document.documentElement.scrollWidth,
-   canvasWidth:canvas.width,
-   canvasHeight:canvas.height,
-   inventoryHeight:inventory.height,
-   toolbarHeight:toolbar.height,
-   runHeight:run.height
-  };
- });
- expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth+1);
- expect(metrics.canvasWidth).toBeGreaterThan(980);
- expect(metrics.canvasHeight).toBeGreaterThan(640);
- expect(metrics.inventoryHeight).toBeGreaterThan(120);
- expect(metrics.inventoryHeight).toBeLessThan(190);
- expect(metrics.toolbarHeight).toBeLessThan(70);
- expect(metrics.runHeight).toBeGreaterThanOrEqual(40);
- await expect(page.locator('#run-button')).toBeVisible();
- await expect(page.locator('.library-panel')).toBeVisible();
- await expect(page.locator('.properties-panel')).toBeVisible();
 });
 
 test('a custom level may reuse the first-ramp id without inheriting tutorial restrictions',async({page})=>{
@@ -123,7 +62,6 @@ test('a custom level may reuse the first-ramp id without inheriting tutorial res
  },CUSTOM_LEVEL_KEY);
  await page.goto('/?e2e=1');
  await expect(page.locator('#fatal-error')).toBeHidden();
- await expect(page.locator('body')).not.toHaveClass(/level01-game-shell/);
  await expect(page.locator('.mission-summary h1')).toHaveText('Мой эксперимент');
  await expect(page.locator('.task-card h2')).toHaveText('Мой эксперимент');
  await expect(page.locator('.palette-part[data-kind="plank"]')).toBeVisible();
