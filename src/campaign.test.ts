@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN_LEVELS, CUSTOM_LEVEL_STORAGE_KEY } from './level';
-import { calculateStars, isCampaignCompletionEligible, isLevelUnlocked, loadCampaignProgress, recordCompletion, type CampaignProgress } from './campaign';
+import { CAMPAIGN_PROGRESS_KEY, calculateStars, isCampaignCompletionEligible, isLevelUnlocked, loadCampaignProgress, recordCompletion, type CampaignProgress } from './campaign';
 
 describe('campaign progression',()=>{
  it('awards three stars when both par targets are met',()=>{
@@ -23,6 +23,25 @@ describe('campaign progression',()=>{
   expect(isLevelUnlocked(CAMPAIGN_LEVELS[1],empty)).toBe(false);
   const after=recordCompletion(empty,CAMPAIGN_LEVELS[0],20,3);
   expect(isLevelUnlocked(CAMPAIGN_LEVELS[1],after)).toBe(true);
+ });
+ it('walks the complete seven-level campaign in order and survives persistence after every result',()=>{
+  let progress:CampaignProgress={levels:{}};
+  for(let index=0;index<CAMPAIGN_LEVELS.length;index+=1){
+   const level=CAMPAIGN_LEVELS[index];
+   expect(isLevelUnlocked(level,progress),`level ${level.number} should be unlocked`).toBe(true);
+   if(index+1<CAMPAIGN_LEVELS.length){
+    expect(isLevelUnlocked(CAMPAIGN_LEVELS[index+1],progress),`level ${level.number+1} must still be locked`).toBe(false);
+   }
+   progress=recordCompletion(progress,level,level.parTime??30,level.parParts??6);
+   const serialized=JSON.stringify(progress);
+   const storage={getItem:(key:string)=>key===CAMPAIGN_PROGRESS_KEY?serialized:null};
+   progress=loadCampaignProgress(storage as Pick<Storage,'getItem'>);
+   expect(progress.levels[level.id]).toMatchObject({completed:true,stars:3});
+   expect(Object.keys(progress.levels)).toHaveLength(index+1);
+  }
+  expect(CAMPAIGN_LEVELS.every(level=>isLevelUnlocked(level,progress))).toBe(true);
+  expect(Object.values(progress.levels).filter(result=>result.completed)).toHaveLength(7);
+  expect(Object.values(progress.levels).reduce((sum,result)=>sum+result.stars,0)).toBe(21);
  });
  it('recovers cleanly from malformed JSON storage',()=>{
   const storage={getItem:()=>'{broken'};
