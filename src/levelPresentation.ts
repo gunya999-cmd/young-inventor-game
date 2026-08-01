@@ -33,13 +33,14 @@ const PRESENTATIONS:Record<string,LevelPresentation>={
  }
 };
 
-export function getLevelPresentation(level:LevelSpec):LevelPresentation{
- return PRESENTATIONS[level.id]??{
+export function getLevelPresentation(level:LevelSpec,useAuthoredPresentation=true):LevelPresentation{
+ if(useAuthoredPresentation&&PRESENTATIONS[level.id])return PRESENTATIONS[level.id];
+ return {
   eyebrow:'ИНЖЕНЕРНАЯ ЗАДАЧА',
   taskTitle:level.title,
   taskBody:level.subtitle,
   buildPrompt:level.subtitle,
-  concepts:CONCEPTS[level.id]??['механика','траектория'],
+  concepts:useAuthoredPresentation?(CONCEPTS[level.id]??['механика','траектория']):['механика','траектория'],
   successTitle:'Механизм сработал',
   successBody:'Контрольный объект достиг приёмника.',
   takeaway:'Проверь, какое физическое действие оказалось ключевым для решения.'
