@@ -1,0 +1,265 @@
+.desktop-app[data-level-id="first-ramp"] .library-panel {
+  background: linear-gradient(180deg,rgba(252,249,242,.98),rgba(243,237,226,.98));
+}
+.desktop-app[data-level-id="first-ramp"] .parts-list {
+  grid-template-columns: 1fr;
+  align-content: start;
+  padding: 10px 14px;
+}
+.desktop-app[data-level-id="first-ramp"] .palette-part[data-kind="plank"] {
+  min-height: 118px;
+  grid-template-rows: 68px auto;
+  border-color: #cbb792;
+  background: linear-gradient(155deg,#fffdf8,#efe4cf);
+  box-shadow: inset 0 1px rgba(255,255,255,.95),0 8px 20px rgba(91,67,38,.08);
+}
+.desktop-app[data-level-id="first-ramp"] .palette-part[data-kind="plank"] .palette-icon {
+  width: 76px;
+  height: 58px;
+  transform: scale(1.35);
+}
+.desktop-app[data-level-id="first-ramp"] .palette-part[data-kind="plank"] .part-copy b {
+  font-size: 12px;
+}
+.desktop-app[data-level-id="first-ramp"] .palette-part[data-kind="plank"] em {
+  right: 8px;
+  top: 8px;
+  padding: 4px 7px;
+  font-size: 10px;
+}
+.desktop-app[data-level-id="first-ramp"] .task-card {
+  border-color: #c7b38d;
+  background: linear-gradient(145deg,#fffef9,#f2e8d6);
+  box-shadow: 0 8px 22px rgba(86,66,41,.08);
+}
+.desktop-app[data-level-id="first-ramp"] .task-card h2 {
+  font-size: 16px;
+  line-height: 1.18;
+}
+.desktop-app[data-level-id="first-ramp"] .task-card p:not(.eyebrow) {
+  font-size: 10px;
+  line-height: 1.55;
+}
+.desktop-app[data-level-id="first-ramp"] .principles-row span {
+  padding: 4px 7px;
+  background: #fbefd4;
+  font-size: 8px;
+}
+.level-brief-stats {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(157,129,88,.18);
+}
+.level-brief-stats span {
+  display: grid;
+  gap: 2px;
+  color: #8b8275;
+  font-size: 7px;
+  line-height: 1.2;
+  text-align: center;
+}
+.level-brief-stats b {
+  color: #76512b;
+  font-size: 11px;
+}
+.level-coach {
+  position: absolute;
+  z-index: 14;
+  top: 54px;
+  left: 16px;
+  width: min(292px,31%);
+  padding: 12px;
+  border: 1px solid rgba(157,126,82,.32);
+  border-radius: 14px;
+  color: #40484c;
+  background: rgba(255,253,247,.94);
+  box-shadow: 0 16px 36px rgba(76,58,34,.16);
+  backdrop-filter: blur(10px);
+  transition: transform .18s ease,box-shadow .18s ease,opacity .18s ease,width .18s ease;
+}
+.level-coach header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.level-coach header div {
+  display: grid;
+  gap: 2px;
+}
+.level-coach header small {
+  color: #a17135;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+.level-coach header strong {
+  font-size: 13px;
+}
+.level-coach header button {
+  width: 27px;
+  height: 27px;
+  border: 1px solid #d3c4ac;
+  border-radius: 8px;
+  color: #766b5d;
+  background: #f8f1e4;
+  font-weight: 900;
+}
+.coach-progress {
+  position: relative;
+  height: 5px;
+  margin: 10px 30px 10px 0;
+  overflow: visible;
+  border-radius: 999px;
+  background: #e7dfd1;
+}
+.coach-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg,#c58a3f,#709b72);
+  transition: width .2s ease;
+}
+.coach-progress b {
+  position: absolute;
+  left: calc(100% + 7px);
+  top: -4px;
+  color: #8c8173;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.level-coach ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.level-coach li {
+  display: grid;
+  grid-template-columns: 25px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 7px;
+  border: 1px solid rgba(174,154,123,.2);
+  border-radius: 9px;
+  background: rgba(248,244,235,.76);
+  transition: opacity .15s ease,border-color .15s ease,background .15s ease;
+}
+.level-coach li > i {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c9b690;
+  border-radius: 50%;
+  color: #90642f;
+  background: #f7e6c5;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+.level-coach li div {
+  display: grid;
+  gap: 2px;
+}
+.level-coach li b {
+  font-size: 9px;
+}
+.level-coach li span {
+  color: #8d877d;
+  font-size: 7px;
+  line-height: 1.35;
+}
+.level-coach li.done {
+  border-color: rgba(91,139,102,.28);
+  background: rgba(223,239,224,.65);
+  opacity: .68;
+}
+.level-coach li.done > i {
+  color: #fff;
+  border-color: #6d9a75;
+  background: #6d9a75;
+}
+.level-coach li.done > i::before {
+  content: "✓";
+  font-size: 10px;
+}
+.level-coach li.done > i {
+  font-size: 0;
+}
+.coach-note {
+  margin: 8px 2px 0;
+  color: #8b8175;
+  font-size: 7px;
+  line-height: 1.4;
+}
+.level-coach.ready {
+  border-color: rgba(82,143,98,.5);
+  box-shadow: 0 16px 36px rgba(65,105,72,.16),0 0 0 3px rgba(93,151,106,.08);
+}
+.level-coach.attention {
+  animation: level-coach-nudge .32s ease 2;
+  border-color: rgba(190,116,54,.65);
+  box-shadow: 0 16px 40px rgba(140,84,34,.2),0 0 0 4px rgba(211,142,65,.1);
+}
+.level-coach.complete {
+  border-color: rgba(74,133,90,.54);
+  background: rgba(244,252,244,.96);
+}
+.level-coach.collapsed {
+  width: 46px;
+  padding: 8px;
+  border-radius: 12px;
+}
+.level-coach.collapsed header > div,
+.level-coach.collapsed .coach-progress,
+.level-coach.collapsed ol,
+.level-coach.collapsed .coach-note {
+  display: none;
+}
+.level-coach.collapsed header {
+  justify-content: center;
+}
+.level-coach.collapsed header button {
+  border-color: #c89551;
+  color: #6f4c24;
+  background: #f3d9ab;
+}
+.desktop-app[data-level-id="first-ramp"] .run-button.level-ready {
+  border-color: #668c6e;
+  background: linear-gradient(180deg,#6b9b75,#4f7d5d);
+  box-shadow: inset 0 1px rgba(255,255,255,.3),0 6px 16px rgba(67,111,78,.22);
+}
+.level-takeaway {
+  display: grid;
+  gap: 4px;
+  margin: 13px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(104,143,111,.28);
+  border-radius: 10px;
+  background: rgba(224,239,225,.62);
+  text-align: left;
+}
+.level-takeaway small {
+  color: #718a75;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.level-takeaway strong {
+  color: #506356;
+  font-size: 9px;
+  line-height: 1.45;
+}
+@keyframes level-coach-nudge {
+  0%,100% { transform: translateX(0); }
+  45% { transform: translateX(5px); }
+}
+@media(max-width:1260px){
+  .level-coach { width: 250px; }
+}
