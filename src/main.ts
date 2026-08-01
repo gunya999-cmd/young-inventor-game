@@ -7,6 +7,7 @@ import { installSpringSystem } from './springSystem';
 import { installEventSystem } from './eventSystem';
 import { installFinalVisuals } from './finalVisuals';
 import { installLevelVisuals } from './levelVisuals';
+import { installActiveLevelUi } from './levelUi';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -36,6 +37,7 @@ try {
   installEventSystem();
   installFinalVisuals();
   installLevelVisuals();
+  installActiveLevelUi();
   installEditorUiIntegration();
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('Canvas игрового поля не найден.');
