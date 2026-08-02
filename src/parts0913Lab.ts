@@ -3,11 +3,13 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import {
   createBoxingGloveModel,
   createTrampolineModel,
-  createFanBeltModel,
-  createGearModel,
-  createConveyorBeltModel,
   type ReviewAssetModel0913
 } from './parts0913Models';
+import {
+  createFanBeltModelV2,
+  createGearModelV2,
+  createConveyorBeltModelV2
+} from './parts0913MechanicsV2';
 
 type AssetKey0913 = 'boxing-glove' | 'trampoline' | 'fan-belt' | 'gear' | 'conveyor-belt';
 
@@ -35,19 +37,19 @@ const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
     initialRotation: [-0.34, -0.48, 0.03], create: createTrampolineModel
   },
   'fan-belt': {
-    key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v1',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-belt-cc0', radius: 1.85,
-    initialRotation: [-0.15, -0.44, 0.09], create: createFanBeltModel
+    key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v2',
+    sourceLicense: 'CC0', sourceKey: 'opengameart-belt-cc0', radius: 1.90,
+    initialRotation: [-0.15, -0.44, 0.09], create: createFanBeltModelV2
   },
   gear: {
-    key: 'gear', part: '12', title: 'Gear', version: 'gear-v1',
-    sourceLicense: 'CC0', sourceKey: 'kenney-factory-kit-cc0', radius: 1.55,
-    initialRotation: [-0.16, -0.34, 0.14], create: createGearModel
+    key: 'gear', part: '12', title: 'Gear', version: 'gear-v2',
+    sourceLicense: 'CC0', sourceKey: 'kenney-factory-kit-cc0', radius: 1.58,
+    initialRotation: [-0.16, -0.34, 0.14], create: createGearModelV2
   },
   'conveyor-belt': {
-    key: 'conveyor-belt', part: '13', title: 'Conveyor Belt', version: 'conveyor-belt-v1',
-    sourceLicense: 'CC0', sourceKey: 'kenney-factory-kit-cc0', radius: 2.65,
-    initialRotation: [-0.30, -0.48, 0.04], create: createConveyorBeltModel
+    key: 'conveyor-belt', part: '13', title: 'Conveyor Belt', version: 'conveyor-belt-v2',
+    sourceLicense: 'CC0', sourceKey: 'kenney-factory-kit-cc0', radius: 2.75,
+    initialRotation: [-0.24, -0.46, 0.02], create: createConveyorBeltModelV2
   }
 };
 
@@ -60,12 +62,13 @@ export function installPart0913Lab(key: AssetKey0913): void {
   document.documentElement.classList.add('bowling-ball-lab-mode');
   document.body.classList.add('bowling-ball-lab-mode', 'parts-0913-lab-mode');
 
+  const versionLabel = config.version.split('-').at(-1) ?? config.version;
   const root = document.createElement('section');
   root.className = `bowling-ball-lab parts-0913-lab ${config.key}-lab`;
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>PART ${config.part} · 3D ASSET REVIEW</small><h1>${config.title}</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>${config.sourceLicense}</span><span>v1</span></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>${config.sourceLicense}</span><span>${versionLabel}</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
       <canvas aria-label="${config.title} 3D preview"
