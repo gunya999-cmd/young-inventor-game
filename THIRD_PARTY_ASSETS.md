@@ -46,4 +46,39 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Attribution:** “Bellows” by Nudluria, used as an open-licensed geometric/proportion reference under CC BY.
 - **Use:** overall paddle/leather/nozzle construction reference; v2 uses re-authored bevelled paddle boards, a single continuous pleated leather BufferGeometry shell, hinge, grips and a three-stage metal nozzle.
 
-CC0 attribution is not required, but provenance is retained for maintainability and review. CC-BY attribution is retained explicitly above.
+## Boxing Glove — Part 09
+- **Source creator:** looneybits
+- **Asset:** Boxing Gloves
+- **License:** Creative Commons CC0 1.0 Universal
+- **Source:** https://opengameart.org/content/boxing-gloves
+- **Use:** silhouette and seam reference; production glove is re-authored as a bevelled 3D leather shell, separate anatomical thumb, cuff and palm seam.
+
+## Trampoline — Part 10
+- **Source creator:** flavio / lametta
+- **Asset:** Elastic trampoline
+- **License:** Creative Commons Attribution-ShareAlike (CC BY-SA)
+- **Source:** https://opengameart.org/content/elastic-trampoline
+- **Use:** mechanical construction reference only; production trampoline is re-authored locally with a rounded steel frame, elastic mat, visible coil springs and four legs.
+
+## Fan Belt — Part 11
+- **Source creator:** Paul Wortmann
+- **Asset:** belt
+- **License:** Creative Commons CC0 1.0 Universal
+- **Source:** https://opengameart.org/content/belt
+- **Use:** rubber material/profile reference; production fan belt is a re-authored continuous closed loop with shallow rib detail and two pulley snap anchors.
+
+## Gear — Part 12
+- **Source creator:** Kenney
+- **Pack:** Factory Kit
+- **License:** Creative Commons CC0 1.0 Universal
+- **Source:** https://opengameart.org/content/factory-kit
+- **Use:** industrial visual-language reference; production gear is re-authored as a bevelled 20-tooth machined gear with axle bore and six lightening holes.
+
+## Conveyor Belt — Part 13
+- **Source creator:** Kenney
+- **Pack:** Factory Kit
+- **License:** Creative Commons CC0 1.0 Universal
+- **Source:** https://opengameart.org/content/factory-kit
+- **Use:** industrial conveyor construction reference; production conveyor is re-authored with a continuous rubber loop, two rollers, steel side rails, legs and input/output anchors.
+
+CC0 attribution is not required, but provenance is retained for maintainability and review. CC-BY and CC-BY-SA provenance is retained explicitly above.
