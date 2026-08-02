@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { ReviewAssetModel0913 } from './parts0913Models';
-import { createBoxingGloveModelV5 } from './boxingGloveV5';
+import { createBoxingGloveModelV6 } from './boxingGloveV6';
 import { createTrampolineModelV2 } from './trampolineV2';
 import { createFanBeltModelV2 } from './fanBeltV2';
 import { createGearModelV2 } from './gearV2';
@@ -27,9 +27,9 @@ interface AssetConfig0913 {
 
 const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
   'boxing-glove': {
-    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v5',
-    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-incg5764-boxing-glove-cc-by', radius: 2.46,
-    initialRotation: [-0.075, -0.40, 0.035], create: createBoxingGloveModelV5
+    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v6',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-incg5764-boxing-glove-cc-by', radius: 2.58,
+    initialRotation: [-0.065, -0.38, 0.02], create: createBoxingGloveModelV6
   },
   trampoline: {
     key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v2',
@@ -64,7 +64,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
 
   const versionLabel = config.version.split('-').at(-1) ?? config.version;
   const instruction = config.key === 'boxing-glove'
-    ? 'Нажми красную кнопку сзади — перчатка ударит как в TIM · проведи пальцем, чтобы повернуть'
+    ? 'Нажми красную кнопку сзади — импульс выбросит перчатку, затем она свободно колеблется на пружине под действием гравитации'
     : 'Проведи пальцем по предмету, чтобы повернуть его';
   const root = document.createElement('section');
   root.className = `bowling-ball-lab parts-0913-lab ${config.key}-lab`;
@@ -79,7 +79,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
         data-source-license="${config.sourceLicense}"
         data-source-key="${config.sourceKey}"
         data-studio-lighting="pmrem-soft"
-        data-motion="${config.key === 'boxing-glove' ? 'tim-rear-button-punch' : 'static-review'}"></canvas>
+        data-motion="${config.key === 'boxing-glove' ? 'impulse-spring-gravity' : 'static-review'}"></canvas>
       <p>${instruction}</p>
     </div>
   `;
@@ -117,7 +117,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
   if (config.key === 'boxing-glove' && typeof object.userData.setTriggerPressed === 'function') {
     canvas.__pressBoxingGlove = (): void => {
       object.userData.setTriggerPressed(true);
-      window.setTimeout(() => object.userData.setTriggerPressed(false), 90);
+      window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
     };
   }
 
@@ -126,7 +126,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
     new THREE.MeshBasicMaterial({ color: 0x59616a, transparent: true, opacity: 0.052, depthWrite: false })
   );
   shadow.scale.set(config.radius * 0.76, config.radius * 0.14, 1);
-  shadow.position.set(0, -config.radius * 0.42, -config.radius * 0.32);
+  shadow.position.set(-0.30, -config.radius * 0.54, -config.radius * 0.32);
   scene.add(shadow);
 
   const raycaster = new THREE.Raycaster();
@@ -175,7 +175,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
     if (!triggerHit) return;
 
     object.userData.setTriggerPressed(true);
-    window.setTimeout(() => object.userData.setTriggerPressed(false), 90);
+    window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
   };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
@@ -187,7 +187,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
     const distance = (config.radius / limitingTan) * 1.18;
     camera.position.set(0, 0.04, distance);
-    camera.lookAt(-0.18, 0, 0);
+    camera.lookAt(config.key === 'boxing-glove' ? -0.42 : -0.18, config.key === 'boxing-glove' ? -0.34 : 0, 0);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     canvas.dataset.cameraDistance = distance.toFixed(3);
@@ -218,6 +218,8 @@ export function installPart0913Lab(key: AssetKey0913): void {
     }
     canvas.dataset.motionState = typeof object.userData.state === 'string' ? object.userData.state : '';
     canvas.dataset.extension = typeof object.userData.extension === 'number' ? object.userData.extension.toFixed(3) : '0';
+    canvas.dataset.centerY = typeof object.userData.centerY === 'number' ? object.userData.centerY.toFixed(3) : '0';
+    canvas.dataset.speed = typeof object.userData.speed === 'number' ? object.userData.speed.toFixed(3) : '0';
     canvas.dataset.triggerPressed = object.userData.triggerPressed === true ? 'true' : 'false';
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
