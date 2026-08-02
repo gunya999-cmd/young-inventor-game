@@ -1,42 +1,5 @@
 import * as THREE from 'three';
-
-function createReviewBall(): THREE.Group {
-  const group = new THREE.Group();
-  const shell = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 72, 52),
-    new THREE.MeshPhysicalMaterial({
-      color: 0x101821,
-      metalness: 0.06,
-      roughness: 0.21,
-      clearcoat: 0.78,
-      clearcoatRoughness: 0.16
-    })
-  );
-  group.add(shell);
-
-  const cavityMaterial = new THREE.MeshStandardMaterial({ color: 0x020508, roughness: 0.86 });
-  const rimMaterial = new THREE.MeshStandardMaterial({ color: 0x687786, metalness: 0.72, roughness: 0.24 });
-  const holes = [
-    { x: -0.22, y: 0.22, radius: 0.125 },
-    { x: 0.20, y: 0.22, radius: 0.125 },
-    { x: 0, y: -0.15, radius: 0.145 }
-  ];
-  for (const hole of holes) {
-    const cavity = new THREE.Mesh(new THREE.CircleGeometry(hole.radius * 0.82, 48), cavityMaterial);
-    cavity.position.set(hole.x, hole.y, 0.994);
-    group.add(cavity);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(hole.radius, hole.radius * 0.09, 14, 64), rimMaterial);
-    rim.position.set(hole.x, hole.y, 1.002);
-    group.add(rim);
-  }
-  const accent = new THREE.Mesh(
-    new THREE.CircleGeometry(0.032, 24),
-    new THREE.MeshPhysicalMaterial({ color: 0x526de7, metalness: 0.28, roughness: 0.26, clearcoat: 0.45 })
-  );
-  accent.position.set(0, -0.56, 0.997);
-  group.add(accent);
-  return group;
-}
+import { createBowlingBallModel } from './bowlingBallModel';
 
 export function installBowlingBallLab(): void {
   if (new URLSearchParams(location.search).get('asset') !== 'bowling-ball') return;
@@ -45,10 +8,13 @@ export function installBowlingBallLab(): void {
   root.className = 'bowling-ball-lab';
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
-      <div><small>PART 01 · REAL 3D ASSET</small><h1>Bowling Ball</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>Planck-ready</span></div>
+      <div><small>PART 01 · 3D ASSET REVIEW</small><h1>Bowling Ball</h1></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>v2</span></div>
     </header>
-    <div class="bowling-ball-lab__stage"><canvas aria-label="Bowling Ball 3D preview"></canvas><p>Проведи пальцем по шару, чтобы повернуть его</p></div>
+    <div class="bowling-ball-lab__stage">
+      <canvas aria-label="Bowling Ball 3D preview" data-asset-version="bowling-ball-v2"></canvas>
+      <p>Проведи пальцем по шару, чтобы повернуть его</p>
+    </div>
   `;
   document.body.appendChild(root);
 
@@ -56,43 +22,49 @@ export function installBowlingBallLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
-  renderer.setClearColor(0xe8edf2, 1);
+  renderer.toneMappingExposure = 1.0;
+  renderer.setClearColor(0xedf1f4, 1);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
-  camera.position.set(0, 0.05, 6.4);
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x53606d, 2.1));
-  const key = new THREE.DirectionalLight(0xffffff, 5.1);
-  key.position.set(-3.6, 4.4, 6);
+  // Neutral studio light: clean reflections without blue/green glowing dots.
+  scene.add(new THREE.HemisphereLight(0xfbfcfd, 0x60646a, 1.5));
+  const key = new THREE.DirectionalLight(0xffffff, 2.35);
+  key.position.set(-3.8, 4.8, 6.5);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0x8ba5ff, 1.15);
-  fill.position.set(4, -1.4, 3);
+  const fill = new THREE.DirectionalLight(0xe3e7eb, 0.82);
+  fill.position.set(4.5, -1.2, 4.0);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0x8fe4cf, 0.62);
-  rim.position.set(3.2, 3.6, -1);
-  scene.add(rim);
+  const edge = new THREE.DirectionalLight(0xffffff, 0.34);
+  edge.position.set(3.6, 3.2, -0.5);
+  scene.add(edge);
 
-  const ball = createReviewBall();
-  ball.rotation.set(-0.08, -0.12, -0.06);
+  const model = createBowlingBallModel();
+  const ball = model.group;
+  ball.rotation.set(-0.11, -0.18, -0.035);
   scene.add(ball);
 
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(1.1, 64),
-    new THREE.MeshBasicMaterial({ color: 0x66717d, transparent: true, opacity: 0.12, depthWrite: false })
+    new THREE.CircleGeometry(1.0, 72),
+    new THREE.MeshBasicMaterial({ color: 0x55606b, transparent: true, opacity: 0.08, depthWrite: false })
   );
-  shadow.scale.set(1.25, 0.22, 1);
-  shadow.position.set(0, -1.28, -0.8);
+  shadow.scale.set(1.08, 0.16, 1);
+  shadow.position.set(0, -1.14, -0.72);
   scene.add(shadow);
 
   let pointerId: number | null = null;
   let lastX = 0;
   let lastY = 0;
+  let velocityX = 0;
+  let velocityY = 0;
+
   canvas.addEventListener('pointerdown', (event) => {
     pointerId = event.pointerId;
     lastX = event.clientX;
     lastY = event.clientY;
+    velocityX = 0;
+    velocityY = 0;
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove', (event) => {
@@ -101,26 +73,53 @@ export function installBowlingBallLab(): void {
     const dy = event.clientY - lastY;
     lastX = event.clientX;
     lastY = event.clientY;
-    ball.rotation.y += dx * 0.008;
-    ball.rotation.x += dy * 0.008;
+    velocityX = dx * 0.007;
+    velocityY = dy * 0.007;
+    ball.rotation.y += velocityX;
+    ball.rotation.x += velocityY;
   });
   const release = (event: PointerEvent) => { if (pointerId === event.pointerId) pointerId = null; };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
 
+  const fitCamera = (width: number, height: number): void => {
+    const aspect = width / Math.max(1, height);
+    const verticalTan = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+    const horizontalTan = verticalTan * aspect;
+    const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
+    const modelRadiusWithMargin = 1.18;
+    const distance = modelRadiusWithMargin / limitingTan * 1.12;
+    camera.position.set(0, 0.02, distance);
+    camera.lookAt(0, 0, 0);
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+    canvas.dataset.cameraDistance = distance.toFixed(3);
+  };
+
   const resize = () => {
     const rect = canvas.getBoundingClientRect();
-    renderer.setPixelRatio(Math.min(1.8, window.devicePixelRatio || 1));
-    renderer.setSize(Math.max(1, rect.width), Math.max(1, rect.height), false);
-    camera.aspect = rect.width / Math.max(1, rect.height);
-    camera.updateProjectionMatrix();
+    const width = Math.max(1, rect.width);
+    const height = Math.max(1, rect.height);
+    renderer.setPixelRatio(Math.min(1.7, window.devicePixelRatio || 1));
+    renderer.setSize(width, height, false);
+    fitCamera(width, height);
   };
   new ResizeObserver(resize).observe(canvas);
   resize();
 
-  const animate = () => {
+  let previous = performance.now();
+  const animate = (now: number) => {
+    const dt = Math.min(0.032, Math.max(0, (now - previous) / 1000));
+    previous = now;
+    if (pointerId === null) {
+      const damping = Math.pow(0.025, dt);
+      velocityX *= damping;
+      velocityY *= damping;
+      ball.rotation.y += velocityX;
+      ball.rotation.x += velocityY;
+    }
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
-  animate();
+  requestAnimationFrame(animate);
 }
