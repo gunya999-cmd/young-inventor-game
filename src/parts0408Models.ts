@@ -206,12 +206,12 @@ export function createBalloonModel(): ReviewAssetModel {
 function roundedBoard(width: number, height: number, depth: number, color: number): THREE.Group {
   const group = new THREE.Group();
   const material = new THREE.MeshPhysicalMaterial({ color, roughness: 0.5, clearcoat: 0.08, clearcoatRoughness: 0.74 });
-  const center = new THREE.Mesh(new THREE.BoxGeometry(width - height, height, depth), material);
+  const straightLength = width - depth;
+  const center = new THREE.Mesh(new THREE.BoxGeometry(straightLength, height, depth), material);
   group.add(center);
-  const capGeometry = new THREE.CylinderGeometry(height / 2, height / 2, depth, 32);
+  const capGeometry = new THREE.CylinderGeometry(depth / 2, depth / 2, height, 32);
   const left = new THREE.Mesh(capGeometry, material);
-  left.rotation.x = Math.PI / 2;
-  left.position.x = -(width - height) / 2;
+  left.position.x = -straightLength / 2;
   group.add(left);
   const right = left.clone();
   right.position.x *= -1;
@@ -278,7 +278,6 @@ function bellowsBoard(color: number): THREE.Group {
   const body = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.14, 1.06), material);
   board.add(body);
   const end = new THREE.Mesh(new THREE.CylinderGeometry(0.53, 0.53, 0.14, 40), material);
-  end.rotation.x = Math.PI / 2;
   end.position.x = -1.05;
   board.add(end);
   const handle = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.14, 0.34), material);
