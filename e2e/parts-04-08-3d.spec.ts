@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const assets = [
-  ['baseball', 'baseball-v1', 'CC0', 'opengameart-old-baseball-cc0'],
+  ['baseball', 'baseball-v2', 'CC0', 'opengameart-old-baseball-cc0'],
   ['tennis-ball', 'tennis-ball-v1', 'CC0', 'opengameart-hq-pbr-tennis-ball-cc0'],
   ['balloon', 'balloon-v1', 'CC0', 'opengameart-balloons-cc0'],
   ['teeter-totter', 'teeter-totter-v1', 'CC0', 'opengameart-playground-cc0'],
@@ -22,6 +22,11 @@ for (const [asset, version, license, sourceKey] of assets) {
     await expect(canvas).toHaveAttribute('data-source-license', license);
     await expect(canvas).toHaveAttribute('data-source-key', sourceKey);
     await expect(canvas).toHaveAttribute('data-studio-lighting', 'pmrem-soft');
+
+    if (asset === 'baseball') {
+      await expect(canvas).toHaveAttribute('data-seam-construction', 'surface-integrated');
+      await expect(canvas).toHaveAttribute('data-external-stitch-meshes', '0');
+    }
 
     const metrics = await canvas.evaluate((element) => {
       const rect = element.getBoundingClientRect();
