@@ -6,60 +6,60 @@ export interface CannonballModel {
   selectionShell: THREE.Mesh;
 }
 
-function createCastIronBumpTexture(): THREE.CanvasTexture {
+/**
+ * Source reference: Kenney Tower Defense Kit / weapon-ammo-cannonball (CC0).
+ * The production mesh is re-authored locally at a smoother game-ready density
+ * so the asset stays self-contained and does not hot-link third-party files.
+ */
+const SOURCE_REFERENCE = {
+  creator: 'Kenney',
+  pack: 'Tower Defense Kit',
+  asset: 'weapon-ammo-cannonball',
+  license: 'CC0-1.0',
+  url: 'https://kenney.nl/assets/tower-defense-kit'
+} as const;
+
+function createCastIronRoughnessTexture(): THREE.CanvasTexture {
+  const size = 128;
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = size;
+  canvas.height = size;
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('Cannonball texture canvas unavailable.');
+  if (!context) throw new Error('Cannonball roughness texture canvas unavailable.');
 
-  context.fillStyle = '#7f7f7f';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  let seed = 0x8a3f9d1;
+  const image = context.createImageData(size, size);
+  let seed = 0x71d3a519;
   const random = (): number => {
     seed = (seed * 1664525 + 1013904223) >>> 0;
     return seed / 0xffffffff;
   };
 
-  for (let i = 0; i < 1700; i += 1) {
-    const x = random() * canvas.width;
-    const y = random() * canvas.height;
-    const radius = 0.45 + random() * 1.5;
-    const value = 103 + Math.round(random() * 42);
-    context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
-    context.fillStyle = `rgb(${value},${value},${value})`;
-    context.fill();
+  for (let pixel = 0; pixel < size * size; pixel += 1) {
+    // High values keep the iron broadly matte. The tiny deterministic variation
+    // breaks up the reflection without creating visible pits or dirty highlights.
+    const value = Math.round(218 + random() * 24);
+    const offset = pixel * 4;
+    image.data[offset] = value;
+    image.data[offset + 1] = value;
+    image.data[offset + 2] = value;
+    image.data[offset + 3] = 255;
   }
+  context.putImageData(image, 0, 0);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(5.2, 3.8);
+  texture.repeat.set(3.5, 2.4);
   texture.colorSpace = THREE.NoColorSpace;
   texture.needsUpdate = true;
   return texture;
 }
 
 function createCannonballGeometry(): THREE.SphereGeometry {
-  const geometry = new THREE.SphereGeometry(1, 96, 72);
-  const position = geometry.getAttribute('position');
-  const point = new THREE.Vector3();
-  const direction = new THREE.Vector3();
-
-  // Tiny deterministic casting irregularity: enough to catch the light without
-  // changing the clean silhouette expected from a TIM-style cannonball.
-  for (let index = 0; index < position.count; index += 1) {
-    point.fromBufferAttribute(position, index);
-    direction.copy(point).normalize();
-    const noise = Math.sin(direction.x * 31.0 + direction.y * 17.0) *
-      Math.sin(direction.z * 23.0 - direction.x * 11.0);
-    const scale = 1 + noise * 0.0019;
-    position.setXYZ(index, direction.x * scale, direction.y * scale, direction.z * scale);
-  }
-
-  position.needsUpdate = true;
+  // Kenney's CC0 source uses a deliberately simple spherical silhouette.
+  // We retain that clean proportion while increasing tessellation so the
+  // close-up Asset Lab reads as a modern production object rather than faceted.
+  const geometry = new THREE.SphereGeometry(1, 48, 32);
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -68,37 +68,29 @@ function createCannonballGeometry(): THREE.SphereGeometry {
 export function createCannonballModel(): CannonballModel {
   const group = new THREE.Group();
   group.userData.kind = 'cannonball-3d';
-  group.userData.assetVersion = 'cannonball-v1';
-  group.userData.surface = 'stylized-cast-iron';
+  group.userData.assetVersion = 'cannonball-v2';
+  group.userData.surface = 'seamless-gunmetal-cast-iron';
+  group.userData.sourceReference = SOURCE_REFERENCE;
   group.userData.snapPoints = [];
 
   const shellMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x2f343a,
-    metalness: 0.78,
-    roughness: 0.43,
-    clearcoat: 0.035,
-    clearcoatRoughness: 0.82,
-    bumpMap: createCastIronBumpTexture(),
-    bumpScale: 0.018,
+    color: 0x4a4f54,
+    metalness: 0.58,
+    roughness: 0.76,
+    roughnessMap: createCastIronRoughnessTexture(),
+    clearcoat: 0,
+    clearcoatRoughness: 1,
+    envMapIntensity: 0.92,
     emissive: 0x000000,
     emissiveIntensity: 0
   });
 
   const shell = new THREE.Mesh(createCannonballGeometry(), shellMaterial);
-  shell.name = 'CannonballCastIronShell';
+  shell.name = 'CannonballSeamlessCastIronShell';
   group.add(shell);
 
-  // A very restrained casting seam. It sits almost flush with the sphere and
-  // reads only when light skims across it; no decorative sci-fi detailing.
-  const seamMaterial = new THREE.MeshStandardMaterial({
-    color: 0x24292e,
-    metalness: 0.72,
-    roughness: 0.55
-  });
-  const seam = new THREE.Mesh(new THREE.TorusGeometry(1.001, 0.008, 8, 112), seamMaterial);
-  seam.name = 'CannonballCastingSeam';
-  seam.rotation.x = Math.PI / 2;
-  group.add(seam);
+  // No decorative or casting-ring overlay. A real cannonball reads as one
+  // continuous mass; the v1 torus was intentionally removed after review.
 
   const selectionShell = new THREE.Mesh(
     new THREE.SphereGeometry(1.055, 40, 28),
@@ -120,6 +112,6 @@ export function createCannonballModel(): CannonballModel {
 
 export function setCannonballSelected(model: CannonballModel, selected: boolean): void {
   model.selectionShell.visible = selected;
-  model.shellMaterial.emissive.setHex(selected ? 0x182358 : 0x000000);
-  model.shellMaterial.emissiveIntensity = selected ? 0.11 : 0;
+  model.shellMaterial.emissive.setHex(selected ? 0x19202b : 0x000000);
+  model.shellMaterial.emissiveIntensity = selected ? 0.1 : 0;
 }
