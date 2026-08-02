@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { ReviewAssetModel0913 } from './parts0913Models';
-import { createBoxingGloveModelV12 } from './boxingGloveV12';
+import { createBoxingGloveModelV13 } from './boxingGloveV13';
 import { createTrampolineModelV2 } from './trampolineV2';
 import { createFanBeltModelV2 } from './fanBeltV2';
 import { createGearModelV2 } from './gearV2';
@@ -27,9 +27,9 @@ interface AssetConfig0913 {
 
 const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
   'boxing-glove': {
-    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v12',
-    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-incg5764-boxing-glove-cc-by', radius: 1.82,
-    initialRotation: [-0.045, -0.48, 0.015], create: createBoxingGloveModelV12
+    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v13',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-incg5764-boxing-glove-cc-by', radius: 1.78,
+    initialRotation: [-0.055, -0.43, 0.012], create: createBoxingGloveModelV13
   },
   trampoline: {
     key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v2',
