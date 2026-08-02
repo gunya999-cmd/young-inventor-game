@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Cannonball Asset Lab fits the complete cast-iron 3D asset on a phone viewport', async ({ page }) => {
+test('Cannonball Asset Lab fits the seamless CC0-based cast-iron asset on a phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?asset=cannonball');
 
@@ -8,9 +8,11 @@ test('Cannonball Asset Lab fits the complete cast-iron 3D asset on a phone viewp
   const canvas = page.locator('.cannonball-lab canvas');
   await expect(lab).toBeVisible();
   await expect(canvas).toBeVisible();
-  await expect(canvas).toHaveAttribute('data-asset-version', 'cannonball-v1');
-  await expect(canvas).toHaveAttribute('data-surface', 'stylized-cast-iron');
-  await expect(canvas).toHaveAttribute('data-casting-seam', '1');
+  await expect(canvas).toHaveAttribute('data-asset-version', 'cannonball-v2');
+  await expect(canvas).toHaveAttribute('data-surface', 'seamless-gunmetal-cast-iron');
+  await expect(canvas).toHaveAttribute('data-casting-seam', '0');
+  await expect(canvas).toHaveAttribute('data-source', 'kenney-tower-defense-cc0');
+  await expect(canvas).toHaveAttribute('data-lighting', 'soft-studio-environment');
 
   const metrics = await page.evaluate(() => {
     const canvas = document.querySelector<HTMLCanvasElement>('.cannonball-lab canvas')!;
