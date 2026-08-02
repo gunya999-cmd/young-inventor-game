@@ -8,7 +8,8 @@ test('Bowling Ball is a real Three.js object synchronized with Planck', async ({
   const layer = page.locator('canvas.bowling-ball-3d-layer');
   await expect(layer).toBeVisible();
   await expect(layer).toHaveAttribute('data-render-engine', 'three-webgl');
-  await expect(layer).toHaveAttribute('data-asset-version', 'bowling-ball-v2');
+  await expect(layer).toHaveAttribute('data-asset-version', 'bowling-ball-v3');
+  await expect(layer).toHaveAttribute('data-hole-geometry', 'deformed-shell');
   await expect(layer).toHaveCSS('pointer-events', 'none');
   await expect(layer).toHaveAttribute('data-bowling-ball-count', '1');
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.bowlingBall3d)).toBe('ready');
@@ -44,7 +45,8 @@ test('Bowling Ball Asset Lab fits the complete 3D asset on a phone viewport', as
   const canvas = page.locator('.bowling-ball-lab__stage canvas');
   await expect(lab).toBeVisible();
   await expect(canvas).toBeVisible();
-  await expect(canvas).toHaveAttribute('data-asset-version', 'bowling-ball-v2');
+  await expect(canvas).toHaveAttribute('data-asset-version', 'bowling-ball-v3');
+  await expect(canvas).toHaveAttribute('data-hole-geometry', 'deformed-shell');
 
   const metrics = await page.evaluate(() => {
     const canvas = document.querySelector<HTMLCanvasElement>('.bowling-ball-lab__stage canvas')!;
@@ -61,6 +63,5 @@ test('Bowling Ball Asset Lab fits the complete 3D asset on a phone viewport', as
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
   expect(metrics.width).toBeGreaterThan(360);
   expect(metrics.height).toBeGreaterThan(620);
-  // Portrait framing must pull the perspective camera farther back than desktop.
   expect(metrics.cameraDistance).toBeGreaterThan(8);
 });
