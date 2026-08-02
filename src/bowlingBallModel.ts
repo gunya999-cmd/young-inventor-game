@@ -3,93 +3,106 @@ import * as THREE from 'three';
 export interface BowlingBallModel {
   group: THREE.Group;
   shellMaterial: THREE.MeshPhysicalMaterial;
-  holeLipMaterials: THREE.MeshStandardMaterial[];
   selectionShell: THREE.Mesh;
 }
 
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
+interface FingerHoleSpec {
+  normal: THREE.Vector3;
+  radius: number;
+  depth: number;
+}
 
-function placeOnSphere(object: THREE.Object3D, normal: THREE.Vector3, radius: number): void {
-  object.position.copy(normal).multiplyScalar(radius);
-  object.quaternion.setFromUnitVectors(Z_AXIS, normal);
+const HOLES: FingerHoleSpec[] = [
+  { normal: new THREE.Vector3(-0.23, 0.27, 1).normalize(), radius: 0.122, depth: 0.155 },
+  { normal: new THREE.Vector3(0.22, 0.27, 1).normalize(), radius: 0.122, depth: 0.155 },
+  { normal: new THREE.Vector3(0, -0.12, 1).normalize(), radius: 0.142, depth: 0.185 }
+];
+
+function smoothstep01(value: number): number {
+  const t = THREE.MathUtils.clamp(value, 0, 1);
+  return t * t * (3 - 2 * t);
 }
 
 /**
- * Production Bowling Ball visual.
- * The finger-hole elements are oriented to the local sphere tangent instead of
- * being placed on one flat Z plane. This keeps them visually attached to the
- * curved shell while the whole asset rotates freely in 3D.
+ * Creates one continuous shell mesh with the three finger holes recessed into
+ * the sphere itself. There are deliberately no rings, tori, discs or overlays
+ * sitting above the surface: the visible lip and depth come from the actual
+ * vertex positions and normals of the shell.
  */
+function createRecessedShellGeometry(): THREE.SphereGeometry {
+  const geometry = new THREE.SphereGeometry(1, 144, 104);
+  const position = geometry.getAttribute('position');
+  const colors = new Float32Array(position.count * 3);
+  const point = new THREE.Vector3();
+  const direction = new THREE.Vector3();
+  const surfaceColor = new THREE.Color(0x20242a);
+  const cavityColor = new THREE.Color(0x050607);
+  const vertexColor = new THREE.Color();
+
+  for (let index = 0; index < position.count; index += 1) {
+    point.fromBufferAttribute(position, index);
+    direction.copy(point).normalize();
+
+    let deepestNormalized = 0;
+    let radialDepth = 0;
+
+    for (const hole of HOLES) {
+      const dot = THREE.MathUtils.clamp(direction.dot(hole.normal), -1, 1);
+      const angle = Math.acos(dot);
+      const outerAngle = hole.radius * 1.34;
+      if (angle >= outerAngle) continue;
+
+      // Broad smooth transition forms a rounded entrance chamfer. The steeper
+      // inner portion reads as a drilled finger recess without adding a raised
+      // rim above the bowling-ball surface.
+      const normalized = 1 - angle / outerAngle;
+      const bowl = smoothstep01(normalized);
+      const inner = smoothstep01((normalized - 0.46) / 0.54);
+      const depth = hole.depth * (bowl * 0.48 + inner * 0.52);
+      radialDepth = Math.max(radialDepth, depth);
+      deepestNormalized = Math.max(deepestNormalized, depth / hole.depth);
+    }
+
+    direction.multiplyScalar(1 - radialDepth);
+    position.setXYZ(index, direction.x, direction.y, direction.z);
+
+    const darkening = smoothstep01((deepestNormalized - 0.22) / 0.78);
+    vertexColor.copy(surfaceColor).lerp(cavityColor, darkening * 0.94);
+    colors[index * 3] = vertexColor.r;
+    colors[index * 3 + 1] = vertexColor.g;
+    colors[index * 3 + 2] = vertexColor.b;
+  }
+
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+/** Production Bowling Ball visual shared by the game and Asset Lab. */
 export function createBowlingBallModel(): BowlingBallModel {
   const group = new THREE.Group();
   group.userData.kind = 'bowling-ball-3d';
   group.userData.snapPoints = [];
-  group.userData.assetVersion = 'bowling-ball-v2';
+  group.userData.assetVersion = 'bowling-ball-v3';
+  group.userData.holeConstruction = 'deformed-shell';
 
   const shellMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x171a1f,
-    metalness: 0.02,
-    roughness: 0.34,
-    clearcoat: 0.52,
-    clearcoatRoughness: 0.24,
+    color: 0xffffff,
+    vertexColors: true,
+    metalness: 0.015,
+    roughness: 0.4,
+    clearcoat: 0.36,
+    clearcoatRoughness: 0.3,
     emissive: 0x000000,
     emissiveIntensity: 0
   });
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(1, 72, 52), shellMaterial);
-  shell.name = 'BowlingBallShell';
+  const shell = new THREE.Mesh(createRecessedShellGeometry(), shellMaterial);
+  shell.name = 'BowlingBallRecessedShell';
   group.add(shell);
 
-  const cavityMaterial = new THREE.MeshStandardMaterial({
-    color: 0x020304,
-    metalness: 0,
-    roughness: 0.92,
-    side: THREE.DoubleSide
-  });
-  const holeLipMaterials: THREE.MeshStandardMaterial[] = [];
-
-  const holes = [
-    { normal: new THREE.Vector3(-0.23, 0.27, 1).normalize(), radius: 0.122 },
-    { normal: new THREE.Vector3(0.22, 0.27, 1).normalize(), radius: 0.122 },
-    { normal: new THREE.Vector3(0, -0.12, 1).normalize(), radius: 0.142 }
-  ];
-
-  holes.forEach((hole, index) => {
-    // A dark flush opening. Its tangent follows the real curvature of the ball.
-    const cavity = new THREE.Mesh(new THREE.CircleGeometry(hole.radius * 0.78, 64), cavityMaterial);
-    cavity.name = `FingerHoleCavity${index + 1}`;
-    placeOnSphere(cavity, hole.normal, 1.003);
-    group.add(cavity);
-
-    // Thin, matte chamfer instead of a raised metallic torus.
-    const lipMaterial = new THREE.MeshStandardMaterial({
-      color: 0x31363d,
-      metalness: 0.12,
-      roughness: 0.46,
-      emissive: 0x000000,
-      emissiveIntensity: 0,
-      side: THREE.DoubleSide
-    });
-    holeLipMaterials.push(lipMaterial);
-    const lip = new THREE.Mesh(
-      new THREE.RingGeometry(hole.radius * 0.79, hole.radius, 64),
-      lipMaterial
-    );
-    lip.name = `FingerHoleChamfer${index + 1}`;
-    placeOnSphere(lip, hole.normal, 1.004);
-    group.add(lip);
-
-    // Subtle inner shadow toward the bottom of the bore gives depth at game scale.
-    const innerShadow = new THREE.Mesh(
-      new THREE.CircleGeometry(hole.radius * 0.58, 48),
-      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.52, side: THREE.DoubleSide })
-    );
-    innerShadow.name = `FingerHoleDepth${index + 1}`;
-    placeOnSphere(innerShadow, hole.normal, 1.005);
-    innerShadow.position.add(new THREE.Vector3(0, -0.012, 0));
-    group.add(innerShadow);
-  });
-
-  // A full 3D selection shell reads correctly from every rotation angle.
+  // Full 3D selection shell reads correctly from every rotation angle.
   const selectionShell = new THREE.Mesh(
     new THREE.SphereGeometry(1.055, 48, 34),
     new THREE.MeshBasicMaterial({
@@ -105,15 +118,11 @@ export function createBowlingBallModel(): BowlingBallModel {
   selectionShell.visible = false;
   group.add(selectionShell);
 
-  return { group, shellMaterial, holeLipMaterials, selectionShell };
+  return { group, shellMaterial, selectionShell };
 }
 
 export function setBowlingBallSelected(model: BowlingBallModel, selected: boolean): void {
   model.selectionShell.visible = selected;
   model.shellMaterial.emissive.setHex(selected ? 0x182358 : 0x000000);
-  model.shellMaterial.emissiveIntensity = selected ? 0.16 : 0;
-  for (const material of model.holeLipMaterials) {
-    material.emissive.setHex(selected ? 0x4156bf : 0x000000);
-    material.emissiveIntensity = selected ? 0.52 : 0;
-  }
+  model.shellMaterial.emissiveIntensity = selected ? 0.14 : 0;
 }
