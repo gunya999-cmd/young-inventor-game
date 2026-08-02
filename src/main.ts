@@ -14,6 +14,7 @@ import { installActiveLevelUi } from './levelUi';
 import { installLevel01Experience } from './level01Experience';
 import { installBowlingBall3D } from './bowlingBall3d';
 import { installBowlingBallLab } from './bowlingBallLab';
+import { installBasketballLab } from './basketballLab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -40,6 +41,8 @@ const assetPreview = new URLSearchParams(location.search).get('asset');
 
 if (assetPreview === 'bowling-ball') {
   installBowlingBallLab();
+} else if (assetPreview === 'basketball') {
+  installBasketballLab();
 } else {
   try {
     installExtendedParts();
