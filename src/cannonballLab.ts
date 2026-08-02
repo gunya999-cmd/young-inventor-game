@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createCannonballModel } from './cannonballModel';
 
 export function installCannonballLab(): void {
@@ -12,10 +13,10 @@ export function installCannonballLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>PART 03 · 3D ASSET REVIEW</small><h1>Cannonball</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>v1</span></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>CC0 base</span><span>v2</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Cannonball 3D preview" data-asset-version="cannonball-v1" data-surface="stylized-cast-iron" data-casting-seam="1"></canvas>
+      <canvas aria-label="Cannonball 3D preview" data-asset-version="cannonball-v2" data-surface="seamless-gunmetal-cast-iron" data-casting-seam="0" data-source="kenney-tower-defense-cc0" data-lighting="soft-studio-environment"></canvas>
       <p>Проведи пальцем по ядру, чтобы повернуть его</p>
     </div>
   `;
@@ -25,33 +26,44 @@ export function installCannonballLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMappingExposure = 1.0;
   renderer.setClearColor(0xedf1f4, 1);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(0xf8fafc, 0x4b5056, 1.25));
-  const key = new THREE.DirectionalLight(0xffffff, 2.15);
-  key.position.set(-4.6, 5.4, 6.8);
+  // A neutral PMREM studio environment gives metal a single broad, controlled
+  // reflection instead of the hard disconnected spots produced by v1 lights.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const room = new RoomEnvironment();
+  const environment = pmrem.fromScene(room, 0.04).texture;
+  scene.environment = environment;
+  pmrem.dispose();
+
+  scene.add(new THREE.HemisphereLight(0xf7f9fb, 0x5f6469, 0.48));
+
+  const key = new THREE.DirectionalLight(0xffffff, 0.82);
+  key.position.set(-3.6, 4.8, 5.8);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xdde4ea, 0.72);
-  fill.position.set(4.7, -1.8, 4.1);
+
+  const fill = new THREE.DirectionalLight(0xe7ebef, 0.22);
+  fill.position.set(3.8, 0.8, 4.0);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffffff, 0.34);
-  rim.position.set(3.8, 3.2, -1.2);
+
+  const rim = new THREE.DirectionalLight(0xf8fafc, 0.1);
+  rim.position.set(3.6, 2.8, -2.2);
   scene.add(rim);
 
   const model = createCannonballModel();
   const ball = model.group;
-  ball.rotation.set(-0.16, -0.36, 0.08);
+  ball.rotation.set(-0.1, -0.28, 0.04);
   scene.add(ball);
 
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(1.03, 72),
-    new THREE.MeshBasicMaterial({ color: 0x3f4850, transparent: true, opacity: 0.095, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0x59616a, transparent: true, opacity: 0.055, depthWrite: false })
   );
-  shadow.scale.set(1.08, 0.17, 1);
+  shadow.scale.set(1.08, 0.16, 1);
   shadow.position.set(0, -1.15, -0.72);
   scene.add(shadow);
 
