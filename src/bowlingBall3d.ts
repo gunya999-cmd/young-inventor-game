@@ -35,25 +35,26 @@ class BowlingBall3DLayer {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.className = 'bowling-ball-3d-layer';
     this.renderer.domElement.dataset.renderEngine = 'three-webgl';
-    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v4';
-    this.renderer.domElement.dataset.holeGeometry = 'deformed-shell-sharp';
+    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v5';
+    this.renderer.domElement.dataset.holeGeometry = 'cut-shell-cavity-mesh';
+    this.renderer.domElement.dataset.holeCount = '3';
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(this.renderer.domElement);
 
     this.camera.position.set(0, 0, 100);
     this.camera.lookAt(0, 0, 0);
 
-    this.scene.add(new THREE.HemisphereLight(0xf7f8fa, 0x55585f, 1.45));
+    this.scene.add(new THREE.HemisphereLight(0xf7f8fa, 0x55585f, 1.4));
 
-    const key = new THREE.DirectionalLight(0xffffff, 1.9);
+    const key = new THREE.DirectionalLight(0xffffff, 1.75);
     key.position.set(-180, 240, 420);
     this.scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xe7ebef, 0.62);
+    const fill = new THREE.DirectionalLight(0xe7ebef, 0.55);
     fill.position.set(260, -120, 300);
     this.scene.add(fill);
 
-    const edge = new THREE.DirectionalLight(0xffffff, 0.28);
+    const edge = new THREE.DirectionalLight(0xffffff, 0.2);
     edge.position.set(320, 220, 40);
     this.scene.add(edge);
 
