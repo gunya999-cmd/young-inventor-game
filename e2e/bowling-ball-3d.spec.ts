@@ -8,6 +8,7 @@ test('Bowling Ball is a real Three.js object synchronized with Planck', async ({
   const layer = page.locator('canvas.bowling-ball-3d-layer');
   await expect(layer).toBeVisible();
   await expect(layer).toHaveAttribute('data-render-engine', 'three-webgl');
+  await expect(layer).toHaveAttribute('data-asset-version', 'bowling-ball-v2');
   await expect(layer).toHaveCSS('pointer-events', 'none');
   await expect(layer).toHaveAttribute('data-bowling-ball-count', '1');
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.bowlingBall3d)).toBe('ready');
@@ -35,14 +36,31 @@ test('Bowling Ball is a real Three.js object synchronized with Planck', async ({
   expect(finish.angle).not.toBe(start.angle);
 });
 
-test('Bowling Ball asset lab renders a large touch-rotatable 3D preview', async ({ page }) => {
+test('Bowling Ball Asset Lab fits the complete 3D asset on a phone viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?asset=bowling-ball');
+
   const lab = page.locator('.bowling-ball-lab');
-  const preview = lab.locator('canvas');
+  const canvas = page.locator('.bowling-ball-lab__stage canvas');
   await expect(lab).toBeVisible();
-  await expect(lab.locator('h1')).toHaveText('Bowling Ball');
-  await expect(preview).toBeVisible();
-  const box = await preview.boundingBox();
-  expect(box?.width ?? 0).toBeGreaterThan(500);
-  expect(box?.height ?? 0).toBeGreaterThan(400);
+  await expect(canvas).toBeVisible();
+  await expect(canvas).toHaveAttribute('data-asset-version', 'bowling-ball-v2');
+
+  const metrics = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('.bowling-ball-lab__stage canvas')!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      cameraDistance: Number(canvas.dataset.cameraDistance)
+    };
+  });
+
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  expect(metrics.width).toBeGreaterThan(360);
+  expect(metrics.height).toBeGreaterThan(620);
+  // Portrait framing must pull the perspective camera farther back than desktop.
+  expect(metrics.cameraDistance).toBeGreaterThan(8);
 });
