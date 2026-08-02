@@ -12,10 +12,10 @@ export function installBowlingBallLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>PART 01 · 3D ASSET REVIEW</small><h1>Bowling Ball</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>v3</span></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>v4</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Bowling Ball 3D preview" data-asset-version="bowling-ball-v3" data-hole-geometry="deformed-shell"></canvas>
+      <canvas aria-label="Bowling Ball 3D preview" data-asset-version="bowling-ball-v4" data-hole-geometry="deformed-shell-sharp"></canvas>
       <p>Проведи пальцем по шару, чтобы повернуть его</p>
     </div>
   `;
