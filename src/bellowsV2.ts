@@ -82,7 +82,7 @@ function createPleatedBellowsGeometry(): THREE.BufferGeometry {
 
 function createSelectionVolume(): THREE.Mesh {
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(4.25, 1.4, 1.45),
+    new THREE.BoxGeometry(5.0, 1.4, 1.45),
     new THREE.MeshBasicMaterial({
       color: 0x6e82ff,
       transparent: true,
@@ -93,7 +93,7 @@ function createSelectionVolume(): THREE.Mesh {
     })
   );
   mesh.visible = false;
-  mesh.position.x = 0.08;
+  mesh.position.x = 0.25;
   mesh.name = 'BellowsSelectionVolume';
   return mesh;
 }
@@ -106,7 +106,7 @@ export function createBellowsModelV2(): ReviewAssetModel {
   group.userData.construction = 'continuous-pleated-shell';
   group.userData.snapPoints = [
     { id: 'hinge', position: [-1.05, 0, 0] },
-    { id: 'nozzle', position: [2.18, 0, 0] }
+    { id: 'nozzle', position: [2.48, 0, 0] }
   ];
 
   const woodTop = new THREE.MeshPhysicalMaterial({
@@ -150,8 +150,6 @@ export function createBellowsModelV2(): ReviewAssetModel {
   pleats.name = 'ContinuousLeatherPleats';
   group.add(pleats);
 
-  // Comfortable dark grip inserts keep the rear handles readable without
-  // introducing decorative ornament.
   for (const y of [-0.515, 0.515]) {
     const grip = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.28), gripMaterial);
     grip.position.set(-1.53, y, 0);
