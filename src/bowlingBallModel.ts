@@ -30,7 +30,9 @@ function smoothstep01(value: number): number {
  * vertex positions and normals of the shell.
  */
 function createRecessedShellGeometry(): THREE.SphereGeometry {
-  const geometry = new THREE.SphereGeometry(1, 144, 104);
+  // 96×72 keeps the sculpted holes smooth at Asset-Lab scale while avoiding
+  // the unnecessary software-WebGL cost of the earlier review mesh.
+  const geometry = new THREE.SphereGeometry(1, 96, 72);
   const position = geometry.getAttribute('position');
   const colors = new Float32Array(position.count * 3);
   const point = new THREE.Vector3();
@@ -52,9 +54,6 @@ function createRecessedShellGeometry(): THREE.SphereGeometry {
       const outerAngle = hole.radius * 1.34;
       if (angle >= outerAngle) continue;
 
-      // Broad smooth transition forms a rounded entrance chamfer. The steeper
-      // inner portion reads as a drilled finger recess without adding a raised
-      // rim above the bowling-ball surface.
       const normalized = 1 - angle / outerAngle;
       const bowl = smoothstep01(normalized);
       const inner = smoothstep01((normalized - 0.46) / 0.54);
@@ -102,7 +101,6 @@ export function createBowlingBallModel(): BowlingBallModel {
   shell.name = 'BowlingBallRecessedShell';
   group.add(shell);
 
-  // Full 3D selection shell reads correctly from every rotation angle.
   const selectionShell = new THREE.Mesh(
     new THREE.SphereGeometry(1.055, 48, 34),
     new THREE.MeshBasicMaterial({
