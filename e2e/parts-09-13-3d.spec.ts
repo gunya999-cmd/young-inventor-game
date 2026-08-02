@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const assets = [
-  ['boxing-glove', 'boxing-glove-v13', 'CC-BY', 'sketchfab-incg5764-boxing-glove-cc-by'],
+  ['boxing-glove', 'boxing-glove-v14', 'CC-BY', 'sketchfab-incg5764-boxing-glove-cc-by'],
   ['trampoline', 'trampoline-v2', 'CC-BY', 'sketchfab-simon-laisne-trampoline-cc-by'],
   ['fan-belt', 'fan-belt-v2', 'CC-BY', 'sketchfab-v-belt-c-type-cc-by'],
   ['gear', 'gear-v2', 'CC0', 'sketchfab-plaggy-cc0-gear'],
@@ -51,7 +51,7 @@ for (const [asset, version, license, sourceKey] of assets) {
       await expect.poll(async () => Number(await canvas.getAttribute('data-extension')), { timeout: 1800 })
         .toBeGreaterThan(0.34);
       await expect(canvas).toHaveAttribute('data-motion-state', 'free');
-      await page.screenshot({ path: 'test-results/boxing-glove-v13-impulse.png', fullPage: true });
+      await page.screenshot({ path: 'test-results/boxing-glove-v14-impulse.png', fullPage: true });
 
       await expect.poll(async () => Number(await canvas.getAttribute('data-center-y')), { timeout: 6500 })
         .toBeLessThan(-0.62);
@@ -60,7 +60,7 @@ for (const [asset, version, license, sourceKey] of assets) {
         .toBe('settled');
       await expect.poll(async () => Number(await canvas.getAttribute('data-speed')))
         .toBeLessThan(0.06);
-      await page.screenshot({ path: 'test-results/boxing-glove-v13-settled.png', fullPage: true });
+      await page.screenshot({ path: 'test-results/boxing-glove-v14-settled.png', fullPage: true });
     }
   });
 }
