@@ -35,8 +35,8 @@ class BowlingBall3DLayer {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.className = 'bowling-ball-3d-layer';
     this.renderer.domElement.dataset.renderEngine = 'three-webgl';
-    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v3';
-    this.renderer.domElement.dataset.holeGeometry = 'deformed-shell';
+    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v4';
+    this.renderer.domElement.dataset.holeGeometry = 'deformed-shell-sharp';
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(this.renderer.domElement);
 
