@@ -47,12 +47,12 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Use:** overall paddle/leather/nozzle construction reference; v2 uses re-authored bevelled paddle boards, a single continuous pleated leather BufferGeometry shell, hinge, grips and a three-stage metal nozzle.
 
 ## Boxing Glove — Part 09
-- **Source creator:** ule71
-- **Asset:** Boxing gloves
+- **Source creator:** Incg5764
+- **Asset:** Boxing Glove
 - **License:** Creative Commons Attribution (CC BY)
-- **Source:** https://sketchfab.com/3d-models/boxing-gloves-f76fcadeb6524896b14325696354965b
-- **Attribution:** “Boxing gloves” by ule71, used as an open-licensed anatomical/proportion reference under CC BY.
-- **Use:** v2 is re-authored locally with a high-resolution asymmetrical padded shell, anatomical thumb, open cuff, inset palm seam and the characteristic Incredible Machine trigger button.
+- **Source:** https://sketchfab.com/3d-models/boxing-glove-5b464201104949e09f77f2d1cf8b60c3
+- **Attribution:** “Boxing Glove” by Incg5764, used as an open-licensed anatomical/proportion reference under CC BY.
+- **Use:** v5 keeps the locally re-authored glove head but rebuilds the mechanism around the classic Incredible Machine interaction: compact blue/purple cuff base, red rear trigger button, hidden-at-rest guide/spring, fast forward punch, short hold and automatic return. The trigger contract is contact-driven rather than timer-driven: a rising contact on the rear button fires one punch and must be released before another punch can fire.
 
 ## Trampoline — Part 10
 - **Source creator:** Simon Laisné
