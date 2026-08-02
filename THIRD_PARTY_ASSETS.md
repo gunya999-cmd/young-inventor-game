@@ -47,38 +47,42 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Use:** overall paddle/leather/nozzle construction reference; v2 uses re-authored bevelled paddle boards, a single continuous pleated leather BufferGeometry shell, hinge, grips and a three-stage metal nozzle.
 
 ## Boxing Glove — Part 09
-- **Source creator:** looneybits
-- **Asset:** Boxing Gloves
-- **License:** Creative Commons CC0 1.0 Universal
-- **Source:** https://opengameart.org/content/boxing-gloves
-- **Use:** silhouette and seam reference; production glove is re-authored as a bevelled 3D leather shell, separate anatomical thumb, cuff and palm seam.
+- **Source creator:** ule71
+- **Asset:** Boxing gloves
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/boxing-gloves-f76fcadeb6524896b14325696354965b
+- **Attribution:** “Boxing gloves” by ule71, used as an open-licensed anatomical/proportion reference under CC BY.
+- **Use:** v2 is re-authored locally with a high-resolution asymmetrical padded shell, anatomical thumb, open cuff, inset palm seam and the characteristic Incredible Machine trigger button.
 
 ## Trampoline — Part 10
-- **Source creator:** flavio / lametta
-- **Asset:** Elastic trampoline
-- **License:** Creative Commons Attribution-ShareAlike (CC BY-SA)
-- **Source:** https://opengameart.org/content/elastic-trampoline
-- **Use:** mechanical construction reference only; production trampoline is re-authored locally with a rounded steel frame, elastic mat, visible coil springs and four legs.
+- **Source creator:** Simon Laisné
+- **Asset:** Trampoline
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/trampoline-04505bad99204796a40e711f066b8f37
+- **Attribution:** “Trampoline” by Simon Laisné, used as an open-licensed construction/proportion reference under CC BY.
+- **Use:** v2 is re-authored locally with a continuous tubular frame, protective pad, taut fabric, twenty-two visible coil springs, real attachment tabs and paired U-legs.
 
 ## Fan Belt — Part 11
-- **Source creator:** Paul Wortmann
-- **Asset:** belt
-- **License:** Creative Commons CC0 1.0 Universal
-- **Source:** https://opengameart.org/content/belt
-- **Use:** rubber material/profile reference; production fan belt is a re-authored continuous closed loop with shallow rib detail and two pulley snap anchors.
+- **Source creator:** lokilegioner
+- **Asset:** V Belt C Type
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/v-belt-c-type-507329650b9c4357b536464de7d38100
+- **Attribution:** “V Belt C Type” by lokilegioner, used as an open-licensed V-profile/material reference under CC BY.
+- **Use:** v2 is a locally generated continuous trapezoidal V-belt around two neutral preview pulleys, making the rotational-transfer function readable instead of presenting a rigid rounded rectangle.
 
 ## Gear — Part 12
-- **Source creator:** Kenney
-- **Pack:** Factory Kit
+- **Source creator:** plaggy
+- **Asset:** CC0 - Gear
 - **License:** Creative Commons CC0 1.0 Universal
-- **Source:** https://opengameart.org/content/factory-kit
-- **Use:** industrial visual-language reference; production gear is re-authored as a bevelled 20-tooth machined gear with axle bore and six lightening holes.
+- **Source:** https://sketchfab.com/3d-models/cc0-gear-bb92a0e2e5e04ed4a62a51dde6cb854a
+- **Use:** PBR/material and machined-tooth reference; v2 uses a locally generated 24-tooth profile, true through-bore, lightening holes, raised hub rings, bore sleeve and subtle machined face steps.
 
 ## Conveyor Belt — Part 13
-- **Source creator:** Kenney
-- **Pack:** Factory Kit
-- **License:** Creative Commons CC0 1.0 Universal
-- **Source:** https://opengameart.org/content/factory-kit
-- **Use:** industrial conveyor construction reference; production conveyor is re-authored with a continuous rubber loop, two rollers, steel side rails, legs and input/output anchors.
+- **Source creator:** Jason Kan
+- **Asset:** Conveyor Belt
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/conveyor-belt-a32d111b9d7b416e8a2c074501333eb4
+- **Attribution:** “Conveyor Belt” by Jason Kan, used as an open-licensed industrial construction reference under CC BY.
+- **Use:** v2 is re-authored locally as a complete machine with one continuous rubber loop, end drums, five support rollers, bearing housings, side rails, four braced legs, tread detail and a side-mounted motor/gearbox.
 
-CC0 attribution is not required, but provenance is retained for maintainability and review. CC-BY and CC-BY-SA provenance is retained explicitly above.
+CC0 attribution is not required, but provenance is retained for maintainability and review. CC-BY attribution is retained explicitly above.
