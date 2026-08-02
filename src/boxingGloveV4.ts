@@ -10,6 +10,10 @@ const EXTENDED_SPRING_LENGTH = REST_SPRING_LENGTH + PUNCH_DISTANCE;
 
 function createSpringGeometry(turns = 11): THREE.TubeGeometry {
   class SpringCurve extends THREE.Curve<THREE.Vector3> {
+    constructor() {
+      super();
+    }
+
     override getPoint(t: number): THREE.Vector3 {
       const angle = t * turns * Math.PI * 2;
       return new THREE.Vector3(t, Math.cos(angle) * 0.215, Math.sin(angle) * 0.215);
