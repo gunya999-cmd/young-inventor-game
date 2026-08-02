@@ -1,100 +1,14 @@
 import * as THREE from 'three';
+import { createBowlingBallModel, setBowlingBallSelected, type BowlingBallModel } from './bowlingBallModel';
 import { PARTS, type PartState } from './model';
 import { CanvasRenderer, type RenderFrame } from './renderer';
 
 type RendererPrototype = CanvasRenderer & { __bowlingBall3dInstalled?: boolean };
 
 class BowlingBallVisual {
-  readonly group = new THREE.Group();
-  private readonly shellMaterial: THREE.MeshPhysicalMaterial;
-  private readonly rimMaterials: THREE.MeshStandardMaterial[] = [];
-  private readonly selectionHalo: THREE.Mesh;
-
-  constructor() {
-    this.group.userData.kind = 'bowling-ball-3d';
-    this.group.userData.snapPoints = [];
-
-    this.shellMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x101821,
-      metalness: 0.06,
-      roughness: 0.21,
-      clearcoat: 0.78,
-      clearcoatRoughness: 0.16,
-      emissive: 0x000000,
-      emissiveIntensity: 0
-    });
-
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 44), this.shellMaterial);
-    shell.name = 'BowlingBallShell';
-    shell.castShadow = false;
-    shell.receiveShadow = false;
-    this.group.add(shell);
-
-    const cavityMaterial = new THREE.MeshStandardMaterial({
-      color: 0x020508,
-      metalness: 0,
-      roughness: 0.84
-    });
-
-    const holeSpecs = [
-      { x: -0.22, y: 0.22, radius: 0.125 },
-      { x: 0.20, y: 0.22, radius: 0.125 },
-      { x: 0, y: -0.15, radius: 0.145 }
-    ];
-
-    for (const [index, hole] of holeSpecs.entries()) {
-      const cavity = new THREE.Mesh(new THREE.CircleGeometry(hole.radius * 0.82, 40), cavityMaterial);
-      cavity.name = `FingerHoleCavity${index + 1}`;
-      cavity.position.set(hole.x, hole.y, 0.994);
-      this.group.add(cavity);
-
-      const rimMaterial = new THREE.MeshStandardMaterial({
-        color: 0x687786,
-        metalness: 0.72,
-        roughness: 0.24,
-        emissive: 0x5971ff,
-        emissiveIntensity: 0
-      });
-      this.rimMaterials.push(rimMaterial);
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(hole.radius, hole.radius * 0.09, 12, 48), rimMaterial);
-      rim.name = `FingerHoleRim${index + 1}`;
-      rim.position.set(hole.x, hole.y, 1.002);
-      this.group.add(rim);
-    }
-
-    const accentMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x526de7,
-      metalness: 0.28,
-      roughness: 0.26,
-      clearcoat: 0.45,
-      emissive: 0x1d2d8c,
-      emissiveIntensity: 0.18
-    });
-    const accent = new THREE.Mesh(new THREE.CircleGeometry(0.032, 24), accentMaterial);
-    accent.name = 'BowlingBallAccent';
-    accent.position.set(0, -0.56, 0.997);
-    this.group.add(accent);
-
-    const haloMaterial = new THREE.MeshBasicMaterial({
-      color: 0x6680ff,
-      transparent: true,
-      opacity: 0.34,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    });
-    this.selectionHalo = new THREE.Mesh(new THREE.TorusGeometry(1.075, 0.035, 12, 64), haloMaterial);
-    this.selectionHalo.name = 'BowlingBallSelectionHalo';
-    this.selectionHalo.visible = false;
-    this.selectionHalo.position.z = -0.03;
-    this.group.add(this.selectionHalo);
-  }
-
-  setSelected(selected: boolean): void {
-    this.selectionHalo.visible = selected;
-    this.shellMaterial.emissive.setHex(selected ? 0x111d61 : 0x000000);
-    this.shellMaterial.emissiveIntensity = selected ? 0.32 : 0;
-    for (const material of this.rimMaterials) material.emissiveIntensity = selected ? 1.7 : 0;
-  }
+  readonly model: BowlingBallModel = createBowlingBallModel();
+  get group(): THREE.Group { return this.model.group; }
+  setSelected(selected: boolean): void { setBowlingBallSelected(this.model, selected); }
 }
 
 class BowlingBall3DLayer {
@@ -117,7 +31,7 @@ class BowlingBall3DLayer {
     this.renderer.setPixelRatio(Math.min(1.6, Math.max(1, window.devicePixelRatio || 1)));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = 1.0;
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.className = 'bowling-ball-3d-layer';
     this.renderer.domElement.dataset.renderEngine = 'three-webgl';
@@ -127,20 +41,21 @@ class BowlingBall3DLayer {
     this.camera.position.set(0, 0, 100);
     this.camera.lookAt(0, 0, 0);
 
-    const hemi = new THREE.HemisphereLight(0xf7fbff, 0x52606d, 2.2);
-    this.scene.add(hemi);
+    // Neutral studio lighting. No colored hotspots: the material, not the lamps,
+    // should define the object.
+    this.scene.add(new THREE.HemisphereLight(0xf7f8fa, 0x55585f, 1.55));
 
-    const key = new THREE.DirectionalLight(0xffffff, 4.6);
-    key.position.set(-180, 220, 420);
+    const key = new THREE.DirectionalLight(0xffffff, 2.25);
+    key.position.set(-180, 240, 420);
     this.scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0x8aa2ff, 1.05);
-    fill.position.set(260, -140, 280);
+    const fill = new THREE.DirectionalLight(0xdfe5ec, 0.78);
+    fill.position.set(260, -120, 300);
     this.scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0x8fe9d2, 0.5);
-    rim.position.set(320, 260, 80);
-    this.scene.add(rim);
+    const edge = new THREE.DirectionalLight(0xffffff, 0.38);
+    edge.position.set(320, 220, 40);
+    this.scene.add(edge);
 
     document.documentElement.dataset.bowlingBall3d = 'ready';
   }
@@ -160,6 +75,7 @@ class BowlingBall3DLayer {
 
     const first = balls[0];
     this.renderer.domElement.dataset.bowlingBallCount = String(balls.length);
+    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v2';
     if (first) {
       this.renderer.domElement.dataset.ballX = first.x.toFixed(2);
       this.renderer.domElement.dataset.ballY = first.y.toFixed(2);
