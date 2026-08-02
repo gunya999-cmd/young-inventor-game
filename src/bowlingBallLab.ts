@@ -4,6 +4,9 @@ import { createBowlingBallModel } from './bowlingBallModel';
 export function installBowlingBallLab(): void {
   if (new URLSearchParams(location.search).get('asset') !== 'bowling-ball') return;
 
+  document.documentElement.classList.add('bowling-ball-lab-mode');
+  document.body.classList.add('bowling-ball-lab-mode');
+
   const root = document.createElement('section');
   root.className = 'bowling-ball-lab';
   root.innerHTML = `
@@ -28,7 +31,6 @@ export function installBowlingBallLab(): void {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 
-  // Neutral studio light: clean reflections without blue/green glowing dots.
   scene.add(new THREE.HemisphereLight(0xfbfcfd, 0x60646a, 1.5));
   const key = new THREE.DirectionalLight(0xffffff, 2.35);
   key.position.set(-3.8, 4.8, 6.5);
