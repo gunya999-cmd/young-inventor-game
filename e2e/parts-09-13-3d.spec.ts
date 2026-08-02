@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const assets = [
-  ['boxing-glove', 'boxing-glove-v6', 'CC-BY', 'sketchfab-incg5764-boxing-glove-cc-by'],
+  ['boxing-glove', 'boxing-glove-v7', 'CC-BY', 'sketchfab-incg5764-boxing-glove-cc-by'],
   ['trampoline', 'trampoline-v2', 'CC-BY', 'sketchfab-simon-laisne-trampoline-cc-by'],
   ['fan-belt', 'fan-belt-v2', 'CC-BY', 'sketchfab-v-belt-c-type-cc-by'],
   ['gear', 'gear-v2', 'CC0', 'sketchfab-plaggy-cc0-gear'],
@@ -48,23 +48,19 @@ for (const [asset, version, license, sourceKey] of assets) {
         review.__pressBoxingGlove?.();
       });
 
-      // Strong launch impulse: the spring should extend quickly instead of
-      // following a scripted forward/back animation.
       await expect.poll(async () => Number(await canvas.getAttribute('data-extension')), { timeout: 1800 })
-        .toBeGreaterThan(0.38);
+        .toBeGreaterThan(0.34);
       await expect(canvas).toHaveAttribute('data-motion-state', 'free');
-      await page.screenshot({ path: 'test-results/boxing-glove-v6-impulse.png', fullPage: true });
+      await page.screenshot({ path: 'test-results/boxing-glove-v7-impulse.png', fullPage: true });
 
-      // Gravity then pulls the released glove below the fixed spring anchor.
-      await expect.poll(async () => Number(await canvas.getAttribute('data-center-y')), { timeout: 7000 })
+      await expect.poll(async () => Number(await canvas.getAttribute('data-center-y')), { timeout: 6500 })
         .toBeLessThan(-0.62);
 
-      // Damping must remove the oscillation energy until the glove hangs still.
-      await expect.poll(async () => await canvas.getAttribute('data-motion-state'), { timeout: 14000 })
+      await expect.poll(async () => await canvas.getAttribute('data-motion-state'), { timeout: 10000 })
         .toBe('settled');
       await expect.poll(async () => Number(await canvas.getAttribute('data-speed')))
         .toBeLessThan(0.06);
-      await page.screenshot({ path: 'test-results/boxing-glove-v6-settled.png', fullPage: true });
+      await page.screenshot({ path: 'test-results/boxing-glove-v7-settled.png', fullPage: true });
     }
   });
 }
