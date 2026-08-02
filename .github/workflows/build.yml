@@ -42,6 +42,15 @@ jobs:
       - name: Run browser smoke test
         run: npm run test:e2e
 
+      - name: Upload Boxing Glove preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boxing-glove-v4-preview
+          path: test-results/boxing-glove-v4.png
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
