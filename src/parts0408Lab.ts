@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { createBaseballModelV2 } from './baseballV2';
 import {
-  createBaseballModel,
   createTennisBallModel,
   createBalloonModel,
   createTeeterTotterModel,
@@ -25,9 +25,9 @@ interface AssetConfig {
 
 const CONFIGS: Record<AssetKey, AssetConfig> = {
   baseball: {
-    key: 'baseball', part: '04', title: 'Baseball', version: 'baseball-v1',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-old-baseball-cc0', radius: 1.2,
-    initialRotation: [-0.12, -0.52, 0.18], create: createBaseballModel
+    key: 'baseball', part: '04', title: 'Baseball', version: 'baseball-v2',
+    sourceLicense: 'CC0', sourceKey: 'opengameart-old-baseball-cc0', radius: 1.34,
+    initialRotation: [-0.14, -0.68, 0.12], create: createBaseballModelV2
   },
   'tennis-ball': {
     key: 'tennis-ball', part: '05', title: 'Tennis Ball', version: 'tennis-ball-v1',
@@ -60,12 +60,13 @@ export function installPart0408Lab(key: AssetKey): void {
   document.documentElement.classList.add('bowling-ball-lab-mode');
   document.body.classList.add('bowling-ball-lab-mode', 'parts-0408-lab-mode');
 
+  const versionLabel = config.version.split('-').at(-1) ?? config.version;
   const root = document.createElement('section');
   root.className = `bowling-ball-lab parts-0408-lab ${config.key}-lab`;
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>PART ${config.part} · OPEN-ASSET REVIEW</small><h1>${config.title}</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>${config.sourceLicense}</span><span>v1</span></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>${config.sourceLicense}</span><span>${versionLabel}</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
       <canvas aria-label="${config.title} 3D preview"
@@ -79,6 +80,11 @@ export function installPart0408Lab(key: AssetKey): void {
   document.body.appendChild(root);
 
   const canvas = root.querySelector<HTMLCanvasElement>('canvas')!;
+  if (config.key === 'baseball') {
+    canvas.dataset.seamConstruction = 'surface-integrated';
+    canvas.dataset.externalStitchMeshes = '0';
+  }
+
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
