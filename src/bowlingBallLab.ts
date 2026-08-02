@@ -12,10 +12,10 @@ export function installBowlingBallLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>PART 01 · 3D ASSET REVIEW</small><h1>Bowling Ball</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>v4</span></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>v5</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Bowling Ball 3D preview" data-asset-version="bowling-ball-v4" data-hole-geometry="deformed-shell-sharp"></canvas>
+      <canvas aria-label="Bowling Ball 3D preview" data-asset-version="bowling-ball-v5" data-hole-geometry="cut-shell-cavity-mesh" data-hole-count="3"></canvas>
       <p>Проведи пальцем по шару, чтобы повернуть его</p>
     </div>
   `;
@@ -25,31 +25,31 @@ export function installBowlingBallLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.96;
+  renderer.toneMappingExposure = 0.94;
   renderer.setClearColor(0xedf1f4, 1);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(0xfbfcfd, 0x60646a, 1.42));
-  const key = new THREE.DirectionalLight(0xffffff, 1.95);
+  scene.add(new THREE.HemisphereLight(0xfbfcfd, 0x60646a, 1.34));
+  const key = new THREE.DirectionalLight(0xffffff, 1.75);
   key.position.set(-3.8, 4.8, 6.5);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xe3e7eb, 0.62);
+  const fill = new THREE.DirectionalLight(0xe3e7eb, 0.5);
   fill.position.set(4.5, -1.2, 4.0);
   scene.add(fill);
-  const edge = new THREE.DirectionalLight(0xffffff, 0.26);
+  const edge = new THREE.DirectionalLight(0xffffff, 0.18);
   edge.position.set(3.6, 3.2, -0.5);
   scene.add(edge);
 
   const model = createBowlingBallModel();
   const ball = model.group;
-  ball.rotation.set(-0.09, -0.14, -0.025);
+  ball.rotation.set(-0.075, -0.12, -0.02);
   scene.add(ball);
 
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(1.0, 72),
-    new THREE.MeshBasicMaterial({ color: 0x55606b, transparent: true, opacity: 0.07, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0x55606b, transparent: true, opacity: 0.065, depthWrite: false })
   );
   shadow.scale.set(1.08, 0.16, 1);
   shadow.position.set(0, -1.14, -0.72);
