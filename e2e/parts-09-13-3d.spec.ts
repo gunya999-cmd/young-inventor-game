@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 const assets = [
-  ['boxing-glove', 'boxing-glove-v1', 'CC0', 'opengameart-boxing-gloves-cc0'],
-  ['trampoline', 'trampoline-v1', 'CC-BY-SA', 'opengameart-elastic-trampoline'],
-  ['fan-belt', 'fan-belt-v2', 'CC0', 'opengameart-belt-cc0'],
-  ['gear', 'gear-v2', 'CC0', 'kenney-factory-kit-cc0'],
-  ['conveyor-belt', 'conveyor-belt-v2', 'CC0', 'kenney-factory-kit-cc0']
+  ['boxing-glove', 'boxing-glove-v2', 'CC-BY', 'sketchfab-ule71-boxing-gloves-cc-by'],
+  ['trampoline', 'trampoline-v2', 'CC-BY', 'sketchfab-simon-laisne-trampoline-cc-by'],
+  ['fan-belt', 'fan-belt-v2', 'CC-BY', 'sketchfab-v-belt-c-type-cc-by'],
+  ['gear', 'gear-v2', 'CC0', 'sketchfab-plaggy-cc0-gear'],
+  ['conveyor-belt', 'conveyor-belt-v2', 'CC-BY', 'sketchfab-jason-kan-conveyor-cc-by']
 ] as const;
 
 for (const [asset, version, license, sourceKey] of assets) {
-  test(`${asset} production 3D lab fits on a phone viewport`, async ({ page }) => {
+  test(`${asset} premium 3D lab fits on a phone viewport`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/?asset=${asset}`);
 
