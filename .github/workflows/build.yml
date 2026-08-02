@@ -46,10 +46,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: boxing-glove-v14-preview
+          name: boxing-glove-v15-preview
           path: |
-            test-results/boxing-glove-v14-impulse.png
-            test-results/boxing-glove-v14-settled.png
+            test-results/boxing-glove-v15-armed.png
+            test-results/boxing-glove-v15-impulse.png
+            test-results/boxing-glove-v15-settled.png
           if-no-files-found: warn
           retention-days: 3
 
