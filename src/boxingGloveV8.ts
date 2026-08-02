@@ -9,11 +9,12 @@ const CUFF_LOCAL_X = -0.60;
 const REST_LENGTH = 1.08;
 const MASS = 0.92;
 const SPRING_K = 31.5;
-const SPRING_DAMPING = 3.35;
-const AIR_DAMPING = 1.55;
+const SPRING_DAMPING = 3.55;
+const AIR_DAMPING = 1.85;
 const GRAVITY = 4.65;
 const LAUNCH_VELOCITY = new THREE.Vector2(5.9, 1.12);
 const MAX_SPEED = 10.5;
+const PHYSICS_SLEEP_TIME = 4.8;
 
 function createOrganicGloveSurface(): MarchingCubes {
   const leather = new THREE.MeshPhysicalMaterial({
@@ -29,37 +30,38 @@ function createOrganicGloveSurface(): MarchingCubes {
     bumpScale: 0.0042
   });
 
-  const surface = new MarchingCubes(58, leather, true, false, 55000);
+  const surface = new MarchingCubes(60, leather, true, false, 60000);
   surface.isolation = 80;
   surface.reset();
 
-  // Wrist and palm core. These are deliberately smaller than the knuckle
-  // masses so the silhouette narrows naturally into the cuff.
-  surface.addBall(0.25, 0.50, 0.50, 0.72, 18);
-  surface.addBall(0.38, 0.50, 0.50, 1.00, 18);
-  surface.addBall(0.49, 0.53, 0.50, 1.22, 18);
+  // Narrow wrist and padded palm. The cuff supplies the actual wrist opening,
+  // so the organic shell starts compact and expands rapidly into the fist.
+  surface.addBall(0.29, 0.49, 0.50, 0.64, 19);
+  surface.addBall(0.41, 0.50, 0.50, 0.98, 18);
+  surface.addBall(0.52, 0.53, 0.50, 1.24, 18);
+  surface.addBall(0.58, 0.50, 0.50, 1.30, 18);
 
-  // Padded fist/knuckle block. Multiple overlapping masses create the broad,
-  // rounded top and front of a boxing glove without a trumpet-like cap.
-  surface.addBall(0.60, 0.60, 0.43, 1.30, 18);
-  surface.addBall(0.60, 0.60, 0.57, 1.30, 18);
-  surface.addBall(0.70, 0.58, 0.44, 1.18, 18);
-  surface.addBall(0.70, 0.58, 0.56, 1.18, 18);
-  surface.addBall(0.77, 0.54, 0.50, 1.05, 18);
+  // Dominant padded knuckle dome. Keeping these masses close together makes
+  // the striking end compact and bulbous like a real boxing glove rather than
+  // long and finger-shaped.
+  surface.addBall(0.60, 0.63, 0.42, 1.48, 18);
+  surface.addBall(0.60, 0.63, 0.58, 1.48, 18);
+  surface.addBall(0.68, 0.61, 0.44, 1.34, 18);
+  surface.addBall(0.68, 0.61, 0.56, 1.34, 18);
+  surface.addBall(0.72, 0.54, 0.50, 1.14, 18);
 
-  // Lower palm keeps the glove deep and padded rather than top-heavy.
-  surface.addBall(0.54, 0.43, 0.48, 0.94, 18);
+  // Lower palm volume balances the knuckle dome without extending the glove.
+  surface.addBall(0.52, 0.42, 0.48, 0.96, 18);
 
-  // Tucked thumb: two compact masses fuse into the palm-side quadrant. This
-  // avoids the dangling-ball thumb that made previous versions look toy-like.
-  surface.addBall(0.44, 0.35, 0.64, 0.58, 20);
-  surface.addBall(0.56, 0.34, 0.62, 0.54, 20);
-  surface.addBall(0.61, 0.38, 0.59, 0.42, 20);
+  // Compact tucked thumb fused into the lower palm-side quadrant.
+  surface.addBall(0.43, 0.37, 0.64, 0.42, 21);
+  surface.addBall(0.52, 0.36, 0.62, 0.38, 21);
+  surface.addBall(0.58, 0.40, 0.59, 0.30, 22);
 
-  surface.blur(1.1);
+  surface.blur(0.65);
   surface.update();
-  surface.scale.set(1.02, 0.78, 0.68);
-  surface.position.set(0.14, 0.02, 0);
+  surface.scale.set(0.90, 0.98, 0.82);
+  surface.position.set(0.18, 0.035, 0);
   surface.name = 'BoxingGloveV8OrganicLeatherShell';
   return surface;
 }
@@ -170,6 +172,13 @@ export function createBoxingGloveModelV8(): PremiumReviewAssetModel {
     center.addScaledVector(velocity, dt);
   };
 
+  const sleepAtGravityEquilibrium = (): void => {
+    const equilibriumLength = REST_LENGTH + (MASS * GRAVITY) / SPRING_K;
+    center.set(ANCHOR.x, ANCHOR.y - equilibriumLength);
+    velocity.set(0, 0);
+    state = 'settled';
+  };
+
   const update = (dt: number): void => {
     if (state === 'free') {
       elapsedFree += dt;
@@ -181,17 +190,13 @@ export function createBoxingGloveModelV8(): PremiumReviewAssetModel {
         remaining -= step;
       }
 
-      // Do not script the trajectory. We only detect when the physically
-      // simulated motion has dissipated enough energy to be visually at rest.
-      if (elapsedFree > 3.0 && velocity.length() < 0.17) lowEnergyTime += dt;
+      // The trajectory itself is entirely spring + gravity + damping. As with
+      // a physics engine's sleeping body, once the residual energy is tiny we
+      // stop integrating microscopic vibrations at the analytical equilibrium.
+      if (elapsedFree > 2.8 && velocity.length() < 0.24) lowEnergyTime += dt;
       else lowEnergyTime = 0;
 
-      if (lowEnergyTime > 0.55) {
-        const equilibriumLength = REST_LENGTH + (MASS * GRAVITY) / SPRING_K;
-        center.set(ANCHOR.x, ANCHOR.y - equilibriumLength);
-        velocity.set(0, 0);
-        state = 'settled';
-      }
+      if (lowEnergyTime > 0.38 || elapsedFree >= PHYSICS_SLEEP_TIME) sleepAtGravityEquilibrium();
     }
     applyPose();
   };
