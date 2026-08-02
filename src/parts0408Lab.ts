@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createBaseballModelV2 } from './baseballV2';
-import {
-  createTennisBallModel,
-  createBalloonModel,
-  createTeeterTotterModel,
-  createBellowsModel,
-  type ReviewAssetModel
-} from './parts0408Models';
+import { createTennisBallModelV2 } from './tennisBallV2';
+import { createBalloonModelV2 } from './balloonV2';
+import { createTeeterTotterModelV2 } from './teeterTotterV2';
+import { createBellowsModelV2 } from './bellowsV2';
+import type { ReviewAssetModel } from './parts0408Models';
 
 type AssetKey = 'baseball' | 'tennis-ball' | 'balloon' | 'teeter-totter' | 'bellows';
 
@@ -30,24 +28,24 @@ const CONFIGS: Record<AssetKey, AssetConfig> = {
     initialRotation: [-0.14, -0.68, 0.12], create: createBaseballModelV2
   },
   'tennis-ball': {
-    key: 'tennis-ball', part: '05', title: 'Tennis Ball', version: 'tennis-ball-v1',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-hq-pbr-tennis-ball-cc0', radius: 1.2,
-    initialRotation: [-0.1, -0.42, 0.16], create: createTennisBallModel
+    key: 'tennis-ball', part: '05', title: 'Tennis Ball', version: 'tennis-ball-v2',
+    sourceLicense: 'CC0', sourceKey: 'opengameart-hq-pbr-tennis-ball-cc0', radius: 1.34,
+    initialRotation: [-0.12, -0.64, 0.14], create: createTennisBallModelV2
   },
   balloon: {
-    key: 'balloon', part: '06', title: 'Balloon', version: 'balloon-v1',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-balloons-cc0', radius: 2.05,
-    initialRotation: [-0.05, -0.34, 0.05], create: createBalloonModel
+    key: 'balloon', part: '06', title: 'Balloon', version: 'balloon-v2',
+    sourceLicense: 'CC0', sourceKey: 'opengameart-balloons-cc0', radius: 2.22,
+    initialRotation: [-0.05, -0.28, 0.035], create: createBalloonModelV2
   },
   'teeter-totter': {
-    key: 'teeter-totter', part: '07', title: 'Teeter-Totter', version: 'teeter-totter-v1',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-playground-cc0', radius: 2.15,
-    initialRotation: [-0.28, -0.48, -0.02], create: createTeeterTotterModel
+    key: 'teeter-totter', part: '07', title: 'Teeter-Totter', version: 'teeter-totter-v2',
+    sourceLicense: 'CC0', sourceKey: 'opengameart-playground-cc0', radius: 2.35,
+    initialRotation: [-0.24, -0.50, 0.015], create: createTeeterTotterModelV2
   },
   bellows: {
-    key: 'bellows', part: '08', title: 'Bellows', version: 'bellows-v1',
-    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-nudluria-bellows-cc-by', radius: 3.05,
-    initialRotation: [-0.3, -0.48, 0.08], create: createBellowsModel
+    key: 'bellows', part: '08', title: 'Bellows', version: 'bellows-v2',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-nudluria-bellows-cc-by', radius: 2.85,
+    initialRotation: [-0.28, -0.54, 0.05], create: createBellowsModelV2
   }
 };
 
@@ -83,6 +81,16 @@ export function installPart0408Lab(key: AssetKey): void {
   if (config.key === 'baseball') {
     canvas.dataset.seamConstruction = 'surface-integrated';
     canvas.dataset.externalStitchMeshes = '0';
+  } else if (config.key === 'tennis-ball') {
+    canvas.dataset.seamConstruction = 'surface-integrated';
+    canvas.dataset.externalSeamMeshes = '0';
+    canvas.dataset.surface = 'fine-felt';
+  } else if (config.key === 'balloon') {
+    canvas.dataset.geometry = 'smooth-deformed-sphere';
+  } else if (config.key === 'teeter-totter') {
+    canvas.dataset.construction = 'workshop-lever-a-frame';
+  } else if (config.key === 'bellows') {
+    canvas.dataset.construction = 'continuous-pleated-shell';
   }
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
