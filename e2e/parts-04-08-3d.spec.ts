@@ -2,10 +2,10 @@ import { expect, test } from '@playwright/test';
 
 const assets = [
   ['baseball', 'baseball-v2', 'CC0', 'opengameart-old-baseball-cc0'],
-  ['tennis-ball', 'tennis-ball-v1', 'CC0', 'opengameart-hq-pbr-tennis-ball-cc0'],
-  ['balloon', 'balloon-v1', 'CC0', 'opengameart-balloons-cc0'],
-  ['teeter-totter', 'teeter-totter-v1', 'CC0', 'opengameart-playground-cc0'],
-  ['bellows', 'bellows-v1', 'CC-BY', 'sketchfab-nudluria-bellows-cc-by']
+  ['tennis-ball', 'tennis-ball-v2', 'CC0', 'opengameart-hq-pbr-tennis-ball-cc0'],
+  ['balloon', 'balloon-v2', 'CC0', 'opengameart-balloons-cc0'],
+  ['teeter-totter', 'teeter-totter-v2', 'CC0', 'opengameart-playground-cc0'],
+  ['bellows', 'bellows-v2', 'CC-BY', 'sketchfab-nudluria-bellows-cc-by']
 ] as const;
 
 for (const [asset, version, license, sourceKey] of assets) {
@@ -26,6 +26,16 @@ for (const [asset, version, license, sourceKey] of assets) {
     if (asset === 'baseball') {
       await expect(canvas).toHaveAttribute('data-seam-construction', 'surface-integrated');
       await expect(canvas).toHaveAttribute('data-external-stitch-meshes', '0');
+    } else if (asset === 'tennis-ball') {
+      await expect(canvas).toHaveAttribute('data-seam-construction', 'surface-integrated');
+      await expect(canvas).toHaveAttribute('data-external-seam-meshes', '0');
+      await expect(canvas).toHaveAttribute('data-surface', 'fine-felt');
+    } else if (asset === 'balloon') {
+      await expect(canvas).toHaveAttribute('data-geometry', 'smooth-deformed-sphere');
+    } else if (asset === 'teeter-totter') {
+      await expect(canvas).toHaveAttribute('data-construction', 'workshop-lever-a-frame');
+    } else if (asset === 'bellows') {
+      await expect(canvas).toHaveAttribute('data-construction', 'continuous-pleated-shell');
     }
 
     const metrics = await canvas.evaluate((element) => {
