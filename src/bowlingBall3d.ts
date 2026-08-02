@@ -35,25 +35,25 @@ class BowlingBall3DLayer {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.className = 'bowling-ball-3d-layer';
     this.renderer.domElement.dataset.renderEngine = 'three-webgl';
+    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v3';
+    this.renderer.domElement.dataset.holeGeometry = 'deformed-shell';
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(this.renderer.domElement);
 
     this.camera.position.set(0, 0, 100);
     this.camera.lookAt(0, 0, 0);
 
-    // Neutral studio lighting. No colored hotspots: the material, not the lamps,
-    // should define the object.
-    this.scene.add(new THREE.HemisphereLight(0xf7f8fa, 0x55585f, 1.55));
+    this.scene.add(new THREE.HemisphereLight(0xf7f8fa, 0x55585f, 1.45));
 
-    const key = new THREE.DirectionalLight(0xffffff, 2.25);
+    const key = new THREE.DirectionalLight(0xffffff, 1.9);
     key.position.set(-180, 240, 420);
     this.scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xdfe5ec, 0.78);
+    const fill = new THREE.DirectionalLight(0xe7ebef, 0.62);
     fill.position.set(260, -120, 300);
     this.scene.add(fill);
 
-    const edge = new THREE.DirectionalLight(0xffffff, 0.38);
+    const edge = new THREE.DirectionalLight(0xffffff, 0.28);
     edge.position.set(320, 220, 40);
     this.scene.add(edge);
 
@@ -75,7 +75,6 @@ class BowlingBall3DLayer {
 
     const first = balls[0];
     this.renderer.domElement.dataset.bowlingBallCount = String(balls.length);
-    this.renderer.domElement.dataset.assetVersion = 'bowling-ball-v2';
     if (first) {
       this.renderer.domElement.dataset.ballX = first.x.toFixed(2);
       this.renderer.domElement.dataset.ballY = first.y.toFixed(2);
