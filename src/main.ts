@@ -16,6 +16,7 @@ import { installBowlingBall3D } from './bowlingBall3d';
 import { installBowlingBallLab } from './bowlingBallLab';
 import { installBasketballLab } from './basketballLab';
 import { installCannonballLab } from './cannonballLab';
+import { installPart0408Lab, isPart0408Asset } from './parts0408Lab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -46,6 +47,8 @@ if (assetPreview === 'bowling-ball') {
   installBasketballLab();
 } else if (assetPreview === 'cannonball') {
   installCannonballLab();
+} else if (isPart0408Asset(assetPreview)) {
+  installPart0408Lab(assetPreview);
 } else {
   try {
     installExtendedParts();
