@@ -3,9 +3,9 @@ import { expect, test } from '@playwright/test';
 const assets = [
   ['boxing-glove', 'boxing-glove-v1', 'CC0', 'opengameart-boxing-gloves-cc0'],
   ['trampoline', 'trampoline-v1', 'CC-BY-SA', 'opengameart-elastic-trampoline'],
-  ['fan-belt', 'fan-belt-v1', 'CC0', 'opengameart-belt-cc0'],
-  ['gear', 'gear-v1', 'CC0', 'kenney-factory-kit-cc0'],
-  ['conveyor-belt', 'conveyor-belt-v1', 'CC0', 'kenney-factory-kit-cc0']
+  ['fan-belt', 'fan-belt-v2', 'CC0', 'opengameart-belt-cc0'],
+  ['gear', 'gear-v2', 'CC0', 'kenney-factory-kit-cc0'],
+  ['conveyor-belt', 'conveyor-belt-v2', 'CC0', 'kenney-factory-kit-cc0']
 ] as const;
 
 for (const [asset, version, license, sourceKey] of assets) {
