@@ -1,15 +1,11 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import {
-  createBoxingGloveModel,
-  createTrampolineModel,
-  type ReviewAssetModel0913
-} from './parts0913Models';
-import {
-  createFanBeltModelV2,
-  createGearModelV2,
-  createConveyorBeltModelV2
-} from './parts0913MechanicsV2';
+import type { ReviewAssetModel0913 } from './parts0913Models';
+import { createBoxingGloveModelV2 } from './boxingGloveV2';
+import { createTrampolineModelV2 } from './trampolineV2';
+import { createFanBeltModelV2 } from './fanBeltV2';
+import { createGearModelV2 } from './gearV2';
+import { createConveyorBeltModelV2 } from './conveyorBeltV2';
 
 type AssetKey0913 = 'boxing-glove' | 'trampoline' | 'fan-belt' | 'gear' | 'conveyor-belt';
 
@@ -27,29 +23,29 @@ interface AssetConfig0913 {
 
 const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
   'boxing-glove': {
-    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v1',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-boxing-gloves-cc0', radius: 1.85,
-    initialRotation: [-0.12, -0.38, 0.10], create: createBoxingGloveModel
+    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v2',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-ule71-boxing-gloves-cc-by', radius: 1.90,
+    initialRotation: [-0.10, -0.52, 0.08], create: createBoxingGloveModelV2
   },
   trampoline: {
-    key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v1',
-    sourceLicense: 'CC-BY-SA', sourceKey: 'opengameart-elastic-trampoline', radius: 2.45,
-    initialRotation: [-0.34, -0.48, 0.03], create: createTrampolineModel
+    key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v2',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-simon-laisne-trampoline-cc-by', radius: 2.48,
+    initialRotation: [-0.36, -0.50, 0.025], create: createTrampolineModelV2
   },
   'fan-belt': {
     key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v2',
-    sourceLicense: 'CC0', sourceKey: 'opengameart-belt-cc0', radius: 1.90,
-    initialRotation: [-0.15, -0.44, 0.09], create: createFanBeltModelV2
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-v-belt-c-type-cc-by', radius: 1.92,
+    initialRotation: [-0.18, -0.36, 0.07], create: createFanBeltModelV2
   },
   gear: {
     key: 'gear', part: '12', title: 'Gear', version: 'gear-v2',
-    sourceLicense: 'CC0', sourceKey: 'kenney-factory-kit-cc0', radius: 1.58,
-    initialRotation: [-0.16, -0.34, 0.14], create: createGearModelV2
+    sourceLicense: 'CC0', sourceKey: 'sketchfab-plaggy-cc0-gear', radius: 1.58,
+    initialRotation: [-0.15, -0.42, 0.12], create: createGearModelV2
   },
   'conveyor-belt': {
     key: 'conveyor-belt', part: '13', title: 'Conveyor Belt', version: 'conveyor-belt-v2',
-    sourceLicense: 'CC0', sourceKey: 'kenney-factory-kit-cc0', radius: 2.75,
-    initialRotation: [-0.24, -0.46, 0.02], create: createConveyorBeltModelV2
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-jason-kan-conveyor-cc-by', radius: 2.85,
+    initialRotation: [-0.30, -0.50, 0.015], create: createConveyorBeltModelV2
   }
 };
 
@@ -112,9 +108,9 @@ export function installPart0913Lab(key: AssetKey0913): void {
 
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(1, 72),
-    new THREE.MeshBasicMaterial({ color: 0x59616a, transparent: true, opacity: 0.055, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0x59616a, transparent: true, opacity: 0.052, depthWrite: false })
   );
-  shadow.scale.set(config.radius * 0.78, config.radius * 0.15, 1);
+  shadow.scale.set(config.radius * 0.76, config.radius * 0.14, 1);
   shadow.position.set(0, -config.radius * 0.78, -config.radius * 0.42);
   scene.add(shadow);
 
@@ -154,7 +150,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
     const verticalTan = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
     const horizontalTan = verticalTan * aspect;
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
-    const distance = (config.radius / limitingTan) * 1.14;
+    const distance = (config.radius / limitingTan) * 1.18;
     camera.position.set(0, 0.04, distance);
     camera.lookAt(0, 0, 0);
     camera.aspect = aspect;
