@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const assets = [
-  ['boxing-glove', 'boxing-glove-v2', 'CC-BY', 'sketchfab-ule71-boxing-gloves-cc-by'],
+  ['boxing-glove', 'boxing-glove-v3', 'CC-BY', 'sketchfab-incg5764-boxing-glove-cc-by'],
   ['trampoline', 'trampoline-v2', 'CC-BY', 'sketchfab-simon-laisne-trampoline-cc-by'],
   ['fan-belt', 'fan-belt-v2', 'CC-BY', 'sketchfab-v-belt-c-type-cc-by'],
   ['gear', 'gear-v2', 'CC0', 'sketchfab-plaggy-cc0-gear'],
