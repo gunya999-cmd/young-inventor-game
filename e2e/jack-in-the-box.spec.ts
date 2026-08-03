@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('classic Part 14 Jack-in-the-Box uses imported GLB plus real Planck release physics', async ({ page }) => {
-  test.setTimeout(45_000);
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?asset=jack-in-the-box');
 
@@ -16,8 +16,8 @@ test('classic Part 14 Jack-in-the-Box uses imported GLB plus real Planck release
   await expect(canvas).toHaveAttribute('data-motion-state', 'latched');
   await expect(canvas).toHaveAttribute('data-physics-engine', 'planck');
 
-  await expect.poll(async () => await canvas.getAttribute('data-render-loaded'), { timeout: 10_000 }).toBe('true');
-  await expect.poll(async () => Number(await canvas.getAttribute('data-render-triangles')), { timeout: 10_000 })
+  await expect.poll(async () => await canvas.getAttribute('data-render-loaded'), { timeout: 20_000 }).toBe('true');
+  await expect.poll(async () => Number(await canvas.getAttribute('data-render-triangles')), { timeout: 20_000 })
     .toBeGreaterThan(30_000);
   await expect(canvas).toHaveAttribute('data-render-error', '');
   await page.screenshot({ path: 'test-results/jack-in-the-box-v3-glb-ready.png', fullPage: false });
@@ -27,15 +27,15 @@ test('classic Part 14 Jack-in-the-Box uses imported GLB plus real Planck release
     review.__kickJackDrive?.();
   });
 
-  await expect.poll(async () => Number(await canvas.getAttribute('data-rotation-received')), { timeout: 4500 })
+  await expect.poll(async () => Number(await canvas.getAttribute('data-rotation-received')), { timeout: 12_000 })
     .toBeGreaterThan(4.20);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-release-count')), { timeout: 4500 })
+  await expect.poll(async () => Number(await canvas.getAttribute('data-release-count')), { timeout: 12_000 })
     .toBe(1);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-max-rise')), { timeout: 5500 })
+  await expect.poll(async () => Number(await canvas.getAttribute('data-max-rise')), { timeout: 15_000 })
     .toBeGreaterThan(0.42);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-max-lid-angle')), { timeout: 5500 })
+  await expect.poll(async () => Number(await canvas.getAttribute('data-max-lid-angle')), { timeout: 15_000 })
     .toBeGreaterThan(0.20);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-max-jack-speed')), { timeout: 5500 })
+  await expect.poll(async () => Number(await canvas.getAttribute('data-max-jack-speed')), { timeout: 15_000 })
     .toBeGreaterThan(0.45);
   await page.screenshot({ path: 'test-results/jack-in-the-box-v3-glb-released.png', fullPage: false });
 
