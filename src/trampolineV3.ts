@@ -6,8 +6,8 @@ import type { PremiumReviewAssetModel } from './parts0913PremiumShared';
 const MAT_REST_Y = 0.16;
 const MAT_MIN_TRAVEL = -0.24;
 const MAT_MAX_TRAVEL = 0.035;
-const MAT_STIFFNESS = 92;
-const MAT_DAMPING = 1.45;
+const MAT_STIFFNESS = 112;
+const MAT_DAMPING = 0.82;
 const FIXED_STEP = 1 / 180;
 const MAX_CATCHUP = 0.5;
 const PROBE_RADIUS = 0.22;
@@ -102,16 +102,15 @@ export function createTrampolineModelV3(): PremiumReviewAssetModel {
     position: Vec2(0, MAT_REST_Y),
     fixedRotation: true,
     gravityScale: 0,
-    // A trampoline membrane has very little effective moving mass compared
-    // with its frame. Keeping this low is what lets impact energy enter the
-    // spring instead of disappearing in an effectively heavy inelastic plate.
-    linearDamping: 0.025,
+    // Low effective membrane mass and low damping let impact energy enter the
+    // spring and return through contact, like a real taut trampoline bed.
+    linearDamping: 0.015,
     allowSleep: false,
     userData: { kind: 'trampoline-mat' }
   });
   matBody.createFixture({
     shape: Box(1.31, 0.045),
-    density: 0.42,
+    density: 0.36,
     friction: 0.018,
     restitution: 0.06,
     userData: { kind: 'trampoline-mat' }
