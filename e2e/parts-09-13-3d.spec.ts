@@ -54,6 +54,23 @@ for (const [asset, version, license, sourceKey] of assets) {
       await expect(canvas).toHaveAttribute('data-motion-state', 'free');
       await page.screenshot({ path: 'test-results/boxing-glove-v16-impulse.png', fullPage: true });
 
+      // Sample the rendered physical body, not an animation timer. A real
+      // under-damped spring must reverse vertical direction several times.
+      const samples: number[] = [];
+      for (let i = 0; i < 38; i += 1) {
+        samples.push(Number(await canvas.getAttribute('data-center-y')));
+        await page.waitForTimeout(100);
+      }
+      let reversals = 0;
+      let previousDirection = 0;
+      for (let i = 1; i < samples.length; i += 1) {
+        const delta = samples[i] - samples[i - 1];
+        const direction = Math.abs(delta) > 0.004 ? Math.sign(delta) : 0;
+        if (direction !== 0 && previousDirection !== 0 && direction !== previousDirection) reversals += 1;
+        if (direction !== 0) previousDirection = direction;
+      }
+      expect(reversals).toBeGreaterThanOrEqual(2);
+
       await expect.poll(async () => Number(await canvas.getAttribute('data-center-y')), { timeout: 6500 })
         .toBeLessThan(-0.62);
 
