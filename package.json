@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "prebuild": "node tools/materialize-jitb-v4.mjs",
     "build": "npm run test && tsc -b && vite build",
     "test": "vitest run src/*.test.ts",
     "test:watch": "vitest src/*.test.ts",
