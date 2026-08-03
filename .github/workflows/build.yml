@@ -54,6 +54,18 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+      - name: Upload Trampoline previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trampoline-v3-preview
+          path: |
+            test-results/trampoline-v3-ready.png
+            test-results/trampoline-v3-compressed.png
+            test-results/trampoline-v3-bounced.png
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
