@@ -4,8 +4,8 @@ import type { ReviewAssetModel0913 } from './parts0913Models';
 import { createBoxingGloveModelV16 } from './boxingGloveV16';
 import { createTrampolineModelV3 } from './trampolineV3';
 import { createFanBeltModelV3 } from './fanBeltV3';
-import { createGearModelV2 } from './gearV2';
-import { createConveyorBeltModelV2 } from './conveyorBeltV2';
+import { createGearModelV3 } from './gearV3';
+import { createConveyorBeltModelV3 } from './conveyorBeltV3';
 
 type AssetKey0913 = 'boxing-glove' | 'trampoline' | 'fan-belt' | 'gear' | 'conveyor-belt';
 
@@ -13,6 +13,8 @@ type ReviewCanvas = HTMLCanvasElement & {
   __pressBoxingGlove?: () => void;
   __dropTrampolineProbe?: () => void;
   __kickFanBelt?: () => void;
+  __kickGear?: () => void;
+  __startConveyor?: () => void;
 };
 
 interface AssetConfig0913 {
@@ -44,14 +46,14 @@ const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
     initialRotation: [-0.18, -0.36, 0.07], create: createFanBeltModelV3
   },
   gear: {
-    key: 'gear', part: '12', title: 'Gear', version: 'gear-v2',
+    key: 'gear', part: '12', title: 'Gear', version: 'gear-v3',
     sourceLicense: 'CC0', sourceKey: 'sketchfab-plaggy-cc0-gear', radius: 1.58,
-    initialRotation: [-0.15, -0.42, 0.12], create: createGearModelV2
+    initialRotation: [-0.15, -0.42, 0.12], create: createGearModelV3
   },
   'conveyor-belt': {
-    key: 'conveyor-belt', part: '13', title: 'Conveyor Belt', version: 'conveyor-belt-v2',
-    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-jason-kan-conveyor-cc-by', radius: 2.85,
-    initialRotation: [-0.30, -0.50, 0.015], create: createConveyorBeltModelV2
+    key: 'conveyor-belt', part: '13', title: 'Conveyor Belt', version: 'conveyor-belt-v3',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-jason-kan-conveyor-cc-by', radius: 3.05,
+    initialRotation: [-0.30, -0.50, 0.015], create: createConveyorBeltModelV3
   }
 };
 
@@ -71,14 +73,18 @@ export function installPart0913Lab(key: AssetKey0913): void {
       ? 'Нажми на чёрное полотно — тестовый мяч упадёт на него, продавит пружины и отскочит по реальной физике'
       : config.key === 'fan-belt'
         ? 'Нажми на левый шкив — он получит импульс, а ремень через трение и проскальзывание передаст момент правому шкиву'
-        : 'Проведи пальцем по предмету, чтобы повернуть его';
+        : config.key === 'gear'
+          ? 'Нажми на шестерню — реальный угловой импульс раскрутит её, затем подшипниковое сопротивление постепенно погасит вращение'
+          : 'Нажми на ленту или мотор — привод раскрутит барабаны, а трение движущейся ленты перевезёт тестовый ящик';
   const motion = config.key === 'boxing-glove'
     ? 'impulse-spring-gravity'
     : config.key === 'trampoline'
       ? 'contact-spring-bounce'
       : config.key === 'fan-belt'
         ? 'physical-belt-traction-slip-transfer'
-        : 'static-review';
+        : config.key === 'gear'
+          ? 'angular-impulse-inertia-bearing-drag'
+          : 'motor-drum-belt-friction-transport';
   const root = document.createElement('section');
   root.className = `bowling-ball-lab parts-0913-lab ${config.key}-lab`;
   root.innerHTML = `
@@ -138,6 +144,12 @@ export function installPart0913Lab(key: AssetKey0913): void {
   }
   if (config.key === 'fan-belt' && typeof object.userData.kickDriver === 'function') {
     canvas.__kickFanBelt = (): void => object.userData.kickDriver();
+  }
+  if (config.key === 'gear' && typeof object.userData.kickGear === 'function') {
+    canvas.__kickGear = (): void => object.userData.kickGear();
+  }
+  if (config.key === 'conveyor-belt' && typeof object.userData.startConveyor === 'function') {
+    canvas.__startConveyor = (): void => object.userData.startConveyor();
   }
 
   const shadow = new THREE.Mesh(
@@ -215,6 +227,25 @@ export function installPart0913Lab(key: AssetKey0913): void {
         return false;
       });
       if (driverHit) object.userData.kickDriver();
+      return;
+    }
+
+    if (config.key === 'gear' && typeof object.userData.kickGear === 'function') {
+      const gearHit = hits.find((hit) => hit.object.userData.isGearSpinTarget === true);
+      if (gearHit) object.userData.kickGear();
+      return;
+    }
+
+    if (config.key === 'conveyor-belt' && typeof object.userData.startConveyor === 'function') {
+      const controlHit = hits.find((hit) => {
+        let current: THREE.Object3D | null = hit.object;
+        while (current) {
+          if (current.userData.isConveyorControl === true) return true;
+          current = current.parent;
+        }
+        return false;
+      });
+      if (controlHit) object.userData.startConveyor();
     }
   };
   canvas.addEventListener('pointerup', release);
@@ -228,7 +259,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
     const distance = (config.radius / limitingTan) * 1.18;
     camera.position.set(0, 0.04, distance);
     const targetX = config.key === 'boxing-glove' ? -0.42 : -0.18;
-    const targetY = config.key === 'boxing-glove' ? -0.34 : config.key === 'trampoline' ? 0.52 : 0;
+    const targetY = config.key === 'boxing-glove' ? -0.34 : config.key === 'trampoline' ? 0.52 : config.key === 'conveyor-belt' ? 0.16 : 0;
     camera.lookAt(targetX, targetY, 0);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
@@ -287,6 +318,17 @@ export function installPart0913Lab(key: AssetKey0913): void {
     canvas.dataset.beltTravel = typeof object.userData.beltTravel === 'number' ? object.userData.beltTravel.toFixed(3) : '0';
     canvas.dataset.peakFollowerSpeed = typeof object.userData.peakFollowerSpeed === 'number' ? object.userData.peakFollowerSpeed.toFixed(3) : '0';
     canvas.dataset.kickCount = typeof object.userData.kickCount === 'number' ? String(object.userData.kickCount) : '0';
+    canvas.dataset.gearOmega = typeof object.userData.omega === 'number' ? object.userData.omega.toFixed(3) : '0';
+    canvas.dataset.gearTotalAngle = typeof object.userData.totalAngle === 'number' ? object.userData.totalAngle.toFixed(3) : '0';
+    canvas.dataset.gearPeakOmega = typeof object.userData.peakOmega === 'number' ? object.userData.peakOmega.toFixed(3) : '0';
+    canvas.dataset.gearSpinCount = typeof object.userData.spinCount === 'number' ? String(object.userData.spinCount) : '0';
+    canvas.dataset.conveyorRunning = object.userData.running === true ? 'true' : 'false';
+    canvas.dataset.crateX = typeof object.userData.crateX === 'number' ? object.userData.crateX.toFixed(3) : '0';
+    canvas.dataset.crateY = typeof object.userData.crateY === 'number' ? object.userData.crateY.toFixed(3) : '0';
+    canvas.dataset.crateVx = typeof object.userData.crateVx === 'number' ? object.userData.crateVx.toFixed(3) : '0';
+    canvas.dataset.maxCrateX = typeof object.userData.maxCrateX === 'number' ? object.userData.maxCrateX.toFixed(3) : '0';
+    canvas.dataset.peakBeltSpeed = typeof object.userData.peakBeltSpeed === 'number' ? object.userData.peakBeltSpeed.toFixed(3) : '0';
+    canvas.dataset.delivered = object.userData.delivered === true ? 'true' : 'false';
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
