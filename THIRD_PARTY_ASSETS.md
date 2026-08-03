@@ -89,7 +89,7 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Source creator:** fuglee
 - **Asset:** Pulley
 - **License:** Creative Commons Attribution (CC BY)
-- **Source:** https://sketchfab.com/3d-models/pulley-5a267a9f57a449139f3f192e3f5d87bc
+- **Source:** https://sketchfab.com/3d-models/pulley-87d95e7b0c9d4a829823ceb29a79f0c3
 - **Attribution:** “Pulley” by fuglee, used as an open-licensed forged-block/proportion reference under CC BY.
 - **Use:** v1 is re-authored locally as a compact game-ready forged block with a grooved dynamic sheave, axle, mount eye and dynamic rope. The review mechanism uses a Planck PulleyJoint between unequal masses plus finite clutch torque so sheave rotation can lag the rope rather than being scripted.
 
