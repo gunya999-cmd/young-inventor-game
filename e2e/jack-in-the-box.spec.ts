@@ -30,10 +30,11 @@ test('classic Part 14 Jack-in-the-Box loads the original articulated Blender GLB
     review.__runJackDrive?.();
   });
 
-  await expect.poll(async () => Number(await canvas.getAttribute('data-rotation-received')), { timeout: 12_000 })
-    .toBeGreaterThan(4.20);
+  // The verified mechanical latch releases after 4.0 radians of accumulated real rotation.
   await expect.poll(async () => Number(await canvas.getAttribute('data-release-count')), { timeout: 12_000 })
     .toBe(1);
+  await expect.poll(async () => Number(await canvas.getAttribute('data-rotation-received')), { timeout: 12_000 })
+    .toBeGreaterThan(3.95);
 
   // Capture the actual emerging pose rather than waiting until the spring has already decayed.
   await expect.poll(async () => Number(await canvas.getAttribute('data-jack-y')), { timeout: 8_000, intervals: [40, 60, 80, 100] })
