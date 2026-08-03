@@ -87,8 +87,6 @@ export function createPulleyModelV1(): PremiumReviewAssetModel {
   const darkMetal = new THREE.MeshStandardMaterial({ color: 0x202b31, metalness: 0.86, roughness: 0.31 });
   const ropeMaterial = new THREE.MeshStandardMaterial({ color: 0xb8935f, roughness: 0.92, metalness: 0 });
 
-  // Compact forged clevis inspired by the CC-BY reference, simplified to a
-  // game-ready silhouette with strong readable negative space around the wheel.
   for (const z of [-0.18, 0.18]) {
     const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.82, 1.46, 0.105), frameMetal);
     cheek.position.set(0, 0.60, z);
@@ -135,7 +133,6 @@ export function createPulleyModelV1(): PremiumReviewAssetModel {
   groove.position.z = 0;
   wheelVisual.add(groove);
 
-  // Small machining marks make rotation legible at phone scale.
   for (let index = 0; index < 8; index += 1) {
     const angle = (index / 8) * Math.PI * 2;
     const mark = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.15, 0.30), edgeMetal);
@@ -186,7 +183,7 @@ export function createPulleyModelV1(): PremiumReviewAssetModel {
     leftBody.getWorldCenter(),
     rightBody.getWorldCenter(),
     1
-  ));
+  ))!;
   const ropeConstant = pulleyJoint.getLengthA() + pulleyJoint.getLengthB();
 
   const floor = world.createBody({ type: 'static', position: Vec2(0, -1.14) });
