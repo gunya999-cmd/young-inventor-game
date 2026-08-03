@@ -220,6 +220,8 @@ export function installPart0913Lab(key: AssetKey0913): void {
     canvas.dataset.extension = typeof object.userData.extension === 'number' ? object.userData.extension.toFixed(3) : '0';
     canvas.dataset.centerY = typeof object.userData.centerY === 'number' ? object.userData.centerY.toFixed(3) : '0';
     canvas.dataset.speed = typeof object.userData.speed === 'number' ? object.userData.speed.toFixed(3) : '0';
+    canvas.dataset.oscillationTurns = typeof object.userData.oscillationTurns === 'number' ? String(object.userData.oscillationTurns) : '0';
+    canvas.dataset.physicsEngine = typeof object.userData.physicsEngine === 'string' ? object.userData.physicsEngine : '';
     canvas.dataset.triggerPressed = object.userData.triggerPressed === true ? 'true' : 'false';
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
