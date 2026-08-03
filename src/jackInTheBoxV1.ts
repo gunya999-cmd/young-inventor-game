@@ -13,7 +13,7 @@ const SPRING_K = 17.5;
 const SPRING_DAMPING = 2.15;
 const MAX_SPRING_FORCE = 14.5;
 const DRIVE_THRESHOLD = 4.25;
-const DRIVE_IMPULSE = 0.24;
+const DRIVE_IMPULSE = 0.32;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
