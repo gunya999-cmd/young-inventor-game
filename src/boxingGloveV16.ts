@@ -13,6 +13,9 @@ const GRAVITY = 4.65;
 const LAUNCH_VELOCITY = new THREE.Vector2(5.9, 1.12);
 const MAX_SPRING_FORCE = 82;
 const FIXED_STEP = 1 / 180;
+const MAX_CATCH_UP = 0.5;
+const LOW_ENERGY_SPEED = 0.055;
+const LOW_ENERGY_HOLD = 0.50;
 
 function setSpringPose(mesh: THREE.Mesh, start: THREE.Vector3, end: THREE.Vector3): void {
   const delta = end.clone().sub(start);
@@ -52,9 +55,6 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     awake: false,
     userData: { kind: 'boxing-glove-head' }
   });
-  // The fixture makes the preview use the same kind of real dynamic body that
-  // will later collide with TIM gameplay objects. Density is chosen so the
-  // 2D mass is close to a padded glove rather than an effectively weightless icon.
   gloveBody.createFixture({
     shape: Circle(0.32),
     density: 2.86,
@@ -66,7 +66,7 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
   let state: MotionState = 'armed';
   let triggerPressed = false;
   let triggerLatched = false;
-  let elapsedFree = 0;
+  let simulatedFreeTime = 0;
   let lowEnergyTime = 0;
   let accumulator = 0;
   let oscillationTurns = 0;
@@ -103,6 +103,7 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     group.userData.extension = Math.max(0, distance - ARMED_CENTER.distanceTo(ANCHOR));
     group.userData.triggerPressed = triggerPressed;
     group.userData.oscillationTurns = oscillationTurns;
+    group.userData.simulatedFreeTime = simulatedFreeTime;
     group.userData.physicsEngine = 'planck';
   };
 
@@ -121,34 +122,39 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     gloveBody.applyForceToCenter(Vec2(nx * magnitude, ny * magnitude), true);
   };
 
+  const settleFromPhysicalEnergy = (): void => {
+    const velocity = gloveBody.getLinearVelocity();
+    const speed = Math.hypot(velocity.x, velocity.y);
+    if (simulatedFreeTime > 3.0 && speed < LOW_ENERGY_SPEED) lowEnergyTime += FIXED_STEP;
+    else lowEnergyTime = 0;
+
+    if (lowEnergyTime <= LOW_ENERGY_HOLD) return;
+
+    // The position is never authored or snapped. We only stop integrating once
+    // the real physical body has remained near-zero-energy for half a second
+    // of simulated physics time.
+    gloveBody.setLinearVelocity(Vec2(0, 0));
+    gloveBody.setAwake(false);
+    state = 'settled';
+    accumulator = 0;
+  };
+
   const stepPhysics = (dt: number): void => {
-    accumulator = Math.min(accumulator + dt, 0.12);
-    while (accumulator >= FIXED_STEP) {
+    accumulator = Math.min(accumulator + dt, MAX_CATCH_UP);
+    while (state === 'free' && accumulator >= FIXED_STEP) {
       applySpringAndDamping();
       world.step(FIXED_STEP, 10, 6);
       accumulator -= FIXED_STEP;
+      simulatedFreeTime += FIXED_STEP;
 
       const vy = gloveBody.getLinearVelocity().y;
       const direction = Math.abs(vy) > 0.08 ? Math.sign(vy) : 0;
-      if (elapsedFree > 0.22 && direction !== 0 && lastVerticalDirection !== 0 && direction !== lastVerticalDirection) {
+      if (simulatedFreeTime > 0.22 && direction !== 0 && lastVerticalDirection !== 0 && direction !== lastVerticalDirection) {
         oscillationTurns += 1;
       }
       if (direction !== 0) lastVerticalDirection = direction;
-    }
-  };
 
-  const settleIfReady = (dt: number): void => {
-    const velocity = gloveBody.getLinearVelocity();
-    const speed = Math.hypot(velocity.x, velocity.y);
-    if (elapsedFree > 3.0 && speed < 0.055) lowEnergyTime += dt;
-    else lowEnergyTime = 0;
-
-    if (lowEnergyTime > 0.50) {
-      // No timeout, teleport, or authored final pose: the state changes to
-      // settled only after Planck's body has physically lost almost all energy.
-      gloveBody.setLinearVelocity(Vec2(0, 0));
-      gloveBody.setAwake(false);
-      state = 'settled';
+      settleFromPhysicalEnergy();
     }
   };
 
@@ -156,7 +162,7 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     if (triggerLatched || state === 'free') return;
     triggerLatched = true;
     state = 'free';
-    elapsedFree = 0;
+    simulatedFreeTime = 0;
     lowEnergyTime = 0;
     accumulator = 0;
     oscillationTurns = 0;
@@ -179,12 +185,8 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
   };
 
   const update = (dt = 0): void => {
-    const safeDt = Math.min(0.12, Math.max(0, dt));
-    if (state === 'free') {
-      elapsedFree += safeDt;
-      stepPhysics(safeDt);
-      settleIfReady(safeDt);
-    }
+    const safeDt = Math.min(MAX_CATCH_UP, Math.max(0, dt));
+    if (state === 'free') stepPhysics(safeDt);
     applyPose();
   };
 
@@ -192,7 +194,7 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     state = 'armed';
     triggerPressed = false;
     triggerLatched = false;
-    elapsedFree = 0;
+    simulatedFreeTime = 0;
     lowEnergyTime = 0;
     accumulator = 0;
     oscillationTurns = 0;
