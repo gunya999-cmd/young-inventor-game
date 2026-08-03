@@ -206,11 +206,14 @@ export function installPart0913Lab(key: AssetKey0913): void {
 
   let previous = performance.now();
   const animate = (now: number): void => {
-    const dt = Math.min(0.032, Math.max(0, (now - previous) / 1000));
+    const wallDt = Math.min(0.12, Math.max(0, (now - previous) / 1000));
+    const renderDt = Math.min(0.032, wallDt);
     previous = now;
-    if (typeof object.userData.update === 'function') object.userData.update(dt);
+    if (typeof object.userData.update === 'function') {
+      object.userData.update(config.key === 'boxing-glove' ? wallDt : renderDt);
+    }
     if (pointerId === null) {
-      const damping = Math.pow(0.025, dt);
+      const damping = Math.pow(0.025, renderDt);
       velocityX *= damping;
       velocityY *= damping;
       object.rotation.y += velocityX;
