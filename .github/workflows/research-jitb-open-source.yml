@@ -6,6 +6,8 @@ on:
       - agent/parts-09-13-open-assets
     paths:
       - .github/workflows/research-jitb-open-source.yml
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
