@@ -13,20 +13,20 @@ export function installJackInTheBoxLab(): void {
   root.className = 'bowling-ball-lab parts-0913-lab jack-in-the-box-lab';
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
-      <div><small>CLASSIC PART 14 · IMPORTED GAME-READY 3D</small><h1>Jack-in-the-Box</h1></div>
-      <div class="bowling-ball-lab__meta"><span>GLB</span><span>PBR</span><span>36k tris</span><span>v3</span></div>
+      <div><small>CLASSIC PART 14 · REAL CC0 SOURCE MESH</small><h1>Jack-in-the-Box</h1></div>
+      <div class="bowling-ball-lab__meta"><span>GLB</span><span>CC0</span><span>507k tris</span><span>v4</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Game-ready realistic Jack-in-the-Box GLB preview"
-        data-asset-version="jack-in-the-box-v3-glb-realistic"
-        data-source-license="CC-BY-reference"
-        data-source-key="local-jitb-v3-glb-evan-cg-reference"
-        data-render-source="glb"
+      <canvas aria-label="Real CC0 Jack-in-the-Box 3D preview"
+        data-asset-version="jack-in-the-box-v4-real-cc0"
+        data-source-license="CC0-1.0"
+        data-source-key="meshy-cc0-rusted-jack-in-the-box"
+        data-render-source="real-cc0-glb"
         data-render-loaded="false"
         data-render-triangles="0"
         data-studio-lighting="pmrem-soft"
         data-motion="rotation-threshold-latch-spring-contact"></canvas>
-      <p>Настоящий бинарный GLB: детализированная render-геометрия загружается отдельно от простых Planck-коллайдеров. Привод, защёлка, пружина и крышка остаются физическими.</p>
+      <p>В игре загружается реальная CC0-сетка исходного ассета — не Three.js-примитивы и не концепт-рендер. Planck-физика привода, защёлки и пружины остаётся отдельным слоем.</p>
     </div>
   `;
   document.body.appendChild(root);
@@ -35,7 +35,7 @@ export function installJackInTheBoxLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.92;
+  renderer.toneMappingExposure = 1.02;
   renderer.setClearColor(0xdfe3e5, 1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -43,23 +43,23 @@ export function installJackInTheBoxLab(): void {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.045).texture;
-  scene.add(new THREE.HemisphereLight(0xf8fafb, 0x4b5053, 0.52));
+  scene.add(new THREE.HemisphereLight(0xf8fafb, 0x4b5053, 0.58));
 
-  const key = new THREE.DirectionalLight(0xfff4e8, 1.16);
+  const key = new THREE.DirectionalLight(0xfff4e8, 1.22);
   key.position.set(-4.8, 6.2, 7.4);
   key.castShadow = true;
   key.shadow.mapSize.set(1536, 1536);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xcbd9e0, 0.24);
+  const fill = new THREE.DirectionalLight(0xcbd9e0, 0.30);
   fill.position.set(4.2, 1.2, 5.5);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffffff, 0.25);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.28);
   rim.position.set(3.4, 5.0, -4.8);
   scene.add(rim);
 
   const model = createJackInTheBoxModelV1();
   const object = model.group;
-  object.rotation.set(-0.075, -0.49, 0.015);
+  object.rotation.set(-0.075, -0.42, 0.015);
   object.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.castShadow = true;
@@ -69,7 +69,7 @@ export function installJackInTheBoxLab(): void {
   scene.add(object);
 
   void attachJackInTheBoxGlbV3(object).catch((error) => {
-    console.error('Realistic Jack GLB failed to load; keeping procedural fallback.', error);
+    console.error('Real CC0 Jack GLB failed to load; keeping procedural fallback.', error);
   });
 
   const floor = new THREE.Mesh(
@@ -137,7 +137,10 @@ export function installJackInTheBoxLab(): void {
       }
       return false;
     });
-    if (hitDrive) canvas.__kickJackDrive?.();
+
+    // The real CC0 source is one monolithic render mesh, so a tap anywhere on it
+    // activates the separate physical drive while drag remains reserved for review rotation.
+    if (hitDrive || object.userData.renderLoaded === true) canvas.__kickJackDrive?.();
   };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
@@ -149,7 +152,7 @@ export function installJackInTheBoxLab(): void {
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
     const distance = (1.05 / limitingTan) * 1.05;
     activeCamera.position.set(0, 0.13, distance);
-    activeCamera.lookAt(0.04, 0.13, 0.08);
+    activeCamera.lookAt(0.02, 0.20, 0.02);
     activeCamera.aspect = aspect;
     activeCamera.updateProjectionMatrix();
     canvas.dataset.cameraDistance = distance.toFixed(3);
@@ -196,6 +199,8 @@ export function installJackInTheBoxLab(): void {
     canvas.dataset.renderSource = typeof object.userData.renderSource === 'string' ? object.userData.renderSource : '';
     canvas.dataset.renderLoaded = object.userData.renderLoaded === true ? 'true' : 'false';
     canvas.dataset.renderTriangles = typeof object.userData.renderTriangles === 'number' ? String(object.userData.renderTriangles) : '0';
+    canvas.dataset.renderBytes = typeof object.userData.renderBytes === 'number' ? String(object.userData.renderBytes) : '0';
+    canvas.dataset.renderModelType = typeof object.userData.renderModelType === 'string' ? object.userData.renderModelType : '';
     canvas.dataset.renderError = typeof object.userData.renderError === 'string' ? object.userData.renderError : '';
 
     renderer.render(scene, activeCamera);
