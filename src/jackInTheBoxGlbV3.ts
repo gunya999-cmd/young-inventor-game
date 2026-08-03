@@ -6,8 +6,10 @@ const DETAIL_GATE = 45_000;
 const SPRING_BOTTOM_Y = -0.49;
 const SPRING_BASE_TOP_Y = -0.10;
 
-function hideChildren(host: THREE.Object3D): void {
-  for (const child of host.children) child.visible = false;
+function hideProceduralMeshes(root: THREE.Object3D): void {
+  root.traverse((child) => {
+    if (child instanceof THREE.Mesh) child.visible = false;
+  });
 }
 
 function countTriangles(root: THREE.Object3D): number {
@@ -43,6 +45,7 @@ function collectRenderStats(root: THREE.Object3D): { meshes: number; materials: 
 function prepareOriginalMesh(root: THREE.Object3D): void {
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
+    child.visible = true;
     child.castShadow = true;
     child.receiveShadow = true;
     child.frustumCulled = true;
@@ -86,9 +89,8 @@ export function attachJackInTheBoxGlbV3(object: THREE.Group): Promise<void> {
   const lidHost = object.getObjectByName('JackBoxV2DynamicLid');
   const driveHost = object.getObjectByName('JackBoxV2DrivePulley');
   const jackHost = object.getObjectByName('JackBoxV2DynamicJack');
-  const fallbackSpring = object.getObjectByName('JackBoxV2DynamicSpring');
 
-  if (!housingHost || !lidHost || !driveHost || !jackHost || !fallbackSpring) {
+  if (!housingHost || !lidHost || !driveHost || !jackHost) {
     object.userData.renderError = 'missing-physics-visual-hosts';
     return Promise.reject(new Error('Jack physics hosts are missing.'));
   }
@@ -119,12 +121,10 @@ export function attachJackInTheBoxGlbV3(object: THREE.Group): Promise<void> {
           return;
         }
 
-        // Keep the proven Planck bodies/joints. Only their render layer is replaced by the reviewed Blender GLB.
-        hideChildren(housingHost);
-        hideChildren(lidHost);
-        hideChildren(driveHost);
-        hideChildren(jackHost);
-        fallbackSpring.visible = false;
+        // The procedural model exists only to host the proven Planck bodies and their pivots.
+        // Hide EVERY old mesh before attaching the reviewed Blender render layer. This also removes
+        // old bearing plates / decorative geometry that sit outside the four moving host groups.
+        hideProceduralMeshes(object);
 
         housingHost.add(housing);
         lidHost.add(lid);
