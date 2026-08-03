@@ -1,0 +1,18 @@
+{
+  "sourcePage": "https://www.meshy.ai/3d-models/An-old-rusted-jackinthebox-its-tin-body-dented-and-covered-in-peeling-circus-designs-The-handle-grinds-loudly-when-turned-playing-a-distorted-lullaby-When-it-pops-open-a-grotesque-puppet-with-oversized-eyes-and-an-impossibly-wide-grin-springs-out-its-fabriccovered-hands-reaching-forward-unnaturally-Its-head-slowly-tilts-watching-whoever-opened-it-v2-0195a25f-cbd6-78c8-9255-1c8e88a70b80",
+  "license": "CC0-1.0",
+  "sourceTriangleCount": 507575,
+  "sourceVertexCount": 285620,
+  "glbBytes": 2850696,
+  "generator": "gltfpack 0.25",
+  "extensionsRequired": [
+    "KHR_mesh_quantization",
+    "EXT_meshopt_compression",
+    "EXT_texture_webp"
+  ],
+  "meshes": 1,
+  "materials": 1,
+  "textures": 1,
+  "images": 1,
+  "note": "Real source mesh from public CC0 Meshy model; .meshy wrapper decrypted to its embedded GLB without re-authoring geometry."
+}
