@@ -18,6 +18,7 @@ import { installBasketballLab } from './basketballLab';
 import { installCannonballLab } from './cannonballLab';
 import { installPart0408Lab, isPart0408Asset } from './parts0408Lab';
 import { installPart0913Lab, isPart0913Asset } from './parts0913Lab';
+import { installPart14PulleyLab } from './part14Lab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -48,6 +49,8 @@ if (assetPreview === 'bowling-ball') {
   installBasketballLab();
 } else if (assetPreview === 'cannonball') {
   installCannonballLab();
+} else if (assetPreview === 'pulley') {
+  installPart14PulleyLab();
 } else if (isPart0408Asset(assetPreview)) {
   installPart0408Lab(assetPreview);
 } else if (isPart0913Asset(assetPreview)) {
