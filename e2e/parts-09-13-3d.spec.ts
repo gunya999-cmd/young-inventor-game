@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 const assets = [
   ['boxing-glove', 'boxing-glove-v16', 'CC-BY', 'sketchfab-incg5764-boxing-glove-cc-by'],
   ['trampoline', 'trampoline-v3', 'CC-BY', 'sketchfab-simon-laisne-trampoline-cc-by'],
-  ['fan-belt', 'fan-belt-v2', 'CC-BY', 'sketchfab-v-belt-c-type-cc-by'],
+  ['fan-belt', 'fan-belt-v3', 'CC-BY', 'sketchfab-v-belt-c-type-cc-by'],
   ['gear', 'gear-v2', 'CC0', 'sketchfab-plaggy-cc0-gear'],
   ['conveyor-belt', 'conveyor-belt-v2', 'CC-BY', 'sketchfab-jason-kan-conveyor-cc-by']
 ] as const;
@@ -57,15 +57,10 @@ for (const [asset, version, license, sourceKey] of assets) {
       await expect(canvas).toHaveAttribute('data-motion-state', 'free');
       await page.screenshot({ path: 'test-results/boxing-glove-v16-impulse.png', fullPage: true });
 
-      // The Planck body itself counts genuine vertical velocity reversals.
-      // Requiring at least two proves an under-damped oscillation rather than
-      // a scripted launch followed by a one-way return.
       await expect.poll(async () => Number(await canvas.getAttribute('data-oscillation-turns')), { timeout: 7000 })
         .toBeGreaterThanOrEqual(2);
-
       await expect.poll(async () => Number(await canvas.getAttribute('data-center-y')), { timeout: 6500 })
         .toBeLessThan(-0.62);
-
       await expect.poll(async () => await canvas.getAttribute('data-motion-state'), { timeout: 12000 })
         .toBe('settled');
       await expect.poll(async () => Number(await canvas.getAttribute('data-speed')))
@@ -84,8 +79,6 @@ for (const [asset, version, license, sourceKey] of assets) {
         review.__dropTrampolineProbe?.();
       });
 
-      // The test ball has horizontal velocity before impact. The trampoline
-      // must compress through a real contact rather than a scripted bounce.
       await expect.poll(async () => Number(await canvas.getAttribute('data-max-compression')), { timeout: 4500 })
         .toBeGreaterThan(0.045);
       await expect.poll(async () => Number(await canvas.getAttribute('data-impact-speed')), { timeout: 4500 })
@@ -99,6 +92,30 @@ for (const [asset, version, license, sourceKey] of assets) {
       await expect.poll(async () => Number(await canvas.getAttribute('data-horizontal-retention')), { timeout: 6500 })
         .toBeGreaterThan(0.72);
       await page.screenshot({ path: 'test-results/trampoline-v3-bounced.png', fullPage: true });
+    }
+
+    if (asset === 'fan-belt') {
+      await expect(canvas).toHaveAttribute('data-motion', 'physical-belt-traction-slip-transfer');
+      await expect(canvas).toHaveAttribute('data-motion-state', 'ready');
+      await expect(canvas).toHaveAttribute('data-physics-engine', 'planck');
+      await page.screenshot({ path: 'test-results/fan-belt-v3-ready.png', fullPage: true });
+
+      await canvas.evaluate((element) => {
+        const review = element as HTMLCanvasElement & { __kickFanBelt?: () => void };
+        review.__kickFanBelt?.();
+      });
+
+      // Only the left pulley receives the angular impulse. The right pulley
+      // must acquire rotation through finite belt traction, not direct velocity assignment.
+      await expect.poll(async () => Math.abs(Number(await canvas.getAttribute('data-right-omega'))), { timeout: 2500 })
+        .toBeGreaterThan(1.4);
+      await expect.poll(async () => Math.abs(Number(await canvas.getAttribute('data-speed-ratio'))), { timeout: 3000 })
+        .toBeGreaterThan(0.78);
+      await expect.poll(async () => Math.abs(Number(await canvas.getAttribute('data-belt-slip'))), { timeout: 3000 })
+        .toBeLessThan(0.35);
+      await expect.poll(async () => Number(await canvas.getAttribute('data-belt-travel')), { timeout: 3000 })
+        .toBeGreaterThan(0.45);
+      await page.screenshot({ path: 'test-results/fan-belt-v3-transmitting.png', fullPage: true });
     }
   });
 }
