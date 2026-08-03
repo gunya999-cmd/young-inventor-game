@@ -1,0 +1,63 @@
+name: Validate original Jack visual
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/build-jitb-option-a.py
+      - .github/workflows/validate-jitb-option-a.yml
+
+permissions:
+  contents: read
+
+jobs:
+  visual-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender >/dev/null
+          blender --version | head -n 2
+
+      - name: Build original GLB and visual review
+        env:
+          JITB_OUT: test-results/jack-in-the-box-option-a.glb
+          JITB_PREVIEW: test-results/jack-option-a-blender.png
+        run: |
+          mkdir -p test-results
+          blender -b --python tools/build-jitb-option-a.py
+          test -s test-results/jack-in-the-box-option-a.glb
+          test -s test-results/jack-option-a-blender.png
+
+      - name: Validate geometry
+        run: |
+          python -m pip install --disable-pip-version-check --quiet trimesh
+          python - <<'PY'
+          import json, os, trimesh
+          path='test-results/jack-in-the-box-option-a.glb'
+          scene=trimesh.load(path, force='scene')
+          faces=sum(len(g.faces) for g in scene.geometry.values() if hasattr(g,'faces'))
+          nodes=set(scene.graph.nodes)
+          required={'JITB_Housing','JITB_Lid','JITB_Drive','JITB_Jack','JITB_Spring'}
+          report={'bytes':os.path.getsize(path),'triangles':faces,'geometries':len(scene.geometry),'nodes':sorted(n for n in nodes if n.startswith('JITB_')),'missing':sorted(required-nodes)}
+          print(json.dumps(report,indent=2))
+          assert 25000 <= faces <= 120000, report
+          assert not report['missing'], report
+          with open('test-results/jack-option-a-report.json','w') as f: json.dump(report,f,indent=2)
+          PY
+
+      - name: Upload original Jack visual gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jack-option-a-visual-gate
+          path: |
+            test-results/jack-option-a-blender.png
+            test-results/jack-option-a-report.json
+            test-results/jack-in-the-box-option-a.glb
+          if-no-files-found: warn
+          retention-days: 3
