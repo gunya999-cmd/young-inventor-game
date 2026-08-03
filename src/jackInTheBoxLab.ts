@@ -12,17 +12,17 @@ export function installJackInTheBoxLab(): void {
   root.className = 'bowling-ball-lab parts-0913-lab jack-in-the-box-lab';
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
-      <div><small>CLASSIC PART 14 · 3D ASSET REVIEW</small><h1>Jack-in-the-Box</h1></div>
-      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>CC-BY</span><span>v1</span></div>
+      <div><small>CLASSIC PART 14 · REALISTIC 3D ASSET REVIEW</small><h1>Jack-in-the-Box</h1></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>Realistic PBR</span><span>CC-BY</span><span>v2</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Jack-in-the-Box 3D preview"
-        data-asset-version="jack-in-the-box-v1"
+      <canvas aria-label="Realistic Jack-in-the-Box 3D preview"
+        data-asset-version="jack-in-the-box-v2-realistic"
         data-source-license="CC-BY"
-        data-source-key="sketchfab-vasian-digital3d-jack-in-the-box-cc-by"
+        data-source-key="sketchfab-evan-cg-jack-in-the-box-cc-by"
         data-studio-lighting="pmrem-soft"
         data-motion="rotation-threshold-latch-spring-contact"></canvas>
-      <p>Нажми на боковой шкив: он получает реальный угловой импульс. После достаточного вращения защёлка отпускает сжатую пружину, Jack физически выбивает крышку и продолжает колебаться.</p>
+      <p>Реалистичная игровая модель: отдельные металлические панели, крепёж, петли, подшипниковый узел, литой шкив и детализированная фигурка. Нажми на привод — защёлка освободит физическую пружину.</p>
     </div>
   `;
   document.body.appendChild(root);
@@ -31,36 +31,48 @@ export function installJackInTheBoxLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.04;
-  renderer.setClearColor(0xedf1f4, 1);
+  renderer.toneMappingExposure = 1.03;
+  renderer.setClearColor(0xe7ebee, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.045).texture;
-  scene.add(new THREE.HemisphereLight(0xfafcff, 0x6d767c, 0.90));
+  scene.add(new THREE.HemisphereLight(0xfafcff, 0x60686d, 0.74));
 
-  const key = new THREE.DirectionalLight(0xfffbf5, 1.24);
+  const key = new THREE.DirectionalLight(0xfff7ed, 1.38);
   key.position.set(-4.8, 6.2, 7.4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xdce8ef, 0.34);
+  const fill = new THREE.DirectionalLight(0xcddfea, 0.38);
   fill.position.set(4.2, 1.2, 5.5);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffffff, 0.22);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.28);
   rim.position.set(3.4, 5.0, -4.8);
   scene.add(rim);
 
   const model = createJackInTheBoxModelV1();
   const object = model.group;
-  object.rotation.set(-0.10, -0.40, 0.025);
+  object.rotation.set(-0.08, -0.46, 0.02);
+  object.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
   scene.add(object);
 
-  const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(1, 72),
-    new THREE.MeshBasicMaterial({ color: 0x59616a, transparent: true, opacity: 0.052, depthWrite: false })
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(1.45, 96),
+    new THREE.MeshStandardMaterial({ color: 0xd7dde0, roughness: 0.92, metalness: 0.0 })
   );
-  shadow.scale.set(1.10, 0.20, 1);
-  shadow.position.set(0, -0.66, -0.42);
-  scene.add(shadow);
+  floor.rotation.x = -Math.PI / 2;
+  floor.scale.set(1.25, 0.72, 1);
+  floor.position.set(0, -0.67, -0.12);
+  floor.receiveShadow = true;
+  scene.add(floor);
 
   canvas.__kickJackDrive = (): void => {
     if (typeof object.userData.kickDrive === 'function') object.userData.kickDrive();
@@ -97,6 +109,7 @@ export function installJackInTheBoxLab(): void {
     object.rotation.x += velocityY;
   });
 
+  const activeCamera = new THREE.PerspectiveCamera(30, 1, 0.1, 120);
   const release = (event: PointerEvent): void => {
     if (pointerId !== event.pointerId) return;
     pointerId = null;
@@ -107,8 +120,7 @@ export function installJackInTheBoxLab(): void {
       ((event.clientX - rect.left) / rect.width) * 2 - 1,
       -((event.clientY - rect.top) / rect.height) * 2 + 1
     );
-    const camera = activeCamera;
-    raycaster.setFromCamera(pointerNdc, camera);
+    raycaster.setFromCamera(pointerNdc, activeCamera);
     const hitDrive = raycaster.intersectObject(object, true).some((hit) => {
       let current: THREE.Object3D | null = hit.object;
       while (current) {
@@ -122,15 +134,14 @@ export function installJackInTheBoxLab(): void {
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
 
-  const activeCamera = new THREE.PerspectiveCamera(28, 1, 0.1, 120);
   const fitCamera = (width: number, height: number): void => {
     const aspect = width / Math.max(1, height);
     const verticalTan = Math.tan(THREE.MathUtils.degToRad(activeCamera.fov * 0.5));
     const horizontalTan = verticalTan * aspect;
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
-    const distance = (1.72 / limitingTan) * 1.16;
-    activeCamera.position.set(0, 0.08, distance);
-    activeCamera.lookAt(0.06, 0.12, 0.08);
+    const distance = (1.82 / limitingTan) * 1.12;
+    activeCamera.position.set(0, 0.12, distance);
+    activeCamera.lookAt(0.05, 0.15, 0.08);
     activeCamera.aspect = aspect;
     activeCamera.updateProjectionMatrix();
     canvas.dataset.cameraDistance = distance.toFixed(3);
@@ -140,7 +151,7 @@ export function installJackInTheBoxLab(): void {
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(1, rect.width);
     const height = Math.max(1, rect.height);
-    renderer.setPixelRatio(Math.min(1.7, window.devicePixelRatio || 1));
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     renderer.setSize(width, height, false);
     fitCamera(width, height);
   };
