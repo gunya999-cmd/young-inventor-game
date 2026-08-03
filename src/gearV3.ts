@@ -5,8 +5,8 @@ import { createFineBumpTexture, type PremiumReviewAssetModel } from './parts0913
 
 const FIXED_STEP = 1 / 180;
 const MAX_CATCHUP = 0.4;
-const BEARING_DRAG = 0.055;
-const SPIN_IMPULSE = 0.72;
+const BEARING_DRAG = 0.82;
+const SPIN_IMPULSE = 2.2;
 const BODY_RADIUS = 1.0;
 
 export function createGearModelV3(): PremiumReviewAssetModel {
@@ -35,14 +35,11 @@ export function createGearModelV3(): PremiumReviewAssetModel {
   const darkMetal = new THREE.MeshStandardMaterial({ color: 0x20292f, metalness: 0.9, roughness: 0.26 });
   const polished = new THREE.MeshPhysicalMaterial({ color: 0xaeb8bd, metalness: 0.95, roughness: 0.19, clearcoat: 0.06 });
 
-  // Keyway insert gives the axle bore a clear mechanical orientation and makes
-  // rotation readable even at phone scale.
   const keyway = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.18, 0.34), darkMetal);
   keyway.position.set(0.205, 0, 0);
   keyway.name = 'GearV3AxleKeyway';
   group.add(keyway);
 
-  // Fine face witness marks: restrained machining detail rather than decoration.
   for (let index = 0; index < 12; index += 1) {
     const angle = index * Math.PI / 6;
     const tick = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.014), polished);
