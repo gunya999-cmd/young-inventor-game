@@ -3,7 +3,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import type { ReviewAssetModel0913 } from './parts0913Models';
 import { createBoxingGloveModelV16 } from './boxingGloveV16';
 import { createTrampolineModelV3 } from './trampolineV3';
-import { createFanBeltModelV2 } from './fanBeltV2';
+import { createFanBeltModelV3 } from './fanBeltV3';
 import { createGearModelV2 } from './gearV2';
 import { createConveyorBeltModelV2 } from './conveyorBeltV2';
 
@@ -12,6 +12,7 @@ type AssetKey0913 = 'boxing-glove' | 'trampoline' | 'fan-belt' | 'gear' | 'conve
 type ReviewCanvas = HTMLCanvasElement & {
   __pressBoxingGlove?: () => void;
   __dropTrampolineProbe?: () => void;
+  __kickFanBelt?: () => void;
 };
 
 interface AssetConfig0913 {
@@ -38,9 +39,9 @@ const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
     initialRotation: [-0.36, -0.50, 0.025], create: createTrampolineModelV3
   },
   'fan-belt': {
-    key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v2',
-    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-v-belt-c-type-cc-by', radius: 1.92,
-    initialRotation: [-0.18, -0.36, 0.07], create: createFanBeltModelV2
+    key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v3',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-v-belt-c-type-cc-by', radius: 2.06,
+    initialRotation: [-0.18, -0.36, 0.07], create: createFanBeltModelV3
   },
   gear: {
     key: 'gear', part: '12', title: 'Gear', version: 'gear-v2',
@@ -68,12 +69,16 @@ export function installPart0913Lab(key: AssetKey0913): void {
     ? 'Нажми красную кнопку сзади — импульс выбросит перчатку, затем она свободно колеблется на пружине под действием гравитации'
     : config.key === 'trampoline'
       ? 'Нажми на чёрное полотно — тестовый мяч упадёт на него, продавит пружины и отскочит по реальной физике'
-      : 'Проведи пальцем по предмету, чтобы повернуть его';
+      : config.key === 'fan-belt'
+        ? 'Нажми на левый шкив — он получит импульс, а ремень через трение и проскальзывание передаст момент правому шкиву'
+        : 'Проведи пальцем по предмету, чтобы повернуть его';
   const motion = config.key === 'boxing-glove'
     ? 'impulse-spring-gravity'
     : config.key === 'trampoline'
       ? 'contact-spring-bounce'
-      : 'static-review';
+      : config.key === 'fan-belt'
+        ? 'physical-belt-traction-slip-transfer'
+        : 'static-review';
   const root = document.createElement('section');
   root.className = `bowling-ball-lab parts-0913-lab ${config.key}-lab`;
   root.innerHTML = `
@@ -130,6 +135,9 @@ export function installPart0913Lab(key: AssetKey0913): void {
   }
   if (config.key === 'trampoline' && typeof object.userData.dropProbe === 'function') {
     canvas.__dropTrampolineProbe = (): void => object.userData.dropProbe();
+  }
+  if (config.key === 'fan-belt' && typeof object.userData.kickDriver === 'function') {
+    canvas.__kickFanBelt = (): void => object.userData.kickDriver();
   }
 
   const shadow = new THREE.Mesh(
@@ -194,6 +202,19 @@ export function installPart0913Lab(key: AssetKey0913): void {
     if (config.key === 'trampoline' && typeof object.userData.dropProbe === 'function') {
       const matHit = hits.find((hit) => hit.object.userData.isTrampolineSurface === true);
       if (matHit) object.userData.dropProbe();
+      return;
+    }
+
+    if (config.key === 'fan-belt' && typeof object.userData.kickDriver === 'function') {
+      const driverHit = hits.find((hit) => {
+        let current: THREE.Object3D | null = hit.object;
+        while (current) {
+          if (current.userData.isFanBeltDriver === true) return true;
+          current = current.parent;
+        }
+        return false;
+      });
+      if (driverHit) object.userData.kickDriver();
     }
   };
   canvas.addEventListener('pointerup', release);
@@ -258,6 +279,14 @@ export function installPart0913Lab(key: AssetKey0913): void {
     canvas.dataset.peakAfterBounce = typeof object.userData.peakAfterBounce === 'number' ? object.userData.peakAfterBounce.toFixed(3) : '0';
     canvas.dataset.horizontalRetention = typeof object.userData.horizontalRetention === 'number' ? object.userData.horizontalRetention.toFixed(3) : '0';
     canvas.dataset.probeActive = object.userData.probeActive === true ? 'true' : 'false';
+    canvas.dataset.leftOmega = typeof object.userData.leftOmega === 'number' ? object.userData.leftOmega.toFixed(3) : '0';
+    canvas.dataset.rightOmega = typeof object.userData.rightOmega === 'number' ? object.userData.rightOmega.toFixed(3) : '0';
+    canvas.dataset.speedRatio = typeof object.userData.speedRatio === 'number' ? object.userData.speedRatio.toFixed(3) : '0';
+    canvas.dataset.beltSlip = typeof object.userData.slip === 'number' ? object.userData.slip.toFixed(3) : '0';
+    canvas.dataset.beltSpeed = typeof object.userData.beltSpeed === 'number' ? object.userData.beltSpeed.toFixed(3) : '0';
+    canvas.dataset.beltTravel = typeof object.userData.beltTravel === 'number' ? object.userData.beltTravel.toFixed(3) : '0';
+    canvas.dataset.peakFollowerSpeed = typeof object.userData.peakFollowerSpeed === 'number' ? object.userData.peakFollowerSpeed.toFixed(3) : '0';
+    canvas.dataset.kickCount = typeof object.userData.kickCount === 'number' ? String(object.userData.kickCount) : '0';
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
