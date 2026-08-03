@@ -66,6 +66,17 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+      - name: Upload Jack GLB previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jack-in-the-box-v3-glb-preview
+          path: |
+            test-results/jack-in-the-box-v3-glb-ready.png
+            test-results/jack-in-the-box-v3-glb-released.png
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
