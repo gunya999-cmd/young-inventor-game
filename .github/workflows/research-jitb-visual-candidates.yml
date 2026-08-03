@@ -1,0 +1,148 @@
+name: Render Jack visual candidates
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download real CC-BY candidate GLBs
+        run: |
+          python -m pip install --disable-pip-version-check --quiet objaverse
+          mkdir -p test-results/jitb-visual-candidates
+          python - <<'PY'
+          import json, os, shutil
+          import objaverse
+
+          candidates = {
+              'vasian': '32702a813df8489aad2a54be7eb5f86a',
+              'tesni': 'fc0b76b3381246298c5a75bb79b69c19',
+          }
+          report = {}
+          for name, uid in candidates.items():
+              try:
+                  ann = objaverse.load_annotations([uid]).get(uid)
+                  obj = objaverse.load_objects([uid], download_processes=1).get(uid)
+                  if not ann or not obj or not os.path.exists(obj):
+                      raise RuntimeError('metadata or GLB missing')
+                  license_value = str(ann.get('license', '')).lower()
+                  if 'by' not in license_value and 'attribution' not in license_value:
+                      raise RuntimeError(f'unexpected license {ann.get("license")}')
+                  dst = f'test-results/jitb-visual-candidates/{name}.glb'
+                  shutil.copy2(obj, dst)
+                  report[name] = {
+                      'uid': uid,
+                      'name': ann.get('name'),
+                      'license': ann.get('license'),
+                      'uri': ann.get('uri'),
+                      'bytes': os.path.getsize(dst),
+                  }
+              except Exception as exc:
+                  report[name] = {'uid': uid, 'error': str(exc)}
+          print(json.dumps(report, indent=2, ensure_ascii=False))
+          with open('test-results/jitb-visual-candidates/report.json','w') as f:
+              json.dump(report, f, indent=2, ensure_ascii=False)
+          if not any('error' not in x for x in report.values()):
+              raise RuntimeError('No candidate downloaded')
+          PY
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender >/dev/null
+
+      - name: Render candidates in identical studio setup
+        run: |
+          cat > /tmp/render_candidate.py <<'PY'
+          import bpy, math, os, sys
+          from mathutils import Vector
+
+          argv = sys.argv[sys.argv.index('--') + 1:]
+          src, dst = argv[0], argv[1]
+          bpy.ops.wm.read_factory_settings(use_empty=True)
+          bpy.ops.import_scene.gltf(filepath=src)
+
+          meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
+          if not meshes:
+              raise RuntimeError('No mesh objects')
+
+          pts=[]
+          for o in meshes:
+              for corner in o.bound_box:
+                  pts.append(o.matrix_world @ Vector(corner))
+          mn=Vector((min(p.x for p in pts),min(p.y for p in pts),min(p.z for p in pts)))
+          mx=Vector((max(p.x for p in pts),max(p.y for p in pts),max(p.z for p in pts)))
+          center=(mn+mx)*0.5
+          size=mx-mn
+          radius=max(size.x,size.y,size.z)*0.55
+
+          root=bpy.data.objects.new('CandidateRoot',None)
+          bpy.context.collection.objects.link(root)
+          roots=[o for o in bpy.context.scene.objects if o.parent is None and o != root]
+          for o in roots: o.parent=root
+          root.location=-center
+
+          bpy.context.scene.render.engine='BLENDER_EEVEE'
+          bpy.context.scene.eevee.use_gtao=True
+          bpy.context.scene.eevee.gtao_distance=max(radius*0.5,0.1)
+          bpy.context.scene.eevee.gtao_factor=1.25
+          bpy.context.scene.render.resolution_x=900
+          bpy.context.scene.render.resolution_y=900
+          bpy.context.scene.render.resolution_percentage=100
+          bpy.context.scene.render.image_settings.file_format='PNG'
+          bpy.context.scene.render.film_transparent=False
+          bpy.context.scene.view_settings.look='Medium High Contrast'
+          bpy.context.scene.world.color=(0.72,0.75,0.78)
+
+          def area(name, loc, energy, size):
+              data=bpy.data.lights.new(name,'AREA'); data.energy=energy; data.size=size
+              obj=bpy.data.objects.new(name,data); bpy.context.collection.objects.link(obj); obj.location=loc
+              direction=-obj.location
+              obj.rotation_euler=direction.to_track_quat('-Z','Y').to_euler()
+              return obj
+          s=max(radius,0.5)
+          area('Key',(s*3,-s*4,s*4),950*s*s,s*3)
+          area('Fill',(-s*3,-s*1,s*2),500*s*s,s*3)
+          area('Rim',(s*2,s*3,s*3),700*s*s,s*2)
+
+          cam_data=bpy.data.cameras.new('Camera'); cam=bpy.data.objects.new('Camera',cam_data); bpy.context.collection.objects.link(cam)
+          cam.location=(s*2.4,-s*3.5,s*2.0)
+          cam.rotation_euler=(-cam.location).to_track_quat('-Z','Y').to_euler()
+          cam_data.lens=55
+          bpy.context.scene.camera=cam
+
+          plane_size=s*8
+          bpy.ops.mesh.primitive_plane_add(size=plane_size, location=(0,0,-size.z*0.5-0.03*s))
+          plane=bpy.context.object
+          mat=bpy.data.materials.new('StudioFloor'); mat.diffuse_color=(0.63,0.66,0.68,1); mat.roughness=0.9
+          plane.data.materials.append(mat)
+
+          bpy.context.scene.render.filepath=dst
+          bpy.ops.render.render(write_still=True)
+          PY
+
+          for src in test-results/jitb-visual-candidates/*.glb; do
+            [ -f "$src" ] || continue
+            name=$(basename "$src" .glb)
+            blender -b --python /tmp/render_candidate.py -- "$src" "$(pwd)/test-results/jitb-visual-candidates/${name}.png"
+          done
+
+      - name: Upload visual candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: jack-visual-candidates
+          path: test-results/jitb-visual-candidates
+          retention-days: 3
