@@ -38,7 +38,7 @@ test('classic Part 14 Jack-in-the-Box loads the original articulated Blender GLB
 
   // Capture the actual emerging pose rather than waiting until the spring has already decayed.
   await expect.poll(async () => Number(await canvas.getAttribute('data-jack-y')), { timeout: 8_000, intervals: [40, 60, 80, 100] })
-    .toBeGreaterThan(0.20);
+    .toBeGreaterThan(0.50);
   await page.screenshot({ path: 'test-results/jack-in-the-box-v5-original-released.png', fullPage: false });
 
   await expect.poll(async () => Number(await canvas.getAttribute('data-max-rise')), { timeout: 15_000 })
