@@ -163,6 +163,8 @@ export function installPart15MotorLab(): void {
     canvas.dataset.clutchSlip = typeof object.userData.clutchSlip === 'number' ? object.userData.clutchSlip.toFixed(3) : '0';
     canvas.dataset.maxClutchSlip = typeof object.userData.maxClutchSlip === 'number' ? object.userData.maxClutchSlip.toFixed(3) : '0';
     canvas.dataset.speedDropRatio = typeof object.userData.speedDropRatio === 'number' ? object.userData.speedDropRatio.toFixed(3) : '0';
+    canvas.dataset.maxSpeedDropRatio = typeof object.userData.maxSpeedDropRatio === 'number' ? object.userData.maxSpeedDropRatio.toFixed(3) : '0';
+    canvas.dataset.loadResistanceTorque = typeof object.userData.loadResistanceTorque === 'number' ? object.userData.loadResistanceTorque.toFixed(3) : '0';
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
