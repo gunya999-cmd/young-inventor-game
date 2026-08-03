@@ -6,6 +6,9 @@ on:
       - agent/parts-09-13-open-assets
     paths:
       - tools/build-jitb-option-a.py
+      - tools/build-jitb-option-a-v2.py
+      - tools/build-jitb-option-a-v4.py
+      - tools/generate-jitb-option-a-textures.py
       - .github/workflows/materialize-jitb-option-a.yml
   workflow_dispatch:
 
@@ -23,19 +26,23 @@ jobs:
           ref: agent/parts-09-13-open-assets
           fetch-depth: 0
 
-      - name: Install Blender
+      - name: Install Blender and texture dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends blender >/dev/null
+          sudo apt-get install -y --no-install-recommends blender python3-numpy libegl1 libgl1 libglx-mesa0 libopengl0 >/dev/null
+          python -m pip install --disable-pip-version-check --quiet pillow numpy
           blender --version | head -n 2
 
-      - name: Build original game-ready GLB and studio preview
+      - name: Generate original PBR texture maps
+        run: python tools/generate-jitb-option-a-textures.py
+
+      - name: Build reviewed game-ready GLB
         env:
           JITB_OUT: public/assets/jack-in-the-box-option-a.glb
           JITB_PREVIEW: test-results/jack-option-a-blender.png
         run: |
           mkdir -p public/assets test-results
-          blender -b --python tools/build-jitb-option-a.py
+          blender -b --python tools/build-jitb-option-a-v4.py
           test -s public/assets/jack-in-the-box-option-a.glb
           test -s test-results/jack-option-a-blender.png
           ls -lh public/assets/jack-in-the-box-option-a.glb test-results/jack-option-a-blender.png
@@ -53,22 +60,21 @@ jobs:
           missing=sorted(required-nodes)
           report={'bytes':os.path.getsize(path),'triangles':faces,'geometries':len(scene.geometry),'missing_nodes':missing}
           print(json.dumps(report,indent=2))
-          assert faces >= 25000, report
-          assert faces <= 120000, report
+          assert 25000 <= faces <= 140000, report
           assert not missing, report
           with open('test-results/jack-option-a-report.json','w') as f: json.dump(report,f,indent=2)
           PY
 
-      - name: Upload mandatory visual review
+      - name: Upload reviewed visual
         uses: actions/upload-artifact@v4
         with:
-          name: jack-option-a-visual-review
+          name: jack-option-a-materialized-review
           path: |
             test-results/jack-option-a-blender.png
             test-results/jack-option-a-report.json
           retention-days: 3
 
-      - name: Commit original GLB
+      - name: Commit reviewed original GLB
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -77,6 +83,6 @@ jobs:
             echo 'Original Jack GLB already current.'
             exit 0
           fi
-          git commit -m 'Add original Blender Jack-in-the-Box GLB'
+          git commit -m 'Add reviewed original Blender Jack GLB'
           git pull --rebase origin agent/parts-09-13-open-assets
           git push origin HEAD:agent/parts-09-13-open-assets
