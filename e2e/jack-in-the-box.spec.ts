@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('classic Part 14 Jack-in-the-Box releases from real rotational input', async ({ page }) => {
+test('classic Part 14 realistic Jack-in-the-Box releases from real rotational input', async ({ page }) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?asset=jack-in-the-box');
@@ -8,9 +8,9 @@ test('classic Part 14 Jack-in-the-Box releases from real rotational input', asyn
   const canvas = page.locator('.jack-in-the-box-lab canvas');
   await expect(page.locator('#fatal-error')).toBeHidden();
   await expect(canvas).toBeVisible();
-  await expect(canvas).toHaveAttribute('data-asset-version', 'jack-in-the-box-v1');
+  await expect(canvas).toHaveAttribute('data-asset-version', 'jack-in-the-box-v2-realistic');
   await expect(canvas).toHaveAttribute('data-source-license', 'CC-BY');
-  await expect(canvas).toHaveAttribute('data-source-key', 'sketchfab-vasian-digital3d-jack-in-the-box-cc-by');
+  await expect(canvas).toHaveAttribute('data-source-key', 'sketchfab-evan-cg-jack-in-the-box-cc-by');
   await expect(canvas).toHaveAttribute('data-motion', 'rotation-threshold-latch-spring-contact');
   await expect(canvas).toHaveAttribute('data-motion-state', 'latched');
   await expect(canvas).toHaveAttribute('data-physics-engine', 'planck');
