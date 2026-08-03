@@ -6,6 +6,7 @@ on:
     paths:
       - tools/build-jitb-option-a.py
       - tools/build-jitb-option-a-v2.py
+      - tools/build-jitb-option-a-v3.py
       - .github/workflows/validate-jitb-option-a.yml
 
 permissions:
@@ -30,7 +31,7 @@ jobs:
           JITB_PREVIEW: test-results/jack-option-a-blender.png
         run: |
           mkdir -p test-results
-          blender -b --python tools/build-jitb-option-a-v2.py
+          blender -b --python tools/build-jitb-option-a-v3.py
           test -s test-results/jack-in-the-box-option-a.glb
           test -s test-results/jack-option-a-blender.png
 
