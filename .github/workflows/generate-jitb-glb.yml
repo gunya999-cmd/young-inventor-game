@@ -5,7 +5,7 @@ on:
     branches:
       - agent/parts-09-13-open-assets
     paths:
-      - tools/jitb_generator.py.gz.b64
+      - tools/jitb_generator_v4.py.gz.b64
       - .github/workflows/generate-jitb-glb.yml
   workflow_dispatch:
 
@@ -32,7 +32,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check numpy trimesh
 
       - name: Decode generator
-        run: base64 -d tools/jitb_generator.py.gz.b64 | gunzip > /tmp/generate_jitb.py
+        run: base64 -d tools/jitb_generator_v4.py.gz.b64 | gunzip > /tmp/generate_jitb.py
 
       - name: Generate game-ready GLB
         env:
@@ -65,5 +65,5 @@ jobs:
             echo 'GLB already current.'
             exit 0
           fi
-          git commit -m 'Add game-ready realistic Jack GLB [skip glb-gen]'
+          git commit -m 'Refine realistic Jack GLB v4 [skip glb-gen]'
           git push origin HEAD:agent/parts-09-13-open-assets
