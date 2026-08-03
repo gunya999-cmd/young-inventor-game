@@ -58,7 +58,7 @@ jobs:
           if 'by' not in license_value and 'attribution' not in license_value:
               raise RuntimeError(f'Unexpected license: {annotation.get("license")}')
 
-          objects = objaverse.load_objects([uid], download_processes=1, download_dir='/tmp/objaverse')
+          objects = objaverse.load_objects([uid], download_processes=1)
           source = objects.get(uid)
           if not source or not os.path.exists(source):
               raise RuntimeError('Objaverse did not materialize the requested GLB')
