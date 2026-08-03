@@ -13,20 +13,20 @@ export function installJackInTheBoxLab(): void {
   root.className = 'bowling-ball-lab parts-0913-lab jack-in-the-box-lab';
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
-      <div><small>CLASSIC PART 14 · REAL CC0 SOURCE MESH</small><h1>Jack-in-the-Box</h1></div>
-      <div class="bowling-ball-lab__meta"><span>GLB</span><span>CC0</span><span>507k tris</span><span>v4</span></div>
+      <div><small>CLASSIC PART 14 · ORIGINAL BLENDER GAME ASSET</small><h1>Jack-in-the-Box</h1></div>
+      <div class="bowling-ball-lab__meta"><span>GLB</span><span>PBR</span><span>49.6k tris</span><span>v5</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Real CC0 Jack-in-the-Box 3D preview"
-        data-asset-version="jack-in-the-box-v4-real-cc0"
-        data-source-license="CC0-1.0"
-        data-source-key="meshy-cc0-rusted-jack-in-the-box"
-        data-render-source="real-cc0-glb"
+      <canvas aria-label="Original realistic Jack-in-the-Box 3D preview"
+        data-asset-version="jack-in-the-box-v5-original-blender"
+        data-source-license="PROJECT-ORIGINAL"
+        data-source-key="original-blender-jitb-option-a"
+        data-render-source="original-blender-glb"
         data-render-loaded="false"
         data-render-triangles="0"
         data-studio-lighting="pmrem-soft"
         data-motion="rotation-threshold-latch-spring-contact"></canvas>
-      <p>В игре загружается реальная CC0-сетка исходного ассета — не Three.js-примитивы и не концепт-рендер. Planck-физика привода, защёлки и пружины остаётся отдельным слоем.</p>
+      <p>Собственная игровая GLB-модель: отдельные корпус, крышка, привод, фигурка и пружина с PBR-картами. Planck управляет приводом, защёлкой, выстрелом пружины и крышкой отдельно от render mesh.</p>
     </div>
   `;
   document.body.appendChild(root);
@@ -35,22 +35,22 @@ export function installJackInTheBoxLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
-  renderer.setClearColor(0xdfe3e5, 1);
+  renderer.toneMappingExposure = 1.03;
+  renderer.setClearColor(0xe1e5e7, 1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.045).texture;
-  scene.add(new THREE.HemisphereLight(0xf8fafb, 0x4b5053, 0.58));
+  scene.add(new THREE.HemisphereLight(0xf8fafb, 0x4b5053, 0.62));
 
   const key = new THREE.DirectionalLight(0xfff4e8, 1.22);
   key.position.set(-4.8, 6.2, 7.4);
   key.castShadow = true;
   key.shadow.mapSize.set(1536, 1536);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xcbd9e0, 0.30);
+  const fill = new THREE.DirectionalLight(0xcbd9e0, 0.34);
   fill.position.set(4.2, 1.2, 5.5);
   scene.add(fill);
   const rim = new THREE.DirectionalLight(0xffffff, 0.28);
@@ -69,12 +69,12 @@ export function installJackInTheBoxLab(): void {
   scene.add(object);
 
   void attachJackInTheBoxGlbV3(object).catch((error) => {
-    console.error('Real CC0 Jack GLB failed to load; keeping procedural fallback.', error);
+    console.error('Original Blender Jack GLB failed to load; keeping procedural fallback.', error);
   });
 
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(1.55, 96),
-    new THREE.MeshStandardMaterial({ color: 0xc9cdcf, roughness: 0.97, metalness: 0.0 })
+    new THREE.MeshStandardMaterial({ color: 0xc8ccce, roughness: 0.96, metalness: 0.0 })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.scale.set(1.28, 0.72, 1);
@@ -138,8 +138,8 @@ export function installJackInTheBoxLab(): void {
       return false;
     });
 
-    // The real CC0 source is one monolithic render mesh, so a tap anywhere on it
-    // activates the separate physical drive while drag remains reserved for review rotation.
+    // For mobile review a short tap anywhere on the loaded asset kicks the drive;
+    // dragging remains reserved for rotating the model.
     if (hitDrive || object.userData.renderLoaded === true) canvas.__kickJackDrive?.();
   };
   canvas.addEventListener('pointerup', release);
