@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test('classic Part 14 Jack-in-the-Box loads the original articulated Blender GLB and keeps Planck release physics', async ({ page }) => {
-  test.setTimeout(90_000);
+  // This is the heaviest single asset test: a 6 MB articulated GLB, PBR textures and a 180 Hz Planck world
+  // run beside the rest of the browser suite. Give it enough total budget without weakening any physics gate.
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?asset=jack-in-the-box');
 
@@ -37,16 +39,18 @@ test('classic Part 14 Jack-in-the-Box loads the original articulated Blender GLB
     .toBeGreaterThan(3.95);
 
   // Capture the actual emerging pose rather than waiting until the spring has already decayed.
-  await expect.poll(async () => Number(await canvas.getAttribute('data-jack-y')), { timeout: 8_000, intervals: [40, 60, 80, 100] })
+  await expect.poll(async () => Number(await canvas.getAttribute('data-jack-y')), { timeout: 10_000, intervals: [40, 60, 80, 100] })
     .toBeGreaterThan(0.50);
   await page.screenshot({ path: 'test-results/jack-in-the-box-v5-original-released.png', fullPage: false });
 
-  await expect.poll(async () => Number(await canvas.getAttribute('data-max-rise')), { timeout: 15_000 })
-    .toBeGreaterThan(0.42);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-max-lid-angle')), { timeout: 15_000 })
-    .toBeGreaterThan(0.20);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-max-jack-speed')), { timeout: 15_000 })
-    .toBeGreaterThan(0.45);
+  // These are maxima accumulated by the same physical release. Poll them together so a busy two-worker CI
+  // cannot burn three sequential 15-second windows after the mechanism has already completed its motion.
+  await expect.poll(async () => {
+    const rise = Number(await canvas.getAttribute('data-max-rise'));
+    const lid = Number(await canvas.getAttribute('data-max-lid-angle'));
+    const speed = Number(await canvas.getAttribute('data-max-jack-speed'));
+    return rise > 0.42 && lid > 0.20 && speed > 0.45;
+  }, { timeout: 30_000, intervals: [50, 100, 200, 400] }).toBe(true);
 
   expect(Number(await canvas.getAttribute('data-release-count'))).toBe(1);
 });
