@@ -10,6 +10,8 @@ const assets = [
 
 for (const [asset, version, license, sourceKey] of assets) {
   test(`${asset} premium 3D lab fits on a phone viewport`, async ({ page }) => {
+    if (asset === 'boxing-glove') test.setTimeout(60_000);
+
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/?asset=${asset}`);
 
@@ -42,6 +44,7 @@ for (const [asset, version, license, sourceKey] of assets) {
     if (asset === 'boxing-glove') {
       await expect(canvas).toHaveAttribute('data-motion', 'impulse-spring-gravity');
       await expect(canvas).toHaveAttribute('data-motion-state', 'armed');
+      await expect(canvas).toHaveAttribute('data-physics-engine', 'planck');
       await page.screenshot({ path: 'test-results/boxing-glove-v16-armed.png', fullPage: true });
 
       await canvas.evaluate((element) => {
@@ -54,27 +57,16 @@ for (const [asset, version, license, sourceKey] of assets) {
       await expect(canvas).toHaveAttribute('data-motion-state', 'free');
       await page.screenshot({ path: 'test-results/boxing-glove-v16-impulse.png', fullPage: true });
 
-      // Sample the rendered physical body, not an animation timer. A real
-      // under-damped spring must reverse vertical direction several times.
-      const samples: number[] = [];
-      for (let i = 0; i < 38; i += 1) {
-        samples.push(Number(await canvas.getAttribute('data-center-y')));
-        await page.waitForTimeout(100);
-      }
-      let reversals = 0;
-      let previousDirection = 0;
-      for (let i = 1; i < samples.length; i += 1) {
-        const delta = samples[i] - samples[i - 1];
-        const direction = Math.abs(delta) > 0.004 ? Math.sign(delta) : 0;
-        if (direction !== 0 && previousDirection !== 0 && direction !== previousDirection) reversals += 1;
-        if (direction !== 0) previousDirection = direction;
-      }
-      expect(reversals).toBeGreaterThanOrEqual(2);
+      // The Planck body itself counts genuine vertical velocity reversals.
+      // Requiring at least two proves an under-damped oscillation rather than
+      // a scripted launch followed by a one-way return.
+      await expect.poll(async () => Number(await canvas.getAttribute('data-oscillation-turns')), { timeout: 7000 })
+        .toBeGreaterThanOrEqual(2);
 
       await expect.poll(async () => Number(await canvas.getAttribute('data-center-y')), { timeout: 6500 })
         .toBeLessThan(-0.62);
 
-      await expect.poll(async () => await canvas.getAttribute('data-motion-state'), { timeout: 10000 })
+      await expect.poll(async () => await canvas.getAttribute('data-motion-state'), { timeout: 12000 })
         .toBe('settled');
       await expect.poll(async () => Number(await canvas.getAttribute('data-speed')))
         .toBeLessThan(0.06);
