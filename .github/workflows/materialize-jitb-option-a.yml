@@ -1,0 +1,82 @@
+name: Build original Jack-in-the-Box asset
+
+on:
+  push:
+    branches:
+      - agent/parts-09-13-open-assets
+    paths:
+      - tools/build-jitb-option-a.py
+      - .github/workflows/materialize-jitb-option-a.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-asset:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout asset branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/parts-09-13-open-assets
+          fetch-depth: 0
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender >/dev/null
+          blender --version | head -n 2
+
+      - name: Build original game-ready GLB and studio preview
+        env:
+          JITB_OUT: public/assets/jack-in-the-box-option-a.glb
+          JITB_PREVIEW: test-results/jack-option-a-blender.png
+        run: |
+          mkdir -p public/assets test-results
+          blender -b --python tools/build-jitb-option-a.py
+          test -s public/assets/jack-in-the-box-option-a.glb
+          test -s test-results/jack-option-a-blender.png
+          ls -lh public/assets/jack-in-the-box-option-a.glb test-results/jack-option-a-blender.png
+
+      - name: Inspect named assemblies and triangle count
+        run: |
+          python -m pip install --disable-pip-version-check --quiet trimesh
+          python - <<'PY'
+          import json, os, trimesh
+          path='public/assets/jack-in-the-box-option-a.glb'
+          scene=trimesh.load(path, force='scene')
+          faces=sum(len(g.faces) for g in scene.geometry.values() if hasattr(g,'faces'))
+          nodes=set(scene.graph.nodes)
+          required={'JITB_Housing','JITB_Lid','JITB_Drive','JITB_Jack','JITB_Spring'}
+          missing=sorted(required-nodes)
+          report={'bytes':os.path.getsize(path),'triangles':faces,'geometries':len(scene.geometry),'missing_nodes':missing}
+          print(json.dumps(report,indent=2))
+          assert faces >= 25000, report
+          assert faces <= 120000, report
+          assert not missing, report
+          with open('test-results/jack-option-a-report.json','w') as f: json.dump(report,f,indent=2)
+          PY
+
+      - name: Upload mandatory visual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: jack-option-a-visual-review
+          path: |
+            test-results/jack-option-a-blender.png
+            test-results/jack-option-a-report.json
+          retention-days: 3
+
+      - name: Commit original GLB
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/jack-in-the-box-option-a.glb
+          if git diff --cached --quiet; then
+            echo 'Original Jack GLB already current.'
+            exit 0
+          fi
+          git commit -m 'Add original Blender Jack-in-the-Box GLB'
+          git pull --rebase origin agent/parts-09-13-open-assets
+          git push origin HEAD:agent/parts-09-13-open-assets
