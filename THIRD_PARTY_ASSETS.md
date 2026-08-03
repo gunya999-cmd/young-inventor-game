@@ -85,7 +85,15 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Attribution:** “Conveyor Belt” by Jason Kan, used as an open-licensed industrial construction reference under CC BY.
 - **Use:** v2 is re-authored locally as a complete machine with one continuous rubber loop, end drums, five support rollers, bearing housings, side rails, four braced legs, tread detail and a side-mounted motor/gearbox.
 
-## Pulley — Part 14
+## Jack-in-the-Box — Classic Part 14
+- **Source creator:** Vasian-Digital3D
+- **Asset:** Jack In The Box
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/jack-in-the-box-32702a813df8489aad2a54be7eb5f86a
+- **Attribution:** “Jack In The Box” by Vasian-Digital3D, used as an open-licensed toy/proportion reference under CC BY.
+- **Use:** v1 is re-authored locally as a premium mechanical toy with a belt-drive input pulley, physical latch, dynamic lid, compressed spring and Planck prismatic Jack body. Sufficient real input rotation releases the latch; spring/contact physics then opens the lid and launches the Jack without an authored position animation.
+
+## Pulley — Classic Part 18
 - **Source creator:** fuglee
 - **Asset:** Pulley
 - **License:** Creative Commons Attribution (CC BY)
@@ -93,7 +101,7 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Attribution:** “Pulley” by fuglee, used as an open-licensed forged-block/proportion reference under CC BY.
 - **Use:** v1 is re-authored locally as a compact game-ready forged block with a grooved dynamic sheave, axle, mount eye and dynamic rope. The review mechanism uses a Planck PulleyJoint between unequal masses plus finite clutch torque so sheave rotation can lag the rope rather than being scripted.
 
-## Electric Motor — Part 15
+## Electric Motor — Classic Part 25
 - **Source creator:** joh.mackell
 - **Asset:** Simple DC Motor Design
 - **License:** Creative Commons Attribution (CC BY)
