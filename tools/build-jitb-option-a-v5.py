@@ -5,7 +5,7 @@ from pathlib import Path
 # now exposes the collar and upper torso instead of only the face/cap.
 path = Path('tools/build-jitb-option-a-v4.py')
 source = path.read_text(encoding='utf-8')
-marker = '# -----------------------------------------------------------------------------\n# Export the neutral pose expected by the runtime.'
+marker = '# Export the neutral pose expected by the runtime.'
 if marker not in source:
     raise RuntimeError('V4 neutral-export marker missing')
 
