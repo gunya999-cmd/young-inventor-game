@@ -1,144 +1,222 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { createBoxingGloveModelV11 } from './boxingGloveV11';
-import { createFineBumpTexture, type PremiumReviewAssetModel } from './parts0913PremiumShared';
+import { Circle, Vec2, World } from 'planck';
+import { createBoxingGloveVisualV16 } from './boxingGloveVisualV16';
+import type { PremiumReviewAssetModel } from './parts0913PremiumShared';
 
-function createFistSilhouetteGeometry(): THREE.ExtrudeGeometry {
-  const shape = new THREE.Shape();
-  // Wrist enters a single broad padded fist. The top stays full and rounded,
-  // while the underside curves back into the palm like a real boxing glove.
-  shape.moveTo(-0.48, 0.27);
-  shape.bezierCurveTo(-0.35, 0.43, -0.08, 0.57, 0.23, 0.60);
-  shape.bezierCurveTo(0.51, 0.63, 0.73, 0.54, 0.82, 0.34);
-  shape.bezierCurveTo(0.90, 0.16, 0.88, -0.10, 0.77, -0.31);
-  shape.bezierCurveTo(0.66, -0.50, 0.46, -0.58, 0.25, -0.57);
-  shape.bezierCurveTo(0.05, -0.56, -0.13, -0.47, -0.24, -0.35);
-  shape.bezierCurveTo(-0.34, -0.25, -0.42, -0.23, -0.48, -0.25);
-  shape.closePath();
+const ANCHOR = new THREE.Vector2(-1.34, 0.06);
+const ARMED_CENTER = new THREE.Vector2(-0.16, 0.05);
+const SPRING_ATTACH_X = -0.68;
+const REST_LENGTH = 1.08;
+const SPRING_K = 31.5;
+const SPRING_DAMPING = 2.15;
+const GRAVITY = 4.65;
+const LAUNCH_VELOCITY = new THREE.Vector2(5.9, 1.12);
+const MAX_SPRING_FORCE = 82;
+const MAX_FREE_TIME = 7.5;
+const FIXED_STEP = 1 / 180;
 
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.66,
-    steps: 2,
-    curveSegments: 36,
-    bevelEnabled: true,
-    bevelThickness: 0.18,
-    bevelSize: 0.14,
-    bevelSegments: 12
-  });
-  geometry.center();
-  geometry.scale(1.0, 1.0, 1.03);
-  geometry.translate(0.18, 0.04, 0);
-  geometry.computeVertexNormals();
-  return geometry;
+function setSpringPose(mesh: THREE.Mesh, start: THREE.Vector3, end: THREE.Vector3): void {
+  const delta = end.clone().sub(start);
+  const length = Math.max(0.08, delta.length());
+  mesh.position.copy(start);
+  mesh.scale.set(length, 1, 1);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), delta.normalize());
 }
 
-function createThumbSilhouetteGeometry(): THREE.ExtrudeGeometry {
-  const shape = new THREE.Shape();
-  // Short teardrop thumb, with the root buried in the palm and the tip curled
-  // up toward the striking pad. This is the second major shape of a glove.
-  shape.moveTo(-0.14, 0.03);
-  shape.bezierCurveTo(-0.03, -0.08, 0.04, -0.28, 0.20, -0.37);
-  shape.bezierCurveTo(0.35, -0.45, 0.49, -0.38, 0.53, -0.24);
-  shape.bezierCurveTo(0.57, -0.10, 0.48, 0.02, 0.34, 0.07);
-  shape.bezierCurveTo(0.16, 0.13, -0.02, 0.10, -0.14, 0.03);
-  shape.closePath();
-
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.34,
-    steps: 2,
-    curveSegments: 30,
-    bevelEnabled: true,
-    bevelThickness: 0.085,
-    bevelSize: 0.070,
-    bevelSegments: 10
-  });
-  geometry.center();
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function populateHead(head: THREE.Group): void {
-  head.clear();
-
-  const leather = new THREE.MeshPhysicalMaterial({
-    color: 0xc72737,
-    roughness: 0.58,
-    metalness: 0,
-    clearcoat: 0.03,
-    clearcoatRoughness: 0.88,
-    sheen: 0.15,
-    sheenRoughness: 0.82,
-    sheenColor: new THREE.Color(0xef6d75),
-    bumpMap: createFineBumpTexture(0x62677846, 18000),
-    bumpScale: 0.0035
-  });
-  const cuffLeather = new THREE.MeshPhysicalMaterial({
-    color: 0xa91d2a,
-    roughness: 0.64,
-    metalness: 0,
-    clearcoat: 0.018,
-    clearcoatRoughness: 0.92
-  });
-  const seamMaterial = new THREE.MeshStandardMaterial({ color: 0x7d141e, roughness: 0.80, metalness: 0 });
-  const inner = new THREE.MeshStandardMaterial({ color: 0x201518, roughness: 0.98, metalness: 0 });
-  const steel = new THREE.MeshStandardMaterial({ color: 0xc9d2d7, roughness: 0.28, metalness: 0.88 });
-
-  const fist = new THREE.Mesh(createFistSilhouetteGeometry(), leather);
-  fist.name = 'BoxingGloveV16Fist';
-  head.add(fist);
-
-  // The thumb lives on the near face. Its root is deliberately buried into the
-  // palm, so it reads as sewn into the glove rather than attached separately.
-  const thumb = new THREE.Mesh(createThumbSilhouetteGeometry(), leather);
-  thumb.position.set(0.18, -0.25, 0.34);
-  thumb.rotation.y = -0.04;
-  thumb.name = 'BoxingGloveV16Thumb';
-  head.add(thumb);
-
-  // A compact boxing cuff/strap. It overlaps the wrist portion of the fist.
-  const cuff = new THREE.Mesh(new RoundedBoxGeometry(0.43, 0.62, 0.68, 10, 0.15), cuffLeather);
-  cuff.position.set(-0.57, -0.01, 0);
-  cuff.name = 'BoxingGloveV16Cuff';
-  head.add(cuff);
-
-  // Leather construction seam where the thumb folds into the palm.
-  const seamCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.02, -0.16, 0.52),
-    new THREE.Vector3(0.12, -0.27, 0.55),
-    new THREE.Vector3(0.27, -0.31, 0.53),
-    new THREE.Vector3(0.41, -0.22, 0.47)
-  ], false, 'centripetal');
-  const thumbSeam = new THREE.Mesh(new THREE.TubeGeometry(seamCurve, 64, 0.0045, 8, false), seamMaterial);
-  thumbSeam.name = 'BoxingGloveV16ThumbSeam';
-  head.add(thumbSeam);
-
-  // Cuff opening + spring receiver are a single readable mechanical connection.
-  const opening = new THREE.Mesh(new THREE.CircleGeometry(0.232, 64), inner);
-  opening.rotation.y = Math.PI / 2;
-  opening.position.set(-0.79, -0.01, 0);
-  head.add(opening);
-
-  const receiver = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.18, 40, 2), steel);
-  receiver.rotation.z = Math.PI / 2;
-  receiver.position.set(-0.68, -0.01, 0);
-  receiver.name = 'BoxingGloveV16SpringReceiver';
-  head.add(receiver);
-
-  const receiverRing = new THREE.Mesh(new THREE.TorusGeometry(0.111, 0.016, 10, 40), steel);
-  receiverRing.rotation.y = Math.PI / 2;
-  receiverRing.position.set(-0.77, -0.01, 0);
-  head.add(receiverRing);
+function receiverWorld(center: THREE.Vector2, angle: number): THREE.Vector3 {
+  return new THREE.Vector3(
+    center.x + Math.cos(angle) * SPRING_ATTACH_X,
+    center.y + Math.sin(angle) * SPRING_ATTACH_X,
+    0
+  );
 }
 
 export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
-  const model = createBoxingGloveModelV11();
-  const root = model.group;
-  const head = root.getObjectByName('BoxingGloveV11DynamicHead') as THREE.Group | undefined;
-  if (!head) throw new Error('Boxing Glove v11 dynamic head was not found.');
+  const model = createBoxingGloveVisualV16();
+  const group = model.group;
+  const glove = group.getObjectByName('BoxingGloveV16DynamicHead') as THREE.Group | undefined;
+  const spring = group.getObjectByName('BoxingGloveV11PhysicalSpring') as THREE.Mesh | undefined;
+  const button = group.getObjectByName('BoxingGloveV11TriggerButton') as THREE.Mesh | undefined;
+  const buttonStem = group.children
+    .flatMap((child) => child.children)
+    .find((child) => child.type === 'Mesh' && child !== button && Math.abs(child.position.x + 1.88) < 0.01) as THREE.Mesh | undefined;
+  if (!glove || !spring || !button) throw new Error('Boxing Glove v16 mechanism parts were not found.');
 
-  populateHead(head);
-  head.name = 'BoxingGloveV16DynamicHead';
-  root.userData.assetVersion = 'boxing-glove-v16';
-  root.userData.referenceStyle = 'authentic-side-silhouette-boxing-glove-tim-physics';
+  const world = new World({ gravity: Vec2(0, -GRAVITY), allowSleep: true });
+  const gloveBody = world.createBody({
+    type: 'dynamic',
+    position: Vec2(ARMED_CENTER.x, ARMED_CENTER.y),
+    fixedRotation: true,
+    linearDamping: 0.42,
+    angularDamping: 1,
+    allowSleep: true,
+    awake: false,
+    userData: { kind: 'boxing-glove-head' }
+  });
+  // The fixture makes the preview use the same kind of real dynamic body that
+  // will later collide with TIM gameplay objects. Density is chosen so the
+  // 2D mass is close to a padded glove rather than an effectively weightless icon.
+  gloveBody.createFixture({
+    shape: Circle(0.32),
+    density: 2.86,
+    friction: 0.62,
+    restitution: 0.12
+  });
+
+  type MotionState = 'armed' | 'free' | 'settled';
+  let state: MotionState = 'armed';
+  let triggerPressed = false;
+  let triggerLatched = false;
+  let elapsedFree = 0;
+  let lowEnergyTime = 0;
+  let accumulator = 0;
+  let oscillationTurns = 0;
+  let lastVerticalDirection = 0;
+
+  const readCenter = (): THREE.Vector2 => {
+    const position = gloveBody.getPosition();
+    return new THREE.Vector2(position.x, position.y);
+  };
+
+  const applyPose = (): void => {
+    const center = readCenter();
+    const radial = center.clone().sub(ANCHOR);
+    const angle = Math.atan2(radial.y, radial.x);
+    const velocity = gloveBody.getLinearVelocity();
+
+    glove.position.set(center.x, center.y, 0);
+    glove.rotation.z = angle;
+    setSpringPose(spring, new THREE.Vector3(ANCHOR.x, ANCHOR.y, 0), receiverWorld(center, angle));
+
+    const buttonTravel = triggerPressed ? 0.055 : 0;
+    button.position.x = -1.98 + buttonTravel;
+    if (buttonStem) buttonStem.position.x = -1.88 + buttonTravel * 0.55;
+
+    const distance = radial.length();
+    const mass = Math.max(0.001, gloveBody.getMass());
+    group.userData.state = state;
+    group.userData.centerX = center.x;
+    group.userData.centerY = center.y;
+    group.userData.speed = Math.hypot(velocity.x, velocity.y);
+    group.userData.verticalVelocity = velocity.y;
+    group.userData.springLength = distance;
+    group.userData.equilibriumLength = REST_LENGTH + (mass * GRAVITY) / SPRING_K;
+    group.userData.extension = Math.max(0, distance - ARMED_CENTER.distanceTo(ANCHOR));
+    group.userData.triggerPressed = triggerPressed;
+    group.userData.oscillationTurns = oscillationTurns;
+    group.userData.physicsEngine = 'planck';
+  };
+
+  const applySpringAndDamping = (): void => {
+    const position = gloveBody.getPosition();
+    const velocity = gloveBody.getLinearVelocity();
+    const dx = position.x - ANCHOR.x;
+    const dy = position.y - ANCHOR.y;
+    const distance = Math.max(0.0001, Math.hypot(dx, dy));
+    const nx = dx / distance;
+    const ny = dy / distance;
+    const radialSpeed = velocity.x * nx + velocity.y * ny;
+    const springTerm = -SPRING_K * (distance - REST_LENGTH);
+    const dampingTerm = -SPRING_DAMPING * radialSpeed;
+    const magnitude = THREE.MathUtils.clamp(springTerm + dampingTerm, -MAX_SPRING_FORCE, MAX_SPRING_FORCE);
+    gloveBody.applyForceToCenter(Vec2(nx * magnitude, ny * magnitude), true);
+  };
+
+  const stepPhysics = (dt: number): void => {
+    accumulator = Math.min(accumulator + dt, 0.12);
+    while (accumulator >= FIXED_STEP) {
+      applySpringAndDamping();
+      world.step(FIXED_STEP, 10, 6);
+      accumulator -= FIXED_STEP;
+
+      const vy = gloveBody.getLinearVelocity().y;
+      const direction = Math.abs(vy) > 0.08 ? Math.sign(vy) : 0;
+      if (elapsedFree > 0.22 && direction !== 0 && lastVerticalDirection !== 0 && direction !== lastVerticalDirection) {
+        oscillationTurns += 1;
+      }
+      if (direction !== 0) lastVerticalDirection = direction;
+    }
+  };
+
+  const settleIfReady = (dt: number): void => {
+    const velocity = gloveBody.getLinearVelocity();
+    const speed = Math.hypot(velocity.x, velocity.y);
+    if (elapsedFree > 3.0 && speed < 0.055) lowEnergyTime += dt;
+    else lowEnergyTime = 0;
+
+    if (lowEnergyTime > 0.50 || elapsedFree >= MAX_FREE_TIME) {
+      // Do not snap or teleport to a scripted final pose. The body is frozen
+      // exactly where the physical simulation has converged.
+      gloveBody.setLinearVelocity(Vec2(0, 0));
+      gloveBody.setAwake(false);
+      state = 'settled';
+    }
+  };
+
+  const releaseWithImpulse = (): void => {
+    if (triggerLatched || state === 'free') return;
+    triggerLatched = true;
+    state = 'free';
+    elapsedFree = 0;
+    lowEnergyTime = 0;
+    accumulator = 0;
+    oscillationTurns = 0;
+    lastVerticalDirection = 0;
+    gloveBody.setAwake(true);
+    const mass = Math.max(0.001, gloveBody.getMass());
+    gloveBody.applyLinearImpulse(
+      Vec2(LAUNCH_VELOCITY.x * mass, LAUNCH_VELOCITY.y * mass),
+      gloveBody.getWorldCenter(),
+      true
+    );
+  };
+
+  const setTriggerPressed = (pressed: boolean): void => {
+    const next = Boolean(pressed);
+    if (next && !triggerPressed) releaseWithImpulse();
+    triggerPressed = next;
+    if (!next) triggerLatched = false;
+    applyPose();
+  };
+
+  const update = (dt = 0): void => {
+    const safeDt = Math.min(0.05, Math.max(0, dt));
+    if (state === 'free') {
+      elapsedFree += safeDt;
+      stepPhysics(safeDt);
+      settleIfReady(safeDt);
+    }
+    applyPose();
+  };
+
+  const reset = (): void => {
+    state = 'armed';
+    triggerPressed = false;
+    triggerLatched = false;
+    elapsedFree = 0;
+    lowEnergyTime = 0;
+    accumulator = 0;
+    oscillationTurns = 0;
+    lastVerticalDirection = 0;
+    gloveBody.setTransform(Vec2(ARMED_CENTER.x, ARMED_CENTER.y), 0);
+    gloveBody.setLinearVelocity(Vec2(0, 0));
+    gloveBody.setAngularVelocity(0);
+    gloveBody.setAwake(false);
+    applyPose();
+  };
+
+  group.userData.assetVersion = 'boxing-glove-v16';
+  group.userData.referenceStyle = 'authentic-side-silhouette-boxing-glove-planck-physics';
+  group.userData.motion = 'planck-impulse-spring-gravity-damping';
+  group.userData.physicsEngine = 'planck';
+  group.userData.setTriggerPressed = setTriggerPressed;
+  group.userData.trigger = (): void => {
+    setTriggerPressed(true);
+    window.setTimeout(() => setTriggerPressed(false), 80);
+  };
+  group.userData.update = update;
+  group.userData.reset = reset;
+
+  reset();
   return model;
 }
