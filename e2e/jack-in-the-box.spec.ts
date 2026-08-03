@@ -20,6 +20,7 @@ test('classic Part 14 Jack-in-the-Box uses imported GLB plus real Planck release
   await expect.poll(async () => Number(await canvas.getAttribute('data-render-triangles')), { timeout: 10_000 })
     .toBeGreaterThan(30_000);
   await expect(canvas).toHaveAttribute('data-render-error', '');
+  await page.screenshot({ path: 'test-results/jack-in-the-box-v3-glb-ready.png', fullPage: false });
 
   await canvas.evaluate((element) => {
     const review = element as HTMLCanvasElement & { __kickJackDrive?: () => void };
@@ -36,6 +37,7 @@ test('classic Part 14 Jack-in-the-Box uses imported GLB plus real Planck release
     .toBeGreaterThan(0.20);
   await expect.poll(async () => Number(await canvas.getAttribute('data-max-jack-speed')), { timeout: 5500 })
     .toBeGreaterThan(0.45);
+  await page.screenshot({ path: 'test-results/jack-in-the-box-v3-glb-released.png', fullPage: false });
 
   expect(Number(await canvas.getAttribute('data-release-count'))).toBe(1);
 });
