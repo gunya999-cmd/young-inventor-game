@@ -12,7 +12,6 @@ const SPRING_DAMPING = 2.15;
 const GRAVITY = 4.65;
 const LAUNCH_VELOCITY = new THREE.Vector2(5.9, 1.12);
 const MAX_SPRING_FORCE = 82;
-const MAX_FREE_TIME = 9.0;
 const FIXED_STEP = 1 / 180;
 
 function setSpringPose(mesh: THREE.Mesh, start: THREE.Vector3, end: THREE.Vector3): void {
@@ -144,9 +143,9 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     if (elapsedFree > 3.0 && speed < 0.055) lowEnergyTime += dt;
     else lowEnergyTime = 0;
 
-    if (lowEnergyTime > 0.50 || elapsedFree >= MAX_FREE_TIME) {
-      // Do not snap or teleport to a scripted final pose. The body is frozen
-      // exactly where the physical simulation has converged.
+    if (lowEnergyTime > 0.50) {
+      // No timeout, teleport, or authored final pose: the state changes to
+      // settled only after Planck's body has physically lost almost all energy.
       gloveBody.setLinearVelocity(Vec2(0, 0));
       gloveBody.setAwake(false);
       state = 'settled';
@@ -180,7 +179,7 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
   };
 
   const update = (dt = 0): void => {
-    const safeDt = Math.min(0.05, Math.max(0, dt));
+    const safeDt = Math.min(0.12, Math.max(0, dt));
     if (state === 'free') {
       elapsedFree += safeDt;
       stepPhysics(safeDt);
