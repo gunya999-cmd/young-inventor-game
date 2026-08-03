@@ -85,4 +85,20 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Attribution:** “Conveyor Belt” by Jason Kan, used as an open-licensed industrial construction reference under CC BY.
 - **Use:** v2 is re-authored locally as a complete machine with one continuous rubber loop, end drums, five support rollers, bearing housings, side rails, four braced legs, tread detail and a side-mounted motor/gearbox.
 
+## Pulley — Part 14
+- **Source creator:** fuglee
+- **Asset:** Pulley
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/pulley-5a267a9f57a449139f3f192e3f5d87bc
+- **Attribution:** “Pulley” by fuglee, used as an open-licensed forged-block/proportion reference under CC BY.
+- **Use:** v1 is re-authored locally as a compact game-ready forged block with a grooved dynamic sheave, axle, mount eye and dynamic rope. The review mechanism uses a Planck PulleyJoint between unequal masses plus finite clutch torque so sheave rotation can lag the rope rather than being scripted.
+
+## Electric Motor — Part 15
+- **Source creator:** joh.mackell
+- **Asset:** Simple DC Motor Design
+- **License:** Creative Commons Attribution (CC BY)
+- **Source:** https://sketchfab.com/3d-models/simple-dc-motor-design-b909f3ece8b04f489207bbdd3eadcb1d
+- **Attribution:** “Simple DC Motor Design” by joh.mackell, used as an open-licensed DC-motor proportion/construction reference under CC BY.
+- **Use:** v1 keeps the compact cylindrical motor language but is re-authored into a game-ready PBR assembly with mounting feet, end bells, cooling vents, copper terminals, output hub and readable shaft markers. The shaft is a Planck dynamic body on a finite-torque revolute motor. A separate inertial flywheel is coupled through finite friction and velocity-dependent opposing load torque so the shaft can measurably slow under load.
+
 CC0 attribution is not required, but provenance is retained for maintainability and review. CC-BY attribution is retained explicitly above.
