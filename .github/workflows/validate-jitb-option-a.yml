@@ -23,6 +23,17 @@ jobs:
           sudo apt-get install -y --no-install-recommends blender python3-numpy >/dev/null
           blender --version | head -n 2
 
+      - name: Patch Blender preview world
+        run: |
+          python - <<'PY'
+          p='tools/build-jitb-option-a.py'
+          t=open(p,encoding='utf-8').read()
+          old="scene.world.color = (0.055, 0.065, 0.075)"
+          new="if scene.world is None:\n    scene.world = bpy.data.worlds.new('StudioWorld')\nscene.world.color = (0.055, 0.065, 0.075)"
+          if old not in t: raise SystemExit('preview world marker not found')
+          open(p,'w',encoding='utf-8').write(t.replace(old,new,1))
+          PY
+
       - name: Build original GLB and visual review
         env:
           JITB_OUT: test-results/jack-in-the-box-option-a.glb
