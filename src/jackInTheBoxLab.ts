@@ -14,7 +14,7 @@ export function installJackInTheBoxLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>CLASSIC PART 14 · IMPORTED GAME-READY 3D</small><h1>Jack-in-the-Box</h1></div>
-      <div class="bowling-ball-lab__meta"><span>GLB</span><span>PBR</span><span>37k tris</span><span>v3</span></div>
+      <div class="bowling-ball-lab__meta"><span>GLB</span><span>PBR</span><span>36k tris</span><span>v3</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
       <canvas aria-label="Game-ready realistic Jack-in-the-Box GLB preview"
@@ -35,25 +35,25 @@ export function installJackInTheBoxLab(): void {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
-  renderer.setClearColor(0xe2e5e7, 1);
+  renderer.toneMappingExposure = 0.92;
+  renderer.setClearColor(0xdfe3e5, 1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.045).texture;
-  scene.add(new THREE.HemisphereLight(0xf8fafb, 0x52585b, 0.66));
+  scene.add(new THREE.HemisphereLight(0xf8fafb, 0x4b5053, 0.52));
 
-  const key = new THREE.DirectionalLight(0xfff4e8, 1.42);
+  const key = new THREE.DirectionalLight(0xfff4e8, 1.16);
   key.position.set(-4.8, 6.2, 7.4);
   key.castShadow = true;
   key.shadow.mapSize.set(1536, 1536);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xcbd9e0, 0.31);
+  const fill = new THREE.DirectionalLight(0xcbd9e0, 0.24);
   fill.position.set(4.2, 1.2, 5.5);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffffff, 0.31);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.25);
   rim.position.set(3.4, 5.0, -4.8);
   scene.add(rim);
 
@@ -74,7 +74,7 @@ export function installJackInTheBoxLab(): void {
 
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(1.55, 96),
-    new THREE.MeshStandardMaterial({ color: 0xd0d3d5, roughness: 0.96, metalness: 0.0 })
+    new THREE.MeshStandardMaterial({ color: 0xc9cdcf, roughness: 0.97, metalness: 0.0 })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.scale.set(1.28, 0.72, 1);
@@ -147,9 +147,9 @@ export function installJackInTheBoxLab(): void {
     const verticalTan = Math.tan(THREE.MathUtils.degToRad(activeCamera.fov * 0.5));
     const horizontalTan = verticalTan * aspect;
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
-    const distance = (1.88 / limitingTan) * 1.10;
+    const distance = (1.05 / limitingTan) * 1.05;
     activeCamera.position.set(0, 0.13, distance);
-    activeCamera.lookAt(0.04, 0.15, 0.08);
+    activeCamera.lookAt(0.04, 0.13, 0.08);
     activeCamera.aspect = aspect;
     activeCamera.updateProjectionMatrix();
     canvas.dataset.cameraDistance = distance.toFixed(3);
