@@ -1,12 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 
-const GLB_URL = '/assets/jack-in-the-box-real-cc0.glb';
-const SOURCE_URL = 'https://www.meshy.ai/3d-models/An-old-rusted-jackinthebox-its-tin-body-dented-and-covered-in-peeling-circus-designs-The-handle-grinds-loudly-when-turned-playing-a-distorted-lullaby-When-it-pops-open-a-grotesque-puppet-with-oversized-eyes-and-an-impossibly-wide-grin-springs-out-its-fabriccovered-hands-reaching-forward-unnaturally-Its-head-slowly-tilts-watching-whoever-opened-it-v2-0195a25f-cbd6-78c8-9255-1c8e88a70b80';
-const DETAIL_GATE = 400_000;
-const TARGET_HEIGHT = 1.86;
-const TARGET_FLOOR_Y = -0.58;
+const GLB_URL = '/assets/jack-in-the-box-option-a.glb';
+const DETAIL_GATE = 45_000;
+const SPRING_BOTTOM_Y = -0.49;
+const SPRING_BASE_TOP_Y = -0.10;
 
 function hideChildren(host: THREE.Object3D): void {
   for (const child of host.children) child.visible = false;
@@ -23,57 +21,66 @@ function countTriangles(root: THREE.Object3D): number {
   return Math.round(triangles);
 }
 
-function prepareRealSource(root: THREE.Object3D): void {
+function collectRenderStats(root: THREE.Object3D): { meshes: number; materials: number; textures: number } {
+  let meshes = 0;
+  const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    meshes += 1;
+    const entries = Array.isArray(child.material) ? child.material : [child.material];
+    for (const material of entries) {
+      materials.add(material);
+      if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+      for (const texture of [material.map, material.normalMap, material.roughnessMap, material.metalnessMap, material.aoMap]) {
+        if (texture) textures.add(texture);
+      }
+    }
+  });
+  return { meshes, materials: materials.size, textures: textures.size };
+}
+
+function prepareOriginalMesh(root: THREE.Object3D): void {
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     child.castShadow = true;
     child.receiveShadow = true;
     child.frustumCulled = true;
-
     const materials = Array.isArray(child.material) ? child.material : [child.material];
     for (const material of materials) {
       if (material instanceof THREE.MeshStandardMaterial) {
-        material.envMapIntensity = 0.72;
-        material.roughness = Math.max(0.62, material.roughness);
-        material.metalness = Math.min(0.12, material.metalness);
-        if (material.map) {
-          material.map.colorSpace = THREE.SRGBColorSpace;
-          material.map.anisotropy = 8;
-          material.map.needsUpdate = true;
+        material.envMapIntensity = 0.78;
+        for (const texture of [material.map, material.normalMap, material.roughnessMap, material.metalnessMap, material.aoMap]) {
+          if (!texture) continue;
+          texture.anisotropy = 8;
+          texture.needsUpdate = true;
         }
+        if (material.map) material.map.colorSpace = THREE.SRGBColorSpace;
       }
       material.needsUpdate = true;
     }
   });
 }
 
-function fitImportedSource(source: THREE.Object3D): THREE.Group {
-  source.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(source);
-  const size = bounds.getSize(new THREE.Vector3());
-  const center = bounds.getCenter(new THREE.Vector3());
-  const scale = TARGET_HEIGHT / Math.max(0.001, size.y);
-
-  const visualRoot = new THREE.Group();
-  visualRoot.name = 'JackBoxRealCc0RenderRoot';
-  visualRoot.scale.setScalar(scale);
-  visualRoot.position.set(
-    -center.x * scale,
-    TARGET_FLOOR_Y - bounds.min.y * scale,
-    -center.z * scale
-  );
-  visualRoot.add(source);
-  return visualRoot;
+function takeNode(source: THREE.Object3D, name: string): THREE.Object3D | null {
+  const node = source.getObjectByName(name);
+  if (!node) return null;
+  node.removeFromParent();
+  node.position.set(0, 0, 0);
+  node.rotation.set(0, 0, 0);
+  node.scale.set(1, 1, 1);
+  node.updateMatrix();
+  return node;
 }
 
 export function attachJackInTheBoxGlbV3(object: THREE.Group): Promise<void> {
-  object.userData.renderSource = 'real-cc0-glb';
+  object.userData.renderSource = 'original-blender-glb';
   object.userData.renderLoaded = false;
   object.userData.renderTriangles = 0;
   object.userData.renderError = '';
-  object.userData.sourceKey = 'meshy-cc0-rusted-jack-in-the-box';
-  object.userData.sourceUrl = SOURCE_URL;
-  object.userData.sourceLicense = 'CC0-1.0';
+  object.userData.sourceKey = 'original-blender-jitb-option-a';
+  object.userData.sourceLicense = 'PROJECT-ORIGINAL';
+  object.userData.sourceUrl = 'repo://tools/build-jitb-option-a-v4.py';
 
   const housingHost = object.getObjectByName('JackBoxV2RealisticHousing');
   const lidHost = object.getObjectByName('JackBoxV2DynamicLid');
@@ -86,49 +93,76 @@ export function attachJackInTheBoxGlbV3(object: THREE.Group): Promise<void> {
     return Promise.reject(new Error('Jack physics hosts are missing.'));
   }
 
-  const loader = new GLTFLoader();
-  loader.setMeshoptDecoder(MeshoptDecoder);
-
   return new Promise<void>((resolve, reject) => {
-    loader.load(
+    new GLTFLoader().load(
       GLB_URL,
       (gltf) => {
         const source = gltf.scene;
         const triangles = countTriangles(source);
+        const stats = collectRenderStats(source);
         if (triangles < DETAIL_GATE) {
-          const error = new Error(`Real Jack GLB detail gate failed: ${triangles} triangles.`);
-          object.userData.renderError = 'real-glb-detail-gate';
+          const error = new Error(`Original Jack GLB detail gate failed: ${triangles} triangles.`);
+          object.userData.renderError = 'original-glb-detail-gate';
           reject(error);
           return;
         }
 
-        // The source is the actual CC0 Meshy mesh, not a reconstruction from Three.js primitives.
-        // It is currently a single artist/source mesh; simple Planck bodies remain separate and invisible.
+        prepareOriginalMesh(source);
+        const housing = takeNode(source, 'JITB_Housing');
+        const lid = takeNode(source, 'JITB_Lid');
+        const drive = takeNode(source, 'JITB_Drive');
+        const jack = takeNode(source, 'JITB_Jack');
+        const spring = takeNode(source, 'JITB_Spring');
+        if (!housing || !lid || !drive || !jack || !spring) {
+          object.userData.renderError = 'missing-original-glb-nodes';
+          reject(new Error('Original Jack GLB is missing required physical assemblies.'));
+          return;
+        }
+
+        // Keep the proven Planck bodies/joints. Only their render layer is replaced by the reviewed Blender GLB.
         hideChildren(housingHost);
         hideChildren(lidHost);
         hideChildren(driveHost);
         hideChildren(jackHost);
         fallbackSpring.visible = false;
 
-        prepareRealSource(source);
-        const visualRoot = fitImportedSource(source);
-        object.add(visualRoot);
+        housingHost.add(housing);
+        lidHost.add(lid);
+        driveHost.add(drive);
+        jackHost.add(jack);
+        object.add(spring);
 
-        object.userData.assetVersion = 'jack-in-the-box-v4-real-cc0';
+        drive.userData.isJackDrive = true;
+        drive.traverse((child) => { child.userData.isJackDrive = true; });
+        spring.name = 'JackBoxOriginalDynamicSpring';
+
+        const baseUpdate = object.userData.update as ((dt?: number) => void) | undefined;
+        object.userData.update = (dt = 0): void => {
+          baseUpdate?.(dt);
+          const jackY = typeof object.userData.jackY === 'number' ? object.userData.jackY : -0.02;
+          const targetTop = jackY - 0.18;
+          const baseLength = SPRING_BASE_TOP_Y - SPRING_BOTTOM_Y;
+          const targetLength = Math.max(0.08, targetTop - SPRING_BOTTOM_Y);
+          const scaleY = targetLength / baseLength;
+          spring.scale.y = scaleY;
+          spring.position.y = SPRING_BOTTOM_Y * (1 - scaleY);
+        };
+
+        object.userData.assetVersion = 'jack-in-the-box-v5-original-blender';
         object.userData.renderLoaded = true;
         object.userData.renderTriangles = triangles;
-        object.userData.renderBytes = 2_850_696;
-        object.userData.renderMeshCount = 1;
-        object.userData.renderMaterialCount = 1;
-        object.userData.renderTextureCount = 1;
-        object.userData.renderModelType = 'real-source-monolithic';
-        object.userData.renderNodeNames = ['JackBoxRealCc0RenderRoot'];
-        object.userData.update?.(0);
+        object.userData.renderBytes = 6_095_652;
+        object.userData.renderMeshCount = stats.meshes;
+        object.userData.renderMaterialCount = stats.materials;
+        object.userData.renderTextureCount = stats.textures;
+        object.userData.renderModelType = 'original-articulated-blender-glb';
+        object.userData.renderNodeNames = ['JITB_Housing', 'JITB_Lid', 'JITB_Drive', 'JITB_Jack', 'JITB_Spring'];
+        object.userData.update(0);
         resolve();
       },
       undefined,
       (error) => {
-        object.userData.renderError = error instanceof Error ? error.message : 'real-glb-load-failed';
+        object.userData.renderError = error instanceof Error ? error.message : 'original-glb-load-failed';
         reject(error);
       }
     );
