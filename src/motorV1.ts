@@ -9,7 +9,9 @@ const MAX_MOTOR_TORQUE = 4.4;
 const SHAFT_RADIUS = 0.26;
 const LOAD_RADIUS = 0.42;
 const CLUTCH_RESPONSE = 1.75;
-const MAX_CLUTCH_TORQUE = 2.35;
+const MAX_CLUTCH_TORQUE = 5.2;
+const LOAD_RESISTANCE = 0.62;
+const MAX_LOAD_RESISTANCE_TORQUE = 4.2;
 const BEARING_DRAG = 0.045;
 
 function clamp(value: number, min: number, max: number): number {
@@ -59,7 +61,14 @@ export function createMotorModelV1(): PremiumReviewAssetModel {
   const edgeMetal = new THREE.MeshStandardMaterial({ color: 0xa8b6bd, metalness: 0.94, roughness: 0.21 });
   const copper = new THREE.MeshPhysicalMaterial({ color: 0xb96d3d, metalness: 0.78, roughness: 0.28, clearcoat: 0.04 });
   const rubber = new THREE.MeshStandardMaterial({ color: 0x171d20, roughness: 0.84, metalness: 0.04 });
-  const accent = new THREE.MeshPhysicalMaterial({ color: 0xe1a842, metalness: 0.42, roughness: 0.34, clearcoat: 0.05 });
+  const accent = new THREE.MeshPhysicalMaterial({
+    color: 0xe1a842,
+    emissive: 0x2a1905,
+    emissiveIntensity: 0.18,
+    metalness: 0.42,
+    roughness: 0.34,
+    clearcoat: 0.05
+  });
 
   // Compact cylindrical housing derived from the lightweight CC-BY reference,
   // rebuilt as a deliberately readable game asset rather than a CAD replica.
@@ -192,11 +201,14 @@ export function createMotorModelV1(): PremiumReviewAssetModel {
   let maxLoadOmega = 0;
   let maxMotorTorqueSeen = 0;
   let maxClutchSlip = 0;
+  let maxSpeedDropRatio = 0;
+  let loadResistanceTorque = 0;
 
   const startMotor = (): void => {
     if (powered) return;
     powered = true;
     state = 'spinning';
+    accent.emissiveIntensity = 1.05;
     motorJoint.enableMotor(true);
     motorJoint.setMotorSpeed(TARGET_SPEED);
     motorJoint.setMaxMotorTorque(MAX_MOTOR_TORQUE);
@@ -213,14 +225,20 @@ export function createMotorModelV1(): PremiumReviewAssetModel {
     shaftBody.setAwake(true);
   };
 
-  const applyClutch = (): void => {
+  const applyClutchAndLoad = (): void => {
     if (!loadEngaged) return;
     const shaftOmega = shaftBody.getAngularVelocity();
     const loadOmega = loadBody.getAngularVelocity();
     const slip = shaftOmega - loadOmega;
-    const torque = clamp(slip * CLUTCH_RESPONSE, -MAX_CLUTCH_TORQUE, MAX_CLUTCH_TORQUE);
-    shaftBody.applyTorque(-torque, true);
-    loadBody.applyTorque(torque, true);
+    const clutchTorque = clamp(slip * CLUTCH_RESPONSE, -MAX_CLUTCH_TORQUE, MAX_CLUTCH_TORQUE);
+    shaftBody.applyTorque(-clutchTorque, true);
+    loadBody.applyTorque(clutchTorque, true);
+
+    // Generator/load resistance is velocity-proportional and capped. It is a real
+    // opposing torque on the load body, so the motor can slow when its finite
+    // maxMotorTorque is insufficient to hold no-load speed.
+    loadResistanceTorque = clamp(-loadOmega * LOAD_RESISTANCE, -MAX_LOAD_RESISTANCE_TORQUE, MAX_LOAD_RESISTANCE_TORQUE);
+    loadBody.applyTorque(loadResistanceTorque, true);
     maxClutchSlip = Math.max(maxClutchSlip, Math.abs(slip));
   };
 
@@ -237,6 +255,7 @@ export function createMotorModelV1(): PremiumReviewAssetModel {
 
     const reference = Math.max(0.001, freeReferenceSpeed || maxFreeOmega);
     const speedDropRatio = loadEngaged ? Math.max(0, 1 - Math.abs(shaftOmega) / reference) : 0;
+    maxSpeedDropRatio = Math.max(maxSpeedDropRatio, speedDropRatio);
 
     group.userData.state = state;
     group.userData.powered = powered;
@@ -250,12 +269,14 @@ export function createMotorModelV1(): PremiumReviewAssetModel {
     group.userData.clutchSlip = shaftOmega - loadOmega;
     group.userData.maxClutchSlip = maxClutchSlip;
     group.userData.speedDropRatio = speedDropRatio;
+    group.userData.maxSpeedDropRatio = maxSpeedDropRatio;
+    group.userData.loadResistanceTorque = loadResistanceTorque;
   };
 
   const update = (dt = 0): void => {
     accumulator = Math.min(accumulator + Math.max(0, dt), MAX_CATCHUP);
     while (accumulator >= FIXED_STEP) {
-      applyClutch();
+      applyClutchAndLoad();
       world.step(FIXED_STEP, 10, 6);
       accumulator -= FIXED_STEP;
     }
