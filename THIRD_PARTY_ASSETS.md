@@ -86,12 +86,14 @@ This project may use open-licensed art as a geometric or visual source reference
 - **Use:** v2 is re-authored locally as a complete machine with one continuous rubber loop, end drums, five support rollers, bearing housings, side rails, four braced legs, tread detail and a side-mounted motor/gearbox.
 
 ## Jack-in-the-Box — Classic Part 14
-- **Source creator:** Vasian-Digital3D
-- **Asset:** Jack In The Box
-- **License:** Creative Commons Attribution (CC BY)
-- **Source:** https://sketchfab.com/3d-models/jack-in-the-box-32702a813df8489aad2a54be7eb5f86a
-- **Attribution:** “Jack In The Box” by Vasian-Digital3D, used as an open-licensed toy/proportion reference under CC BY.
-- **Use:** v1 is re-authored locally as a premium mechanical toy with a belt-drive input pulley, physical latch, dynamic lid, compressed spring and Planck prismatic Jack body. Sufficient real input rotation releases the latch; spring/contact physics then opens the lid and launches the Jack without an authored position animation.
+- **Primary visual reference creator:** evan.cg
+- **Reference asset:** Jack In The Box
+- **Reference license:** Creative Commons Attribution (CC BY)
+- **Reference:** https://sketchfab.com/3d-models/jack-in-the-box-8c96dd839bc14a289a3c857a9a41ba0b
+- **Additional construction reference:** “Jack In The Box” by Vasian-Digital3D, CC BY — https://sketchfab.com/3d-models/jack-in-the-box-32702a813df8489aad2a54be7eb5f86a
+- **Attribution:** open models above are retained as visual/proportion references. Their downloadable binary meshes are not copied into this repository.
+- **Production asset:** `public/assets/jack-in-the-box-v3-realistic.glb` is a locally re-authored binary GLB with named `JITB_Housing`, `JITB_Lid`, `JITB_Drive`, `JITB_Jack` and `JITB_Spring` assemblies. It is generated reproducibly from the project source and loaded at runtime through `GLTFLoader`.
+- **Physics separation:** the high-detail render mesh is not used as a physics collider. Planck keeps simple dedicated bodies/joints for the input drive, latch, prismatic Jack, Hooke spring and hinged lid. Sufficient real input rotation releases the latch and the rising Jack opens the lid through physical contact.
 
 ## Pulley — Classic Part 18
 - **Source creator:** fuglee
