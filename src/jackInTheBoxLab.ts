@@ -3,7 +3,10 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { createJackInTheBoxModelV1 } from './jackInTheBoxV1';
 import { attachJackInTheBoxGlbV3 } from './jackInTheBoxGlbV3';
 
-type ReviewCanvas = HTMLCanvasElement & { __kickJackDrive?: () => void };
+type ReviewCanvas = HTMLCanvasElement & {
+  __kickJackDrive?: () => void;
+  __runJackDrive?: () => void;
+};
 
 export function installJackInTheBoxLab(): void {
   document.documentElement.classList.add('bowling-ball-lab-mode');
@@ -26,7 +29,7 @@ export function installJackInTheBoxLab(): void {
         data-render-triangles="0"
         data-studio-lighting="pmrem-soft"
         data-motion="rotation-threshold-latch-spring-contact"></canvas>
-      <p>Собственная игровая GLB-модель: отдельные корпус, крышка, привод, фигурка и пружина с PBR-картами. Planck управляет приводом, защёлкой, выстрелом пружины и крышкой отдельно от render mesh.</p>
+      <p>Тап — прокрутить физический привод. Перетащи — повернуть модель.</p>
     </div>
   `;
   document.body.appendChild(root);
@@ -60,12 +63,6 @@ export function installJackInTheBoxLab(): void {
   const model = createJackInTheBoxModelV1();
   const object = model.group;
   object.rotation.set(-0.075, -0.42, 0.015);
-  object.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
   scene.add(object);
 
   void attachJackInTheBoxGlbV3(object).catch((error) => {
@@ -84,6 +81,22 @@ export function installJackInTheBoxLab(): void {
 
   canvas.__kickJackDrive = (): void => {
     if (typeof object.userData.kickDrive === 'function') object.userData.kickDrive();
+  };
+
+  let drivePulseTimer: number | null = null;
+  canvas.__runJackDrive = (): void => {
+    if (drivePulseTimer !== null || object.userData.state !== 'latched') return;
+    let pulseCount = 0;
+    const pulse = (): void => {
+      canvas.__kickJackDrive?.();
+      pulseCount += 1;
+      if (pulseCount < 6 && object.userData.state === 'latched') {
+        drivePulseTimer = window.setTimeout(pulse, 110);
+      } else {
+        drivePulseTimer = null;
+      }
+    };
+    pulse();
   };
 
   const raycaster = new THREE.Raycaster();
@@ -129,18 +142,8 @@ export function installJackInTheBoxLab(): void {
       -((event.clientY - rect.top) / rect.height) * 2 + 1
     );
     raycaster.setFromCamera(pointerNdc, activeCamera);
-    const hitDrive = raycaster.intersectObject(object, true).some((hit) => {
-      let current: THREE.Object3D | null = hit.object;
-      while (current) {
-        if (current.userData.isJackDrive === true) return true;
-        current = current.parent;
-      }
-      return false;
-    });
-
-    // For mobile review a short tap anywhere on the loaded asset kicks the drive;
-    // dragging remains reserved for rotating the model.
-    if (hitDrive || object.userData.renderLoaded === true) canvas.__kickJackDrive?.();
+    const hitAsset = raycaster.intersectObject(object, true).length > 0;
+    if (hitAsset || object.userData.renderLoaded === true) canvas.__runJackDrive?.();
   };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
