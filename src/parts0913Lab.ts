@@ -206,7 +206,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
 
   let previous = performance.now();
   const animate = (now: number): void => {
-    const wallDt = Math.min(0.12, Math.max(0, (now - previous) / 1000));
+    const wallDt = Math.min(0.5, Math.max(0, (now - previous) / 1000));
     const renderDt = Math.min(0.032, wallDt);
     previous = now;
     if (typeof object.userData.update === 'function') {
