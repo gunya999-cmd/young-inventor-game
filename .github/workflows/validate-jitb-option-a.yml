@@ -7,6 +7,7 @@ on:
       - tools/build-jitb-option-a.py
       - tools/build-jitb-option-a-v2.py
       - tools/build-jitb-option-a-v4.py
+      - tools/build-jitb-option-a-v5.py
       - tools/generate-jitb-option-a-textures.py
       - .github/workflows/validate-jitb-option-a.yml
 
@@ -30,13 +31,13 @@ jobs:
       - name: Generate original PBR texture maps
         run: python tools/generate-jitb-option-a-textures.py
 
-      - name: Build refined original GLB and visual review
+      - name: Build final original GLB and visual review
         env:
           JITB_OUT: test-results/jack-in-the-box-option-a.glb
           JITB_PREVIEW: test-results/jack-option-a-blender.png
         run: |
           mkdir -p test-results
-          blender -b --python tools/build-jitb-option-a-v4.py
+          blender -b --python tools/build-jitb-option-a-v5.py
           test -s test-results/jack-in-the-box-option-a.glb
           test -s test-results/jack-option-a-blender.png
 
