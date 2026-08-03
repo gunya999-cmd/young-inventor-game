@@ -12,7 +12,7 @@ const SPRING_DAMPING = 2.15;
 const GRAVITY = 4.65;
 const LAUNCH_VELOCITY = new THREE.Vector2(5.9, 1.12);
 const MAX_SPRING_FORCE = 82;
-const MAX_FREE_TIME = 7.5;
+const MAX_FREE_TIME = 9.0;
 const FIXED_STEP = 1 / 180;
 
 function setSpringPose(mesh: THREE.Mesh, start: THREE.Vector3, end: THREE.Vector3): void {
@@ -47,7 +47,7 @@ export function createBoxingGloveModelV16(): PremiumReviewAssetModel {
     type: 'dynamic',
     position: Vec2(ARMED_CENTER.x, ARMED_CENTER.y),
     fixedRotation: true,
-    linearDamping: 0.42,
+    linearDamping: 1.0,
     angularDamping: 1,
     allowSleep: true,
     awake: false,
