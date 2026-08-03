@@ -97,8 +97,8 @@ export function createTrampolineModelV2(): PremiumReviewAssetModel {
   mat.name = 'TrampolineV2TautFabric';
   group.add(mat);
 
-  // Twenty-four visible steel springs. The v1 only hinted at springs; these are
-  // laid out on all four sides with consistent spacing and actual coil geometry.
+  // Twenty-two visible steel springs, distributed on all four sides with
+  // consistent spacing and real coil geometry.
   const pairs: Array<[THREE.Vector3, THREE.Vector3]> = [];
   for (const x of [-1.08, -0.72, -0.36, 0, 0.36, 0.72, 1.08]) {
     pairs.push([new THREE.Vector3(x, 0.155, 0.67), new THREE.Vector3(x, 0.075, 0.89)]);
@@ -126,12 +126,13 @@ export function createTrampolineModelV2(): PremiumReviewAssetModel {
   }
 
   // Small metal spring tabs make the coil endpoints look mechanically attached
-  // instead of floating between the mat and frame.
+  // instead of floating between the mat and frame. V3 moves these with the mat.
   const tabMaterial = new THREE.MeshStandardMaterial({ color: 0x9ba8af, metalness: 0.82, roughness: 0.34 });
   for (const x of [-1.08, -0.72, -0.36, 0, 0.36, 0.72, 1.08]) {
     for (const z of [-0.665, 0.665]) {
       const tab = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 0.055), tabMaterial);
       tab.position.set(x, 0.158, z);
+      tab.name = 'TrampolineV2MatSpringTab';
       group.add(tab);
     }
   }
