@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { ReviewAssetModel0913 } from './parts0913Models';
 import { createBoxingGloveModelV16 } from './boxingGloveV16';
-import { createTrampolineModelV2 } from './trampolineV2';
+import { createTrampolineModelV3 } from './trampolineV3';
 import { createFanBeltModelV2 } from './fanBeltV2';
 import { createGearModelV2 } from './gearV2';
 import { createConveyorBeltModelV2 } from './conveyorBeltV2';
@@ -11,6 +11,7 @@ type AssetKey0913 = 'boxing-glove' | 'trampoline' | 'fan-belt' | 'gear' | 'conve
 
 type ReviewCanvas = HTMLCanvasElement & {
   __pressBoxingGlove?: () => void;
+  __dropTrampolineProbe?: () => void;
 };
 
 interface AssetConfig0913 {
@@ -32,9 +33,9 @@ const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
     initialRotation: [-0.045, -0.39, 0.01], create: createBoxingGloveModelV16
   },
   trampoline: {
-    key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v2',
-    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-simon-laisne-trampoline-cc-by', radius: 2.48,
-    initialRotation: [-0.36, -0.50, 0.025], create: createTrampolineModelV2
+    key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v3',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-simon-laisne-trampoline-cc-by', radius: 2.68,
+    initialRotation: [-0.36, -0.50, 0.025], create: createTrampolineModelV3
   },
   'fan-belt': {
     key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v2',
@@ -65,7 +66,14 @@ export function installPart0913Lab(key: AssetKey0913): void {
   const versionLabel = config.version.split('-').at(-1) ?? config.version;
   const instruction = config.key === 'boxing-glove'
     ? 'Нажми красную кнопку сзади — импульс выбросит перчатку, затем она свободно колеблется на пружине под действием гравитации'
-    : 'Проведи пальцем по предмету, чтобы повернуть его';
+    : config.key === 'trampoline'
+      ? 'Нажми на чёрное полотно — тестовый мяч упадёт на него, продавит пружины и отскочит по реальной физике'
+      : 'Проведи пальцем по предмету, чтобы повернуть его';
+  const motion = config.key === 'boxing-glove'
+    ? 'impulse-spring-gravity'
+    : config.key === 'trampoline'
+      ? 'contact-spring-bounce'
+      : 'static-review';
   const root = document.createElement('section');
   root.className = `bowling-ball-lab parts-0913-lab ${config.key}-lab`;
   root.innerHTML = `
@@ -79,7 +87,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
         data-source-license="${config.sourceLicense}"
         data-source-key="${config.sourceKey}"
         data-studio-lighting="pmrem-soft"
-        data-motion="${config.key === 'boxing-glove' ? 'impulse-spring-gravity' : 'static-review'}"></canvas>
+        data-motion="${motion}"></canvas>
       <p>${instruction}</p>
     </div>
   `;
@@ -119,6 +127,9 @@ export function installPart0913Lab(key: AssetKey0913): void {
       object.userData.setTriggerPressed(true);
       window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
     };
+  }
+  if (config.key === 'trampoline' && typeof object.userData.dropProbe === 'function') {
+    canvas.__dropTrampolineProbe = (): void => object.userData.dropProbe();
   }
 
   const shadow = new THREE.Mesh(
@@ -162,7 +173,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
   const release = (event: PointerEvent): void => {
     if (pointerId !== event.pointerId) return;
     pointerId = null;
-    if (config.key !== 'boxing-glove' || dragDistance >= 8 || typeof object.userData.setTriggerPressed !== 'function') return;
+    if (dragDistance >= 8) return;
 
     const rect = canvas.getBoundingClientRect();
     pointerNdc.set(
@@ -170,12 +181,20 @@ export function installPart0913Lab(key: AssetKey0913): void {
       -((event.clientY - rect.top) / rect.height) * 2 + 1
     );
     raycaster.setFromCamera(pointerNdc, camera);
-    const triggerHit = raycaster.intersectObject(object, true)
-      .find((hit) => hit.object.userData.isBoxingGloveTrigger === true);
-    if (!triggerHit) return;
+    const hits = raycaster.intersectObject(object, true);
 
-    object.userData.setTriggerPressed(true);
-    window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
+    if (config.key === 'boxing-glove' && typeof object.userData.setTriggerPressed === 'function') {
+      const triggerHit = hits.find((hit) => hit.object.userData.isBoxingGloveTrigger === true);
+      if (!triggerHit) return;
+      object.userData.setTriggerPressed(true);
+      window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
+      return;
+    }
+
+    if (config.key === 'trampoline' && typeof object.userData.dropProbe === 'function') {
+      const matHit = hits.find((hit) => hit.object.userData.isTrampolineSurface === true);
+      if (matHit) object.userData.dropProbe();
+    }
   };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
@@ -187,7 +206,9 @@ export function installPart0913Lab(key: AssetKey0913): void {
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
     const distance = (config.radius / limitingTan) * 1.18;
     camera.position.set(0, 0.04, distance);
-    camera.lookAt(config.key === 'boxing-glove' ? -0.42 : -0.18, config.key === 'boxing-glove' ? -0.34 : 0, 0);
+    const targetX = config.key === 'boxing-glove' ? -0.42 : -0.18;
+    const targetY = config.key === 'boxing-glove' ? -0.34 : config.key === 'trampoline' ? 0.52 : 0;
+    camera.lookAt(targetX, targetY, 0);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     canvas.dataset.cameraDistance = distance.toFixed(3);
@@ -210,7 +231,7 @@ export function installPart0913Lab(key: AssetKey0913): void {
     const renderDt = Math.min(0.032, wallDt);
     previous = now;
     if (typeof object.userData.update === 'function') {
-      object.userData.update(config.key === 'boxing-glove' ? wallDt : renderDt);
+      object.userData.update(object.userData.physicsEngine === 'planck' ? wallDt : renderDt);
     }
     if (pointerId === null) {
       const damping = Math.pow(0.025, renderDt);
@@ -226,6 +247,17 @@ export function installPart0913Lab(key: AssetKey0913): void {
     canvas.dataset.oscillationTurns = typeof object.userData.oscillationTurns === 'number' ? String(object.userData.oscillationTurns) : '0';
     canvas.dataset.physicsEngine = typeof object.userData.physicsEngine === 'string' ? object.userData.physicsEngine : '';
     canvas.dataset.triggerPressed = object.userData.triggerPressed === true ? 'true' : 'false';
+    canvas.dataset.compression = typeof object.userData.compression === 'number' ? object.userData.compression.toFixed(3) : '0';
+    canvas.dataset.maxCompression = typeof object.userData.maxCompression === 'number' ? object.userData.maxCompression.toFixed(3) : '0';
+    canvas.dataset.probeX = typeof object.userData.probeX === 'number' ? object.userData.probeX.toFixed(3) : '0';
+    canvas.dataset.probeY = typeof object.userData.probeY === 'number' ? object.userData.probeY.toFixed(3) : '0';
+    canvas.dataset.probeVx = typeof object.userData.probeVx === 'number' ? object.userData.probeVx.toFixed(3) : '0';
+    canvas.dataset.probeVy = typeof object.userData.probeVy === 'number' ? object.userData.probeVy.toFixed(3) : '0';
+    canvas.dataset.impactSpeed = typeof object.userData.impactSpeed === 'number' ? object.userData.impactSpeed.toFixed(3) : '0';
+    canvas.dataset.bounceCount = typeof object.userData.bounceCount === 'number' ? String(object.userData.bounceCount) : '0';
+    canvas.dataset.peakAfterBounce = typeof object.userData.peakAfterBounce === 'number' ? object.userData.peakAfterBounce.toFixed(3) : '0';
+    canvas.dataset.horizontalRetention = typeof object.userData.horizontalRetention === 'number' ? object.userData.horizontalRetention.toFixed(3) : '0';
+    canvas.dataset.probeActive = object.userData.probeActive === true ? 'true' : 'false';
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
