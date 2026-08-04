@@ -3,7 +3,13 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Box, Circle, RevoluteJoint, Vec2, World } from 'planck';
 
-const FIXED_DT = 1 / 120;
+const FIXED_DT = 1 / 180;
+const SWITCH_OFF_ANGLE = -0.30;
+const SWITCH_ON_ANGLE = 0.30;
+const SWITCH_TRIP_ANGLE = 0.035;
+const DETENT_STIFFNESS = 24;
+const DETENT_DAMPING = 1.75;
+const DETENT_MAX_TORQUE = 5.8;
 
 function roundedRectShape(w: number, h: number, r: number): THREE.Shape {
   const x = -w / 2;
@@ -41,7 +47,10 @@ function makeScrew(material: THREE.Material): THREE.Group {
   const head = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.055, 32), material);
   head.rotation.x = Math.PI / 2;
   g.add(head);
-  const slot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.018), new THREE.MeshStandardMaterial({ color: 0x24292c, metalness: 0.7, roughness: 0.35 }));
+  const slot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.11, 0.018, 0.018),
+    new THREE.MeshStandardMaterial({ color: 0x24292c, metalness: 0.7, roughness: 0.35 }),
+  );
   slot.position.z = 0.034;
   slot.rotation.z = -0.15;
   g.add(slot);
@@ -94,8 +103,7 @@ function makePlugCable(): THREE.Group {
     new THREE.Vector3(2.05, -0.55, 0.30),
     new THREE.Vector3(2.55, -0.72, 0.22),
   ]);
-  const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 56, 0.055, 10, false), rubber);
-  g.add(cable);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 56, 0.055, 10, false), rubber));
   return g;
 }
 
@@ -107,7 +115,15 @@ function makeTestLamp(): { group: THREE.Group; bulb: THREE.Mesh; glow: THREE.Poi
   base.position.y = -0.28;
   group.add(base);
 
-  const bulbMat = new THREE.MeshPhysicalMaterial({ color: 0xdad2ad, roughness: 0.18, transmission: 0.38, transparent: true, opacity: 0.88, emissive: 0x000000, emissiveIntensity: 0 });
+  const bulbMat = new THREE.MeshPhysicalMaterial({
+    color: 0xdad2ad,
+    roughness: 0.18,
+    transmission: 0.38,
+    transparent: true,
+    opacity: 0.88,
+    emissive: 0x000000,
+    emissiveIntensity: 0,
+  });
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.34, 40, 28), bulbMat);
   bulb.scale.y = 1.18;
   bulb.position.y = 0.20;
@@ -126,7 +142,7 @@ export function installOutletSwitchLab(): void {
   const style = document.createElement('style');
   style.textContent = `
     .outlet-lab .bowling-ball-lab__stage{position:relative}.outlet-lab canvas{width:100%;height:min(72vh,760px);display:block;touch-action:none}
-    .outlet-controls{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:12px;z-index:5}.outlet-controls button{border:1px solid rgba(255,255,255,.18);border-radius:13px;padding:12px 18px;background:#11161b;color:#fff;font:700 14px/1 system-ui}.outlet-controls button.primary{background:#d8a536;color:#15120a;border-color:#f4cb67}.outlet-status{position:absolute;right:20px;bottom:22px;z-index:5;padding:10px 13px;border-radius:11px;color:#eef3f6;background:rgba(10,13,16,.82);font:600 12px/1.35 system-ui;backdrop-filter:blur(8px)}
+    .outlet-controls{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:12px;z-index:5;flex-wrap:wrap;justify-content:center}.outlet-controls button{border:1px solid rgba(255,255,255,.18);border-radius:13px;padding:12px 18px;background:#11161b;color:#fff;font:700 14px/1 system-ui}.outlet-controls button.primary{background:#d8a536;color:#15120a;border-color:#f4cb67}.outlet-status{position:absolute;right:20px;bottom:22px;z-index:5;padding:10px 13px;border-radius:11px;color:#eef3f6;background:rgba(10,13,16,.82);font:600 12px/1.35 system-ui;backdrop-filter:blur(8px)}
   `;
   document.head.appendChild(style);
 
@@ -135,11 +151,11 @@ export function installOutletSwitchLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>CLASSIC PART 21 · PHYSICAL 3D REVIEW</small><h1>Outlet with Switch / Розетка с выключателем</h1></div>
-      <div class="bowling-ball-lab__meta"><span>PBR</span><span>physical rocker</span><span>power state</span><span>connected load</span><span>v1</span></div>
+      <div class="bowling-ball-lab__meta"><span>PBR</span><span>Planck contact</span><span>bistable detent</span><span>physical power state</span><span>v2</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Outlet with switch 3D preview" data-asset-version="outlet-switch-v1"></canvas>
-      <div class="outlet-controls"><button class="primary" data-action="drop">Уронить шар</button><button data-action="toggle">Переключить рукой</button><button data-action="reset">Сбросить</button></div>
+      <canvas aria-label="Outlet with switch 3D preview" data-asset-version="outlet-switch-v2-physical-detent"></canvas>
+      <div class="outlet-controls"><button class="primary" data-action="drop">Уронить шар</button><button data-action="toggle">Толкнуть тумблер</button><button data-action="reset">Сбросить</button></div>
       <div class="outlet-status">Питание выключено</div>
     </div>`;
   document.body.appendChild(root);
@@ -210,30 +226,36 @@ export function installOutletSwitchLab(): void {
   const lever = new THREE.Mesh(extrude(roundedRectShape(0.38, 0.92, 0.12), 0.16, 0.028), leverMat);
   lever.position.y = 0.14;
   switchPivot.add(lever);
-  const indicator = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.025, 20), new THREE.MeshStandardMaterial({ color: 0x5a1010, emissive: 0x000000 }));
+  const indicator = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 0.025, 20),
+    new THREE.MeshStandardMaterial({ color: 0x5a1010, emissive: 0x000000 }),
+  );
   indicator.rotation.x = Math.PI / 2;
   indicator.position.set(-0.58, -0.08, 0.34);
   assembly.add(indicator);
 
   const lamp = makeTestLamp();
   assembly.add(lamp.group);
-
   assembly.traverse((o) => { if (o instanceof THREE.Mesh) { o.castShadow = true; o.receiveShadow = true; } });
 
   const world = new World({ gravity: Vec2(0, -8.5), allowSleep: false });
   const ground = world.createBody();
-  const switchBody = world.createBody({ type: 'dynamic', position: Vec2(-0.58, 0.52), angle: -0.28, angularDamping: 2.6 });
-  switchBody.createFixture({ shape: Box(0.19, 0.46, Vec2(0, 0.14), 0), density: 1.2, friction: 0.4 });
-  const switchJoint = world.createJoint(RevoluteJoint({ enableLimit: true, lowerAngle: -0.34, upperAngle: 0.34, enableMotor: true, motorSpeed: 0, maxMotorTorque: 4.5 }, ground, switchBody, Vec2(-0.58, 0.52)))!;
+  const switchBody = world.createBody({
+    type: 'dynamic',
+    position: Vec2(-0.58, 0.52),
+    angle: SWITCH_OFF_ANGLE,
+    angularDamping: 0.35,
+  });
+  switchBody.createFixture({ shape: Box(0.19, 0.46, Vec2(0, 0.14), 0), density: 1.35, friction: 0.46, restitution: 0.02 });
+  world.createJoint(RevoluteJoint({ enableLimit: true, lowerAngle: -0.34, upperAngle: 0.34 }, ground, switchBody, Vec2(-0.58, 0.52)));
 
+  let latchedOn = false;
   let powered = false;
-  let targetAngle = -0.28;
   let ballBody: ReturnType<World['createBody']> | null = null;
   let ballMesh: THREE.Mesh | null = null;
 
-  const setPower = (on: boolean): void => {
+  const renderPower = (on: boolean): void => {
     powered = on;
-    targetAngle = on ? 0.28 : -0.28;
     const bulbMat = lamp.bulb.material as THREE.MeshPhysicalMaterial;
     bulbMat.emissive.setHex(on ? 0xffb23f : 0x000000);
     bulbMat.emissiveIntensity = on ? 3.4 : 0;
@@ -242,34 +264,62 @@ export function installOutletSwitchLab(): void {
     im.color.setHex(on ? 0x5d1a12 : 0x341111);
     im.emissive.setHex(on ? 0xff4b28 : 0x000000);
     im.emissiveIntensity = on ? 1.8 : 0;
-    status.textContent = on ? 'Питание включено · подключённая лампа работает' : 'Питание выключено';
+    status.textContent = on
+      ? 'Питание включено · тумблер физически защёлкнут · лампа работает'
+      : 'Питание выключено · тумблер физически защёлкнут';
   };
 
-  const commandSwitch = (): void => {
-    const error = targetAngle - switchJoint.getJointAngle();
-    switchJoint.setMotorSpeed(THREE.MathUtils.clamp(error * 12, -4.2, 4.2));
-    switchJoint.setMaxMotorTorque(4.5);
-    switchJoint.enableMotor(true);
+  const updateDetent = (): void => {
+    const angle = switchBody.getAngle();
+    const omega = switchBody.getAngularVelocity();
+
+    if (!latchedOn && (angle > SWITCH_TRIP_ANGLE || (angle > -0.015 && omega > 0.65))) {
+      latchedOn = true;
+      renderPower(true);
+    } else if (latchedOn && (angle < -SWITCH_TRIP_ANGLE || (angle < 0.015 && omega < -0.65))) {
+      latchedOn = false;
+      renderPower(false);
+    }
+
+    const target = latchedOn ? SWITCH_ON_ANGLE : SWITCH_OFF_ANGLE;
+    const torque = THREE.MathUtils.clamp(
+      (target - angle) * DETENT_STIFFNESS - omega * DETENT_DAMPING,
+      -DETENT_MAX_TORQUE,
+      DETENT_MAX_TORQUE,
+    );
+    switchBody.applyTorque(torque, true);
   };
 
   const spawnBall = (): void => {
     if (ballBody) world.destroyBody(ballBody);
     if (ballMesh) assembly.remove(ballMesh);
-    ballBody = world.createBody({ type: 'dynamic', position: Vec2(-0.58, 2.25), linearDamping: 0.01 });
-    ballBody.createFixture({ shape: Circle(0.22), density: 4.0, restitution: 0.12, friction: 0.45 });
-    ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 28, 20), new THREE.MeshPhysicalMaterial({ color: 0x59636a, metalness: 0.88, roughness: 0.24 }));
+    // Offset to the left of the hinge so the downward impact creates a real
+    // positive angular impulse instead of a scripted toggle.
+    ballBody = world.createBody({ type: 'dynamic', position: Vec2(-0.86, 2.30), linearDamping: 0.01, angularDamping: 0.02 });
+    ballBody.createFixture({ shape: Circle(0.23), density: 5.2, restitution: 0.06, friction: 0.52 });
+    ballMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.23, 32, 22),
+      new THREE.MeshPhysicalMaterial({ color: 0x59636a, metalness: 0.88, roughness: 0.24 }),
+    );
     ballMesh.castShadow = true;
     assembly.add(ballMesh);
+    canvas.dataset.ballSpawned = 'true';
   };
 
   dropButton.addEventListener('click', spawnBall);
-  toggleButton.addEventListener('click', () => setPower(!powered));
+  toggleButton.addEventListener('click', () => {
+    // A hand interaction is also a physical impulse. The detent decides whether
+    // the mechanism actually crosses into the other stable state.
+    switchBody.applyAngularImpulse(latchedOn ? -0.62 : 0.62, true);
+  });
   resetButton.addEventListener('click', () => {
     if (ballBody) { world.destroyBody(ballBody); ballBody = null; }
     if (ballMesh) { assembly.remove(ballMesh); ballMesh = null; }
-    switchBody.setTransform(Vec2(-0.58, 0.52), -0.28);
+    switchBody.setTransform(Vec2(-0.58, 0.52), SWITCH_OFF_ANGLE);
     switchBody.setAngularVelocity(0);
-    setPower(false);
+    latchedOn = false;
+    renderPower(false);
+    canvas.dataset.ballSpawned = 'false';
   });
 
   const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
@@ -286,7 +336,8 @@ export function installOutletSwitchLab(): void {
 
   const resize = (): void => {
     const rect = canvas.getBoundingClientRect();
-    const w = Math.max(1, rect.width), h = Math.max(1, rect.height);
+    const w = Math.max(1, rect.width);
+    const h = Math.max(1, rect.height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
@@ -295,28 +346,19 @@ export function installOutletSwitchLab(): void {
   new ResizeObserver(resize).observe(canvas);
   resize();
 
-  setPower(false);
+  renderPower(false);
+  canvas.dataset.ballSpawned = 'false';
   let previous = performance.now();
   let accumulator = 0;
-  let impactLatch = false;
 
   const animate = (now: number): void => {
     const wallDt = Math.min(0.045, Math.max(0, (now - previous) / 1000));
     previous = now;
     accumulator += wallDt;
+
     while (accumulator >= FIXED_DT) {
-      commandSwitch();
-      world.step(FIXED_DT, 12, 5);
-      if (ballBody) {
-        const p = ballBody.getPosition();
-        const v = ballBody.getLinearVelocity();
-        const nearSwitch = Math.abs(p.x + 0.58) < 0.34 && p.y < 1.22 && p.y > 0.55;
-        if (nearSwitch && v.y < -0.8 && !impactLatch) {
-          setPower(true);
-          impactLatch = true;
-        }
-        if (!nearSwitch) impactLatch = false;
-      }
+      updateDetent();
+      world.step(FIXED_DT, 14, 6);
       accumulator -= FIXED_DT;
     }
 
@@ -325,13 +367,20 @@ export function installOutletSwitchLab(): void {
       const p = ballBody.getPosition();
       ballMesh.position.set(p.x, p.y, 0.42);
       ballMesh.rotation.z = ballBody.getAngle();
+      canvas.dataset.ballY = p.y.toFixed(4);
+      canvas.dataset.ballVelocityY = ballBody.getLinearVelocity().y.toFixed(4);
     }
 
     canvas.dataset.powered = powered ? 'true' : 'false';
+    canvas.dataset.switchLatched = latchedOn ? 'on' : 'off';
     canvas.dataset.switchAngle = switchBody.getAngle().toFixed(4);
+    canvas.dataset.switchAngularVelocity = switchBody.getAngularVelocity().toFixed(4);
+    canvas.dataset.physics = 'planck-contact+revolute-joint+torsion-detent-v2';
+
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
+
   requestAnimationFrame(animate);
 }
