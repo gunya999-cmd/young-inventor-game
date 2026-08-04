@@ -1,18 +1,18 @@
 import { World } from 'planck';
-import { installScissors3DLabV9 } from './scissors3dLabV9';
+import { installScissors3DLabV10 } from './scissors3dLabV10';
 
 /**
  * v12 fixes the last physical failure in the scissors review rig.
  *
- * v11 used a proportional motor controller. Close to zero angle the requested
- * motor speed became so small that angular damping could balance the motor
- * before the blades reached the actual cutting gap. Visually the scissors
- * looked closed, but the rope-cut condition was never reached.
+ * v10 ultimately uses the v9 proportional motor controller. Close to zero
+ * angle the requested motor speed becomes so small that angular damping can
+ * balance the motor before the blades reach the real cutting position. The
+ * scissors can therefore look closed while ropeCut never becomes true.
  *
- * This wrapper keeps the approved v11 geometry and rope model intact, but
- * enforces a finite minimum motor speed for revolute joints while they still
- * have a non-zero command. The joint limits remain authoritative, so the
- * blades stop exactly at the physical closed limit rather than crossing it.
+ * This wrapper preserves the v10 verification layer for two independent rope
+ * pieces, while forcing a finite minimum revolute-joint motor speed until the
+ * physical joint limit is actually reached. Joint limits remain authoritative,
+ * so the blades stop at the closed position and cannot cross through it.
  */
 export function installScissors3DLabV12(): void {
   const worldProto = World.prototype as unknown as {
@@ -37,7 +37,7 @@ export function installScissors3DLabV12(): void {
     return joint;
   };
 
-  installScissors3DLabV9();
+  installScissors3DLabV10();
 
   const canvas = document.querySelector<HTMLCanvasElement>('.scissors3d-lab canvas');
   if (canvas) {
@@ -47,6 +47,6 @@ export function installScissors3DLabV12(): void {
 
   const meta = document.querySelector<HTMLElement>('.scissors3d-lab .bowling-ball-lab__meta');
   if (meta) {
-    meta.innerHTML = '<span>v3 proportions</span><span>PBR</span><span>true blade closure</span><span>physical rope split</span><span>v12</span>';
+    meta.innerHTML = '<span>v3 proportions</span><span>PBR</span><span>true blade closure</span><span>2 physical rope pieces</span><span>v12</span>';
   }
 }
