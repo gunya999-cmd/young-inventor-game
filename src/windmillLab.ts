@@ -10,8 +10,6 @@ type ReviewCanvas = HTMLCanvasElement & {
 };
 
 const MODEL_URL = '/assets/windmill-v1.glb';
-const GROUND_Y = -1.145;
-const GROUND_CLEARANCE = 0.012;
 
 function countTriangles(root: THREE.Object3D): number {
   let triangles = 0;
@@ -56,7 +54,9 @@ export function installWindmillLab(): void {
         data-render-loaded="false"
         data-render-triangles="0"
         data-render-error=""
-        data-ground-intersection="unknown"
+        data-orbit-mode="free-xy"
+        data-review-rotation-x="0"
+        data-review-rotation-y="0"
         data-physics-engine="planck"
         data-motion="airflow-to-finite-shaft-torque"></canvas>
       <p>Нажми на ветряк: поток воздуха раскручивает реальные инерционные лопасти. Нажми ещё раз — направление воздуха поменяется, и вал должен физически затормозить и раскрутиться обратно.</p>
@@ -90,22 +90,12 @@ export function installWindmillLab(): void {
   rim.position.set(3.4, 5.2, -4.8);
   scene.add(rim);
 
-  // Keep the mechanism physically upright. The old preview tilted the whole object
-  // around X/Z while the ground stayed fixed, which visibly drove the base through
-  // the floor. We only yaw the review object; elevation belongs to the camera.
+  // Review space has no physical floor mesh. The previous white ellipse was only a
+  // presentation prop, but it could intersect the freely rotated model. Removing it
+  // lets the player inspect the object from any angle without fake geometry clipping it.
   const reviewRoot = new THREE.Group();
-  reviewRoot.rotation.set(0, -0.30, 0);
+  reviewRoot.rotation.set(-0.10, -0.30, 0.02);
   scene.add(reviewRoot);
-
-  const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(1.25, 96),
-    new THREE.MeshStandardMaterial({ color: 0xdde2e5, roughness: 0.92, metalness: 0.0 }),
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.scale.set(1.45, 1.0, 1.0);
-  floor.position.set(0, GROUND_Y, 0);
-  floor.receiveShadow = true;
-  scene.add(floor);
 
   let physics: WindmillPhysicsController | null = null;
   let model: THREE.Object3D | null = null;
@@ -119,8 +109,8 @@ export function installWindmillLab(): void {
       model.name = 'WindmillV1OriginalGLB';
       enableRenderQuality(model);
 
-      // Blender glTF export is Y-up. Scale first, then align the *actual world-space*
-      // bottom of the rendered GLB to the ground plane. No guessed floor coordinate.
+      // Center the actual exported GLB in review space. No support/floor mesh is part
+      // of the review scene, so free X/Y orbit cannot create an impossible intersection.
       const sourceBox = new THREE.Box3().setFromObject(model);
       const sourceSize = sourceBox.getSize(new THREE.Vector3());
       const targetHeight = 2.25;
@@ -129,26 +119,13 @@ export function installWindmillLab(): void {
       reviewRoot.add(model);
       reviewRoot.updateMatrixWorld(true);
 
-      let worldBox = new THREE.Box3().setFromObject(model);
+      const worldBox = new THREE.Box3().setFromObject(model);
       const worldCenter = worldBox.getCenter(new THREE.Vector3());
       model.position.x -= worldCenter.x;
+      model.position.y -= worldCenter.y;
       model.position.z -= worldCenter.z;
+      model.position.y -= 0.02;
       reviewRoot.updateMatrixWorld(true);
-
-      worldBox = new THREE.Box3().setFromObject(model);
-      model.position.y += (GROUND_Y + GROUND_CLEARANCE) - worldBox.min.y;
-      reviewRoot.updateMatrixWorld(true);
-
-      const finalBox = new THREE.Box3().setFromObject(model);
-      const clearance = finalBox.min.y - GROUND_Y;
-      const intersectsGround = clearance < -0.0005;
-      canvas.dataset.groundY = GROUND_Y.toFixed(4);
-      canvas.dataset.modelBottomY = finalBox.min.y.toFixed(4);
-      canvas.dataset.groundClearance = clearance.toFixed(4);
-      canvas.dataset.groundIntersection = intersectsGround ? 'true' : 'false';
-      if (intersectsGround) {
-        throw new Error(`Windmill geometry intersects the ground plane by ${Math.abs(clearance).toFixed(4)} world units.`);
-      }
 
       const rotor = model.getObjectByName('WM_Rotor');
       const shaft = model.getObjectByName('WM_Shaft');
@@ -184,6 +161,7 @@ export function installWindmillLab(): void {
   let lastY = 0;
   let dragDistance = 0;
   let velocityX = 0;
+  let velocityY = 0;
 
   canvas.addEventListener('pointerdown', (event) => {
     pointerId = event.pointerId;
@@ -191,6 +169,7 @@ export function installWindmillLab(): void {
     lastY = event.clientY;
     dragDistance = 0;
     velocityX = 0;
+    velocityY = 0;
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove', (event) => {
@@ -201,8 +180,9 @@ export function installWindmillLab(): void {
     lastX = event.clientX;
     lastY = event.clientY;
     velocityX = dx * 0.006;
-    // Yaw only: preserve the physical up-axis and ground contact.
+    velocityY = dy * 0.006;
     reviewRoot.rotation.y += velocityX;
+    reviewRoot.rotation.x += velocityY;
   });
   const release = (event: PointerEvent): void => {
     if (pointerId !== event.pointerId) return;
@@ -221,10 +201,8 @@ export function installWindmillLab(): void {
     const horizontalTan = verticalTan * aspect;
     const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
     const distance = (1.38 / limitingTan) * 1.13;
-    // Give the 3/4 product view with the camera, not by tilting the physical object
-    // through the support plane.
-    camera.position.set(distance * 0.16, 0.18, distance);
-    camera.lookAt(0, 0.02, 0.08);
+    camera.position.set(0, 0.02, distance);
+    camera.lookAt(0, 0.02, 0.12);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     canvas.dataset.cameraDistance = distance.toFixed(3);
@@ -251,8 +229,13 @@ export function installWindmillLab(): void {
     if (pointerId === null) {
       const damping = Math.pow(0.025, renderDt);
       velocityX *= damping;
+      velocityY *= damping;
       reviewRoot.rotation.y += velocityX;
+      reviewRoot.rotation.x += velocityY;
     }
+
+    canvas.dataset.reviewRotationX = reviewRoot.rotation.x.toFixed(4);
+    canvas.dataset.reviewRotationY = reviewRoot.rotation.y.toFixed(4);
 
     if (physics) {
       const t = physics.telemetry();
