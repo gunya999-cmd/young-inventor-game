@@ -4,11 +4,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Box, RevoluteJoint, Vec2, World, type Body } from 'planck';
 
 const OPEN_HALF_ANGLE = 0.285;
-const CLOSED_HALF_ANGLE = 0.045;
+// Closed means the blade axes actually reach the same XY direction. The two
+// metal halves remain separated in Z, so they slide past each other like real
+// scissors instead of crossing through one another.
+const CLOSED_HALF_ANGLE = 0.0;
 const FIXED_DT = 1 / 180;
 const HANDLE_RING_OFFSET = 0.32;
 
-// The rope now crosses the visible middle of the blade corridor, not the pivot.
 const ROPE_X = -2.12;
 const ROPE_TOP = 1.55;
 const ROPE_BOTTOM = -1.55;
@@ -209,10 +211,10 @@ export function installScissors3DLabV9(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>CLASSIC PART 20 · PHYSICAL 3D REVIEW</small><h1>Scissors / Ножницы</h1></div>
-      <div class="bowling-ball-lab__meta"><span>v3 proportions</span><span>PBR</span><span>real cut corridor</span><span>continuous rope</span><span>v9</span></div>
+      <div class="bowling-ball-lab__meta"><span>v3 proportions</span><span>PBR</span><span>true blade closure</span><span>physical rope split</span><span>v11</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Scissors physical 3D preview" data-asset-version="scissors-v9-real-cut-corridor"></canvas>
+      <canvas aria-label="Scissors physical 3D preview" data-asset-version="scissors-v11-full-closure-physical-cut"></canvas>
       <div class="scissors3d-controls"><button class="primary" data-action="toggle">Сжать ручки</button><button data-action="reset">Сбросить</button></div>
       <div class="scissors3d-status">Открыты · проверка положения верёвки</div>
     </div>
@@ -281,8 +283,8 @@ export function installScissors3DLabV9(): void {
   lowerBody.createFixture({ shape: Box(1.66, 0.095, Vec2(-1.64, -0.055), 0), density: 1.1, isSensor: true });
   lowerBody.createFixture({ shape: Box(0.90, 0.29, Vec2(1.50, 0), 0), density: 0.58, isSensor: true });
 
-  const upperJoint = world.createJoint(RevoluteJoint({ enableLimit: true, lowerAngle: CLOSED_HALF_ANGLE, upperAngle: OPEN_HALF_ANGLE, enableMotor: true, motorSpeed: 0, maxMotorTorque: 60 }, ground, upperBody, Vec2(0, 0)))!;
-  const lowerJoint = world.createJoint(RevoluteJoint({ enableLimit: true, lowerAngle: -OPEN_HALF_ANGLE, upperAngle: -CLOSED_HALF_ANGLE, enableMotor: true, motorSpeed: 0, maxMotorTorque: 60 }, ground, lowerBody, Vec2(0, 0)))!;
+  const upperJoint = world.createJoint(RevoluteJoint({ enableLimit: true, lowerAngle: CLOSED_HALF_ANGLE, upperAngle: OPEN_HALF_ANGLE, enableMotor: true, motorSpeed: 0, maxMotorTorque: 80 }, ground, upperBody, Vec2(0, 0)))!;
+  const lowerJoint = world.createJoint(RevoluteJoint({ enableLimit: true, lowerAngle: -OPEN_HALF_ANGLE, upperAngle: -CLOSED_HALF_ANGLE, enableMotor: true, motorSpeed: 0, maxMotorTorque: 80 }, ground, lowerBody, Vec2(0, 0)))!;
 
   let ropeNodes = makeRopeNodes();
   const restLengths = Array.from({ length: ROPE_NODES - 1 }, (_, i) => ropeNodes[i].p.distanceTo(ropeNodes[i + 1].p));
@@ -358,8 +360,8 @@ export function installScissors3DLabV9(): void {
 
   const commandJoint = (joint: any, target: number): void => {
     const error = target - joint.getJointAngle();
-    joint.setMotorSpeed(THREE.MathUtils.clamp(error * 18, -5.6, 5.6));
-    joint.setMaxMotorTorque(60);
+    joint.setMotorSpeed(THREE.MathUtils.clamp(error * 22, -6.2, 6.2));
+    joint.setMaxMotorTorque(80);
     joint.enableMotor(true);
   };
 
@@ -399,6 +401,9 @@ export function installScissors3DLabV9(): void {
       }
     }
     if (best < 0) return;
+    // Break exactly one distance constraint. We do not recreate any node, so
+    // each side keeps the velocity encoded by p-prev and becomes an independent
+    // physical rope chain on the very next Verlet step.
     activeLinks[best] = false;
     cutLink = best;
     ropeWholeMesh.visible = false;
@@ -410,8 +415,9 @@ export function installScissors3DLabV9(): void {
     if (cutLink >= 0 || !closingRequested) return;
     const corridor = cutCorridorAtRope();
     if (!corridor.inside) return;
-    // The rope is cut only when the two real cutting edges close to its diameter.
-    if (corridor.gap <= ROPE_RADIUS * 2.35) cutNearestLink(corridor.centerY);
+    // Cut when the actual cutting-edge gap reaches the rope diameter. A small
+    // tolerance represents compression of a real rope between sharp blades.
+    if (corridor.gap <= ROPE_RADIUS * 2.12) cutNearestLink(corridor.centerY);
   };
 
   const resetPhysics = (): void => {
@@ -506,20 +512,21 @@ export function installScissors3DLabV9(): void {
     }
 
     const relativeOpening = Math.abs(upperBody.getAngle() - lowerBody.getAngle());
-    const state = relativeOpening < 0.11 ? 'Закрыты' : relativeOpening > 0.50 ? 'Открыты' : 'Движение';
+    const state = relativeOpening < 0.025 ? 'Закрыты' : relativeOpening > 0.50 ? 'Открыты' : 'Движение';
     const corridor = cutCorridorAtRope();
-    const ropeState = cutLink >= 0 ? 'верёвка разрезана' : corridor.inside ? 'верёвка реально в зоне реза' : 'верёвка вне зоны реза';
+    const ropeState = cutLink >= 0 ? 'верёвка разрезана · 2 независимые части' : corridor.inside ? 'верёвка реально в зоне реза' : 'верёвка вне зоны реза';
     status.textContent = `${state} · ${ropeState}`;
 
     canvas.dataset.upperAngle = upperBody.getAngle().toFixed(4);
     canvas.dataset.lowerAngle = lowerBody.getAngle().toFixed(4);
     canvas.dataset.relativeOpening = relativeOpening.toFixed(4);
     canvas.dataset.ropeCut = cutLink >= 0 ? 'true' : 'false';
+    canvas.dataset.ropePieces = cutLink >= 0 ? '2' : '1';
     canvas.dataset.ropeInCutZone = corridor.inside ? 'true' : 'false';
     canvas.dataset.cutGap = Number.isFinite(corridor.gap) ? corridor.gap.toFixed(4) : 'inf';
     canvas.dataset.ropeCrossX = ROPE_X.toFixed(2);
     canvas.dataset.ropeRenderZ = ROPE_RENDER_Z.toFixed(3);
-    canvas.dataset.physics = 'planck-hinge+continuous-verlet-rope-v9';
+    canvas.dataset.physics = 'planck-hinge+continuous-verlet-rope-v11-full-closure-cut';
 
     controls.update();
     renderer.render(scene, camera);
