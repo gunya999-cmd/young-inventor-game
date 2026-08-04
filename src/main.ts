@@ -23,6 +23,7 @@ import { installPart15MotorLab } from './part15Lab';
 import { installJackInTheBoxLab } from './jackInTheBoxLab';
 import { installWindmillLab } from './windmillLab';
 import { installRopeLab } from './ropeLab';
+import { installMetalLoopHookLab } from './metalLoopHookLab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -63,6 +64,8 @@ if (assetPreview === 'bowling-ball') {
   installWindmillLab();
 } else if (assetPreview === 'rope') {
   installRopeLab();
+} else if (assetPreview === 'metal-loop-hook' || assetPreview === 'hook') {
+  installMetalLoopHookLab();
 } else if (isPart0408Asset(assetPreview)) {
   installPart0408Lab(assetPreview);
 } else if (isPart0913Asset(assetPreview)) {
