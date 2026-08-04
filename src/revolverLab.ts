@@ -68,7 +68,6 @@ function buildRevolver(): {
   });
   const blackRubber = new THREE.MeshStandardMaterial({ color: 0x171a1c, metalness: 0.03, roughness: 0.88 });
 
-  // Main forged frame. Deliberately game-readable rather than a CAD reproduction.
   const frame = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.72, 0.42, 5, 3, 2), bluedSteel);
   frame.name = 'Revolver_Frame';
   frame.position.set(0.12, 0.25, 0);
@@ -79,7 +78,6 @@ function buildRevolver(): {
   topStrap.name = 'Revolver_TopStrap';
   group.add(topStrap);
 
-  // Barrel along +X.
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.20, 1.86, 48, 1, false), bluedSteel);
   barrel.rotation.z = -Math.PI / 2;
   barrel.position.set(1.16, 0.43, 0);
@@ -101,7 +99,6 @@ function buildRevolver(): {
   frontSight.position.set(1.78, 0.66, 0);
   group.add(frontSight);
 
-  // Cylinder and chambers are separate to make the rotational behavior explicit.
   const cylinder = new THREE.Group();
   cylinder.name = 'Revolver_Cylinder';
   cylinder.position.set(0.22, 0.35, 0);
@@ -123,7 +120,6 @@ function buildRevolver(): {
   axle.rotation.x = Math.PI / 2;
   cylinder.add(axle);
 
-  // Trigger guard.
   const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.055, 12, 48, Math.PI * 1.72), bluedSteel);
   triggerGuard.rotation.z = -0.42;
   triggerGuard.scale.set(1.16, 0.72, 1);
@@ -143,7 +139,6 @@ function buildRevolver(): {
   trigger.name = 'Revolver_Trigger';
   triggerPivot.add(trigger);
 
-  // Rope eye: translational movement can pull this, matching classic TIM behavior.
   const triggerEye = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.025, 10, 28), brass);
   triggerEye.position.set(-0.24, -0.34, 0);
   triggerEye.rotation.x = Math.PI / 2;
@@ -160,7 +155,6 @@ function buildRevolver(): {
   hammer.rotation.z = -0.18;
   hammerPivot.add(hammer);
 
-  // Wood grip with visible metal backstrap and grip screws.
   const gripGeometry = new THREE.ExtrudeGeometry(roundedGripShape(), {
     depth: 0.30,
     bevelEnabled: true,
@@ -405,7 +399,7 @@ export function installRevolverLab(): void {
       if (triggerProgress >= 0.74 && !firedThisPull) {
         firedThisPull = true;
         hammerProgress = 1;
-        cylinder.rotation.z -= Math.PI / 3;
+        revolver.cylinder.rotation.z -= Math.PI / 3;
         spawnBullet();
       }
       if (triggerProgress >= 1) {
