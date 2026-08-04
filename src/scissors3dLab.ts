@@ -21,9 +21,9 @@ type RopeNode = {
 
 function ringShape(rx: number, ry: number, holeRx: number, holeRy: number): THREE.Shape {
   const shape = new THREE.Shape();
-  shape.absellipse(0, 0, rx, ry, 0, Math.PI * 2, false, 0);
+  shape.absellipse(0, 0, rx, ry, 0, Math.PI * 2, false);
   const hole = new THREE.Path();
-  hole.absellipse(0, 0, holeRx, holeRy, 0, Math.PI * 2, true, 0);
+  hole.absellipse(0, 0, holeRx, holeRy, 0, Math.PI * 2, true);
   shape.holes.push(hole);
   return shape;
 }
@@ -229,10 +229,10 @@ export function installScissors3DLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>CLASSIC PART 20 · PHYSICAL 3D REVIEW</small><h1>Scissors / Ножницы</h1></div>
-      <div class="bowling-ball-lab__meta"><span>slender geometry</span><span>PBR</span><span>Planck hinge</span><span>Verlet rope</span><span>v5</span></div>
+      <div class="bowling-ball-lab__meta"><span>approved v3 visual</span><span>PBR</span><span>Planck hinge</span><span>continuous rope</span><span>v6</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Scissors physical 3D preview" data-asset-version="scissors-3d-v5-hinge-verlet"></canvas>
+      <canvas aria-label="Scissors physical 3D preview" data-asset-version="scissors-v6-restored-v3-visual"></canvas>
       <div class="scissors3d-controls"><button class="primary" data-action="toggle">Сжать ручки</button><button data-action="reset">Сбросить</button></div>
       <div class="scissors3d-status">Открыты · верёвка натянута</div>
     </div>
@@ -301,14 +301,13 @@ export function installScissors3DLab(): void {
   const world = new World({ gravity: Vec2(0, 0), allowSleep: false });
   const ground = world.createBody();
 
-  // Create bodies at zero angle first so revolute-joint reference angles are exactly zero.
-  const upperBody = world.createBody({ type: 'dynamic', position: Vec2(0, 0), angle: 0, angularDamping: 1.7, linearDamping: 4 });
-  upperBody.createFixture({ shape: Box(1.66, 0.095, Vec2(-1.64, 0.055), 0), density: 1.1, friction: 0.36 });
-  upperBody.createFixture({ shape: Box(0.88, 0.28, Vec2(1.50, 0), 0), density: 0.55, friction: 0.45 });
+  const upperBody = world.createBody({ type: 'dynamic', position: Vec2(0, 0), angle: 0, angularDamping: 1.5, linearDamping: 4 });
+  upperBody.createFixture({ shape: Box(1.66, 0.095, Vec2(-1.64, 0.055), 0), density: 1.1, isSensor: true });
+  upperBody.createFixture({ shape: Box(0.88, 0.28, Vec2(1.50, 0), 0), density: 0.55, isSensor: true });
 
-  const lowerBody = world.createBody({ type: 'dynamic', position: Vec2(0, 0), angle: 0, angularDamping: 1.7, linearDamping: 4 });
-  lowerBody.createFixture({ shape: Box(1.66, 0.095, Vec2(-1.64, -0.055), 0), density: 1.1, friction: 0.36 });
-  lowerBody.createFixture({ shape: Box(0.90, 0.29, Vec2(1.50, 0), 0), density: 0.58, friction: 0.45 });
+  const lowerBody = world.createBody({ type: 'dynamic', position: Vec2(0, 0), angle: 0, angularDamping: 1.5, linearDamping: 4 });
+  lowerBody.createFixture({ shape: Box(1.66, 0.095, Vec2(-1.64, -0.055), 0), density: 1.1, isSensor: true });
+  lowerBody.createFixture({ shape: Box(0.90, 0.29, Vec2(1.50, 0), 0), density: 0.58, isSensor: true });
 
   const upperJoint = world.createJoint(RevoluteJoint({
     enableLimit: true,
@@ -316,7 +315,7 @@ export function installScissors3DLab(): void {
     upperAngle: OPEN_HALF_ANGLE,
     enableMotor: true,
     motorSpeed: 0,
-    maxMotorTorque: 28,
+    maxMotorTorque: 60,
   }, ground, upperBody, Vec2(0, 0)))!;
 
   const lowerJoint = world.createJoint(RevoluteJoint({
@@ -325,7 +324,7 @@ export function installScissors3DLab(): void {
     upperAngle: -CLOSED_HALF_ANGLE,
     enableMotor: true,
     motorSpeed: 0,
-    maxMotorTorque: 28,
+    maxMotorTorque: 60,
   }, ground, lowerBody, Vec2(0, 0)))!;
 
   let ropeNodes = initialRopeNodes();
@@ -381,7 +380,7 @@ export function installScissors3DLab(): void {
       node.prev.copy(current);
     }
 
-    for (let iteration = 0; iteration < 14; iteration += 1) {
+    for (let iteration = 0; iteration < 18; iteration += 1) {
       for (let i = 0; i < ROPE_NODES - 1; i += 1) {
         if (!activeLinks[i]) continue;
         const a = ropeNodes[i];
@@ -400,7 +399,6 @@ export function installScissors3DLab(): void {
           b.p.addScaledVector(delta, -error * 0.5);
         }
       }
-
       for (const node of ropeNodes) {
         if (node.pinned) node.p.copy(node.pinned);
       }
@@ -410,9 +408,9 @@ export function installScissors3DLab(): void {
   const commandJoint = (joint: any, target: number): void => {
     const current = joint.getJointAngle();
     const error = target - current;
-    const speed = THREE.MathUtils.clamp(error * 14, -4.8, 4.8);
+    const speed = THREE.MathUtils.clamp(error * 18, -6.0, 6.0);
     joint.setMotorSpeed(speed);
-    joint.setMaxMotorTorque(28);
+    joint.setMaxMotorTorque(60);
     joint.enableMotor(true);
   };
 
@@ -425,7 +423,6 @@ export function installScissors3DLab(): void {
 
   const maybeCutRope = (): void => {
     if (cutLink >= 0 || !closingRequested) return;
-
     const opening = Math.abs(upperBody.getAngle() - lowerBody.getAngle());
     if (opening > 0.15) return;
 
@@ -475,14 +472,6 @@ export function installScissors3DLab(): void {
     canvas.dataset.command = 'open';
   };
 
-  toggleButton.addEventListener('click', () => {
-    closingRequested = !closingRequested;
-    toggleButton.textContent = closingRequested ? 'Отпустить ручки' : 'Сжать ручки';
-    canvas.dataset.command = closingRequested ? 'closing' : 'opening';
-  });
-
-  resetButton.addEventListener('click', resetPhysics);
-
   const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
   const defaultCamera = new THREE.Vector3(0.20, 1.05, 9.4);
   camera.position.copy(defaultCamera);
@@ -495,6 +484,19 @@ export function installScissors3DLab(): void {
   controls.maxDistance = 13;
   controls.target.set(0, -0.08, 0);
   controls.update();
+
+  toggleButton.addEventListener('click', () => {
+    closingRequested = !closingRequested;
+    toggleButton.textContent = closingRequested ? 'Отпустить ручки' : 'Сжать ручки';
+    canvas.dataset.command = closingRequested ? 'closing' : 'opening';
+  });
+
+  resetButton.addEventListener('click', () => {
+    camera.position.copy(defaultCamera);
+    controls.target.set(0, -0.08, 0);
+    controls.update();
+    resetPhysics();
+  });
 
   const resize = (): void => {
     const rect = canvas.getBoundingClientRect();
@@ -534,7 +536,7 @@ export function installScissors3DLab(): void {
     while (accumulator >= FIXED_DT) {
       commandJoint(upperJoint, upperTarget);
       commandJoint(lowerJoint, lowerTarget);
-      world.step(FIXED_DT, 12, 5);
+      world.step(FIXED_DT, 16, 8);
       solveRope(FIXED_DT);
       maybeCutRope();
       accumulator -= FIXED_DT;
@@ -556,7 +558,7 @@ export function installScissors3DLab(): void {
     canvas.dataset.lowerAngle = lowerBody.getAngle().toFixed(4);
     canvas.dataset.relativeOpening = relativeOpening.toFixed(4);
     canvas.dataset.ropeCut = cutLink >= 0 ? 'true' : 'false';
-    canvas.dataset.physics = 'planck-zero-reference-hinge+verlet-rope-v5';
+    canvas.dataset.physics = 'restored-v3-visual+planck-hinge+continuous-verlet-rope-v6';
 
     controls.update();
     renderer.render(scene, camera);
