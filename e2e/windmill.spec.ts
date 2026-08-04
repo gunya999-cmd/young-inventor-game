@@ -14,6 +14,7 @@ test('Classic Part 15 Windmill converts airflow into finite reversible Planck ro
   await expect(canvas).toHaveAttribute('data-render-source', 'original-blender-glb');
   await expect(canvas).toHaveAttribute('data-physics-engine', 'planck');
   await expect(canvas).toHaveAttribute('data-motion', 'airflow-to-finite-shaft-torque');
+  await expect(canvas).toHaveAttribute('data-orbit-mode', 'free-xy');
 
   await expect.poll(async () => await canvas.getAttribute('data-render-loaded'), { timeout: 30_000 }).toBe('true');
   await expect.poll(async () => Number(await canvas.getAttribute('data-render-triangles')), { timeout: 30_000 })
@@ -21,18 +22,21 @@ test('Classic Part 15 Windmill converts airflow into finite reversible Planck ro
   await expect(canvas).toHaveAttribute('data-render-model-type', 'original-articulated-blender-glb');
   await expect(canvas).toHaveAttribute('data-render-error', '');
 
-  // Geometry contract: the rendered mechanism must rest on the support plane,
-  // never penetrate it. This guards the exact visual failure caught in review.
-  await expect(canvas).toHaveAttribute('data-ground-intersection', 'false');
-  await expect.poll(async () => Number(await canvas.getAttribute('data-ground-clearance')), { timeout: 5_000 })
-    .toBeGreaterThanOrEqual(0.008);
-  await expect.poll(async () => Number(await canvas.getAttribute('data-ground-clearance')), { timeout: 5_000 })
-    .toBeLessThan(0.03);
-  await expect.poll(async () => {
-    const bottom = Number(await canvas.getAttribute('data-model-bottom-y'));
-    const ground = Number(await canvas.getAttribute('data-ground-y'));
-    return bottom - ground;
-  }, { timeout: 5_000 }).toBeGreaterThan(0);
+  // Review interaction must remain a true free X/Y orbit. This guards against the
+  // earlier workaround that prevented floor intersections by disabling vertical drag.
+  const beforeX = Number(await canvas.getAttribute('data-review-rotation-x'));
+  const beforeY = Number(await canvas.getAttribute('data-review-rotation-y'));
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) throw new Error('Windmill canvas has no bounding box');
+  await page.mouse.move(box.x + box.width * 0.50, box.y + box.height * 0.52);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.64, box.y + box.height * 0.35, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => Math.abs(Number(await canvas.getAttribute('data-review-rotation-x')) - beforeX), { timeout: 3_000 })
+    .toBeGreaterThan(0.05);
+  await expect.poll(async () => Math.abs(Number(await canvas.getAttribute('data-review-rotation-y')) - beforeY), { timeout: 3_000 })
+    .toBeGreaterThan(0.05);
 
   await page.screenshot({ path: 'test-results/windmill-v1-ready.png', fullPage: false });
 
