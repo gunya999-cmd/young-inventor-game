@@ -26,7 +26,7 @@ import { installRopeLab } from './ropeLab';
 import { installMetalLoopHookLab } from './metalLoopHookLab';
 import { installRevolverLab } from './revolverLab';
 import { installScissors2DLab } from './scissors2dLab';
-import { installScissors3DLabV10 } from './scissors3dLabV10';
+import { installScissors3DLabV12 } from './scissors3dLabV12';
 import { installOutletSwitchLab } from './outletSwitchLab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
@@ -75,7 +75,7 @@ if (assetPreview === 'bowling-ball') {
 } else if (assetPreview === 'scissors-2d') {
   installScissors2DLab();
 } else if (assetPreview === 'scissors' || assetPreview === 'scissors-3d') {
-  installScissors3DLabV10();
+  installScissors3DLabV12();
 } else if (assetPreview === 'outlet-switch' || assetPreview === 'switch-outlet') {
   installOutletSwitchLab();
 } else if (isPart0408Asset(assetPreview)) {
