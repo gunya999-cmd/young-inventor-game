@@ -20,6 +20,20 @@ test('Classic Part 15 Windmill converts airflow into finite reversible Planck ro
     .toBeGreaterThan(12_000);
   await expect(canvas).toHaveAttribute('data-render-model-type', 'original-articulated-blender-glb');
   await expect(canvas).toHaveAttribute('data-render-error', '');
+
+  // Geometry contract: the rendered mechanism must rest on the support plane,
+  // never penetrate it. This guards the exact visual failure caught in review.
+  await expect(canvas).toHaveAttribute('data-ground-intersection', 'false');
+  await expect.poll(async () => Number(await canvas.getAttribute('data-ground-clearance')), { timeout: 5_000 })
+    .toBeGreaterThanOrEqual(0.008);
+  await expect.poll(async () => Number(await canvas.getAttribute('data-ground-clearance')), { timeout: 5_000 })
+    .toBeLessThan(0.03);
+  await expect.poll(async () => {
+    const bottom = Number(await canvas.getAttribute('data-model-bottom-y'));
+    const ground = Number(await canvas.getAttribute('data-ground-y'));
+    return bottom - ground;
+  }, { timeout: 5_000 }).toBeGreaterThan(0);
+
   await page.screenshot({ path: 'test-results/windmill-v1-ready.png', fullPage: false });
 
   await canvas.evaluate((element) => {
