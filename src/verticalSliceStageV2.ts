@@ -2,17 +2,12 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { installVerticalSliceStage } from './verticalSliceStage';
 
 /**
- * Stage 01 runtime guard.
+ * Stage 01 release runtime.
  *
- * The base vertical slice deliberately keeps the complete scene in one module.
- * This wrapper fixes two release-blocking issues without faking the Rube Goldberg
- * chain:
- * 1) Dynamic dominoes must not simulate while the player is still building.
- * 2) The bell sensor is armed only after the pressure pad has fired and the
- *    second ball has actually reached the domino chain.
- *
- * The real Rapier bodies/colliders and collision events remain the source of
- * truth once the simulation is running.
+ * Keeps the build phase static, arms the bell only after the real chain reaches
+ * the dominoes, and gives both steel balls a small physical launch impulse.
+ * After those impulses every result still comes from Rapier rigid-body motion,
+ * friction and collision events.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
   await RAPIER.init();
@@ -20,6 +15,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const worldProto = RAPIER.World.prototype as unknown as {
     step: (...args: any[]) => any;
     createCollider: (...args: any[]) => any;
+    createRigidBody: (...args: any[]) => any;
   };
   const queueProto = RAPIER.EventQueue.prototype as unknown as {
     drainCollisionEvents: (callback: (handle1: number, handle2: number, started: boolean) => void) => any;
@@ -27,8 +23,16 @@ export async function installVerticalSliceStageV2(): Promise<void> {
 
   const originalStep = worldProto.step;
   const originalCreateCollider = worldProto.createCollider;
+  const originalCreateRigidBody = worldProto.createRigidBody;
   const originalDrainCollisionEvents = queueProto.drainCollisionEvents;
   const sensorHandles: number[] = [];
+  const bodies: any[] = [];
+
+  worldProto.createRigidBody = function (...args: any[]): any {
+    const body = originalCreateRigidBody.apply(this, args);
+    bodies.push(body);
+    return body;
+  };
 
   worldProto.createCollider = function (...args: any[]): any {
     const collider = originalCreateCollider.apply(this, args);
@@ -38,6 +42,8 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     return collider;
   };
 
+  // During construction the machine must remain exactly where the player put it.
+  // Rapier starts stepping only after Run is pressed and continues through the chain.
   worldProto.step = function (...args: any[]): any {
     const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
     const state = canvas?.dataset.stageState;
@@ -70,8 +76,64 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   await installVerticalSliceStage();
 
   const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
-  if (canvas) {
-    canvas.dataset.stageRuntime = 'v2-build-freeze+armed-bell-sensor';
-    canvas.dataset.bellSensorGuard = 'requires-switch-and-domino-chain';
-  }
+  if (!canvas) return;
+
+  canvas.dataset.stageRuntime = 'v3-build-freeze+armed-bell+physical-launch';
+  canvas.dataset.bellSensorGuard = 'requires-switch-and-domino-chain';
+  canvas.dataset.launchModel = 'rigid-body-initial-impulse';
+
+  let startBallBoosted = false;
+  let secondBallBoosted = false;
+
+  const findBodyNear = (x: number, y: number, z: number, tolerance = 0.45): any | null => {
+    for (let index = bodies.length - 1; index >= 0; index -= 1) {
+      const body = bodies[index];
+      if (!body || typeof body.translation !== 'function' || typeof body.setLinvel !== 'function') continue;
+      try {
+        const p = body.translation();
+        if (Math.abs(p.x - x) <= tolerance && Math.abs(p.y - y) <= tolerance && Math.abs(p.z - z) <= tolerance) {
+          return body;
+        }
+      } catch {
+        // Removed rigid bodies may remain in the tracking array after reset.
+      }
+    }
+    return null;
+  };
+
+  const boostStartBall = (): void => {
+    if (startBallBoosted) return;
+    const body = findBodyNear(-5.04, 3.06, -1.40);
+    if (!body) return;
+    body.setLinvel({ x: 1.45, y: 0, z: 0 }, true);
+    startBallBoosted = true;
+    canvas.dataset.startImpulse = '1.45';
+  };
+
+  const boostSecondBall = (): void => {
+    if (secondBallBoosted) return;
+    const body = findBodyNear(-0.42, 1.45, 1.42);
+    if (!body) return;
+    body.setLinvel({ x: 1.20, y: 0, z: 0 }, true);
+    secondBallBoosted = true;
+    canvas.dataset.secondImpulse = '1.20';
+  };
+
+  const syncLaunches = (): void => {
+    const state = canvas.dataset.stageState;
+    if (state === 'build') {
+      startBallBoosted = false;
+      secondBallBoosted = false;
+      return;
+    }
+    if (state === 'running' || state === 'chain') boostStartBall();
+    if (canvas.dataset.switchTriggered === 'true') boostSecondBall();
+  };
+
+  const observer = new MutationObserver(syncLaunches);
+  observer.observe(canvas, {
+    attributes: true,
+    attributeFilter: ['data-stage-state', 'data-switch-triggered'],
+  });
+  syncLaunches();
 }
