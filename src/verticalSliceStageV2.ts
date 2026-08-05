@@ -4,9 +4,10 @@ import { installVerticalSliceStage } from './verticalSliceStage';
 /**
  * Stage 01 release runtime.
  *
- * The build phase is frozen. Both steel balls and every domino remain genuine
- * Rapier rigid bodies. The final bell can only fire after a real collision with
- * a thin strike surface placed immediately in front of the visible brass plate.
+ * All moving pieces remain genuine Rapier rigid bodies. The final bell event is
+ * forwarded only from a real contact with the brass strike surface, and the
+ * base stage's original bell sensor is identified by its physical location —
+ * never by creation-order indices.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
   await RAPIER.init();
@@ -24,9 +25,9 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const originalCreateCollider = worldProto.createCollider;
   const originalCreateRigidBody = worldProto.createRigidBody;
   const originalDrainCollisionEvents = queueProto.drainCollisionEvents;
-  const sensorHandles: number[] = [];
   const bodies: any[] = [];
   let stageWorld: any | null = null;
+  let legacyBellSensorHandle: number | null = null;
   let bellPlateHandle: number | null = null;
   let bellStrikeHandle: number | null = null;
   let finalDominoBody: any | null = null;
@@ -42,20 +43,17 @@ export async function installVerticalSliceStageV2(): Promise<void> {
 
   worldProto.createCollider = function (...args: any[]): any {
     const collider = originalCreateCollider.apply(this, args);
-    if (collider && typeof collider.isSensor === 'function' && collider.isSensor()) {
-      sensorHandles.push(collider.handle);
-    }
-
     const parentBody = args[1];
     if (collider && parentBody && typeof parentBody.translation === 'function') {
       try {
         const p = parentBody.translation();
-        const isBellPlate = near(p.x, 5.18) && near(p.y, 0.55) && near(p.z, 1.42);
-        if (isBellPlate && !(typeof collider.isSensor === 'function' && collider.isSensor())) {
+        const isSensor = typeof collider.isSensor === 'function' && collider.isSensor();
+        if (isSensor && near(p.x, 4.98) && near(p.y, 0.55) && near(p.z, 1.42)) {
+          legacyBellSensorHandle = collider.handle;
+        }
+        if (!isSensor && near(p.x, 5.18) && near(p.y, 0.55) && near(p.z, 1.42)) {
           bellPlateHandle = collider.handle;
-          if (typeof collider.setActiveEvents === 'function') {
-            collider.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
-          }
+          if (typeof collider.setActiveEvents === 'function') collider.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
         }
       } catch {
         // Removed body during reset.
@@ -90,13 +88,13 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   ): any {
     const guarded = (handle1: number, handle2: number, started: boolean): void => {
       const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
-      const bellSensorHandle = sensorHandles[1];
-      const touchesObsoleteBellSensor = bellSensorHandle !== undefined &&
-        (handle1 === bellSensorHandle || handle2 === bellSensorHandle);
+      const touchesLegacyBellSensor = legacyBellSensorHandle !== null &&
+        (handle1 === legacyBellSensorHandle || handle2 === legacyBellSensorHandle);
 
-      // The old helper sensor intersects the authored domino line and is never
-      // allowed to decide victory.
-      if (touchesObsoleteBellSensor) return;
+      // The original broad helper sensor overlaps the authored domino area.
+      // Raw events from it are ignored; only the real strike surface can forward
+      // a bell event back to the base stage.
+      if (touchesLegacyBellSensor) return;
 
       const hitsPhysicalBellSurface =
         (bellStrikeHandle !== null && (handle1 === bellStrikeHandle || handle2 === bellStrikeHandle)) ||
@@ -105,16 +103,20 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       if (hitsPhysicalBellSurface) {
         if (canvas && started) canvas.dataset.bellPhysicalContact = 'true';
         const state = canvas?.dataset.stageState;
-        const chainActuallyReachedDominoes =
+        const qualified =
           started &&
           canvas?.dataset.switchTriggered === 'true' &&
-          canvas?.dataset.dominoStarted === 'true' &&
-          (state === 'running' || state === 'chain' || state === 'failed');
-        if (!chainActuallyReachedDominoes || bellSensorHandle === undefined) return;
+          state !== 'build' &&
+          state !== 'won';
+        if (!qualified || legacyBellSensorHandle === null) return;
 
+        if (canvas) {
+          canvas.dataset.bellQualifiedContact = 'true';
+          canvas.dataset.bellForwarded = 'true';
+        }
         const hitHandle = handle1 === bellStrikeHandle || handle1 === bellPlateHandle ? handle1 : handle2;
         const otherHandle = hitHandle === handle1 ? handle2 : handle1;
-        callback(bellSensorHandle, otherHandle, true);
+        callback(legacyBellSensorHandle, otherHandle, true);
         return;
       }
 
@@ -129,9 +131,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   if (!canvas) return;
 
   if (stageWorld) {
-    const strikeBody = stageWorld.createRigidBody(
-      RAPIER.RigidBodyDesc.fixed().setTranslation(5.075, 0.55, 1.42)
-    );
+    const strikeBody = stageWorld.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(5.075, 0.55, 1.42));
     const strikeCollider = stageWorld.createCollider(
       RAPIER.ColliderDesc.cuboid(0.025, 0.49, 0.39)
         .setSensor(true)
@@ -141,10 +141,13 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     bellStrikeHandle = strikeCollider.handle;
   }
 
-  canvas.dataset.stageRuntime = 'v8-stable-domino-chain+physical-bell-contact';
+  canvas.dataset.stageRuntime = 'v9-real-bell-handle+stable-domino-chain';
   canvas.dataset.bellSensorGuard = 'real-strike-surface-collision-only';
   canvas.dataset.launchModel = 'rigid-body-initial-velocity';
   canvas.dataset.bellPhysicalContact = 'false';
+  canvas.dataset.bellQualifiedContact = 'false';
+  canvas.dataset.bellForwarded = 'false';
+  canvas.dataset.legacyBellHandleFound = legacyBellSensorHandle === null ? 'false' : 'true';
 
   let startBallBoosted = false;
   let secondBallBoosted = false;
@@ -157,9 +160,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       if (typeof body.isDynamic !== 'function' || !body.isDynamic()) continue;
       try {
         const p = body.translation();
-        if (Math.abs(p.x - x) <= tolerance && Math.abs(p.y - y) <= tolerance && Math.abs(p.z - z) <= tolerance) {
-          return body;
-        }
+        if (Math.abs(p.x - x) <= tolerance && Math.abs(p.y - y) <= tolerance && Math.abs(p.z - z) <= tolerance) return body;
       } catch {
         // Removed rigid bodies can remain in the tracking array after reset.
       }
@@ -228,6 +229,8 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       dominoChainPrepared = false;
       finalDominoBody = null;
       canvas.dataset.bellPhysicalContact = 'false';
+      canvas.dataset.bellQualifiedContact = 'false';
+      canvas.dataset.bellForwarded = 'false';
       return;
     }
     if (state === 'running' || state === 'chain') {
