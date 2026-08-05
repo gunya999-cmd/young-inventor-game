@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 test('outlet switch reliably powers on when the falling ball reaches the rocker', async ({ page }) => {
-  // GitHub headless Chromium heavily throttles requestAnimationFrame. Keep the
-  // production code untouched, but feed callbacks normal 60 Hz game time so
-  // this focused test measures the actual physics instead of CI render speed.
+  // GitHub headless Chromium throttles native requestAnimationFrame. Preserve
+  // the production code and drive it with a bounded test clock: normal render
+  // cadence, but enough elapsed game time per callback to exercise physics.
   await page.addInitScript(() => {
     let gameNow = performance.now();
     window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
       const timer = window.setTimeout(() => {
-        gameNow += 1000 / 60;
+        gameNow += 100;
         callback(gameNow);
-      }, 1);
+      }, 16);
       return timer;
     }) as typeof window.requestAnimationFrame;
     window.cancelAnimationFrame = ((handle: number) => {
