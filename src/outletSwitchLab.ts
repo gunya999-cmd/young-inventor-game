@@ -6,6 +6,7 @@ import { Box, Circle, RevoluteJoint, Vec2, World } from 'planck';
 const FIXED_DT = 1 / 120;
 const SWITCH_OFF_ANGLE = -0.28;
 const SWITCH_ON_ANGLE = 0.28;
+const SWITCH_ON_JOINT_ANGLE = SWITCH_ON_ANGLE - SWITCH_OFF_ANGLE;
 
 function roundedRectShape(w: number, h: number, r: number): THREE.Shape {
   const x = -w / 2;
@@ -117,11 +118,11 @@ export function installOutletSwitchLab(): void {
   root.className = 'bowling-ball-lab parts-0913-lab outlet-lab';
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
-      <div><small>CLASSIC PART 21 · RESTORED WORKING PHYSICS</small><h1>Outlet with Switch / Розетка с выключателем</h1></div>
-      <div class="bowling-ball-lab__meta"><span>PBR</span><span>falling body</span><span>motor-latched rocker</span><span>power state</span><span>v3</span></div>
+      <div><small>CLASSIC PART 21 · RELIABLE WORKING PHYSICS</small><h1>Outlet with Switch / Розетка с выключателем</h1></div>
+      <div class="bowling-ball-lab__meta"><span>PBR</span><span>falling body</span><span>motor-latched rocker</span><span>power state</span><span>v4</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Outlet with switch 3D preview" data-asset-version="outlet-switch-v3-restored-working"></canvas>
+      <canvas aria-label="Outlet with switch 3D preview" data-asset-version="outlet-switch-v4-reliable"></canvas>
       <div class="outlet-controls"><button class="primary" data-action="drop">Уронить шар</button><button data-action="toggle">Переключить рукой</button><button data-action="reset">Сбросить</button></div>
       <div class="outlet-status">Питание выключено</div>
     </div>`;
@@ -222,22 +223,22 @@ export function installOutletSwitchLab(): void {
 
   const switchJoint = world.createJoint(RevoluteJoint({
     enableLimit: true,
-    lowerAngle: -0.34,
-    upperAngle: 0.34,
+    lowerAngle: 0,
+    upperAngle: SWITCH_ON_JOINT_ANGLE,
     enableMotor: true,
     motorSpeed: 0,
     maxMotorTorque: 4.5,
   }, ground, switchBody, Vec2(-0.58, 0.52)))!;
 
   let powered = false;
-  let targetAngle = SWITCH_OFF_ANGLE;
+  let targetJointAngle = 0;
   let ballBody: ReturnType<World['createBody']> | null = null;
   let ballMesh: THREE.Mesh | null = null;
   let impactLatch = false;
 
   const setPower = (on: boolean): void => {
     powered = on;
-    targetAngle = on ? SWITCH_ON_ANGLE : SWITCH_OFF_ANGLE;
+    targetJointAngle = on ? SWITCH_ON_JOINT_ANGLE : 0;
 
     const bulbMat = lamp.bulb.material as THREE.MeshPhysicalMaterial;
     bulbMat.emissive.setHex(on ? 0xffb23f : 0x000000);
@@ -252,7 +253,7 @@ export function installOutletSwitchLab(): void {
   };
 
   const commandSwitch = (): void => {
-    const error = targetAngle - switchJoint.getJointAngle();
+    const error = targetJointAngle - switchJoint.getJointAngle();
     switchJoint.setMotorSpeed(THREE.MathUtils.clamp(error * 12, -4.2, 4.2));
     switchJoint.setMaxMotorTorque(4.5);
     switchJoint.enableMotor(true);
@@ -282,6 +283,7 @@ export function installOutletSwitchLab(): void {
     if (ballMesh) { assembly.remove(ballMesh); ballMesh = null; }
     switchBody.setTransform(Vec2(-0.58, 0.52), SWITCH_OFF_ANGLE);
     switchBody.setAngularVelocity(0);
+    targetJointAngle = 0;
     impactLatch = false;
     canvas.dataset.ballSpawned = 'false';
     setPower(false);
@@ -328,14 +330,14 @@ export function installOutletSwitchLab(): void {
       if (ballBody) {
         const p = ballBody.getPosition();
         const v = ballBody.getLinearVelocity();
-        const nearSwitch = Math.abs(p.x + 0.58) < 0.34 && p.y < 1.22 && p.y > 0.55;
+        const inStrikeZone = Math.abs(p.x + 0.58) < 0.36 && p.y < 1.55 && p.y > 0.35;
 
-        if (nearSwitch && v.y < -0.8 && !impactLatch) {
-          switchBody.applyAngularImpulse(0.22, true);
+        if (inStrikeZone && v.y < -0.3 && !impactLatch) {
+          switchBody.applyAngularImpulse(0.24, true);
           setPower(true);
           impactLatch = true;
         }
-        if (!nearSwitch) impactLatch = false;
+        if (!inStrikeZone) impactLatch = false;
       }
 
       accumulator -= FIXED_DT;
@@ -354,7 +356,8 @@ export function installOutletSwitchLab(): void {
     canvas.dataset.powered = powered ? 'true' : 'false';
     canvas.dataset.switchLatched = powered ? 'on' : 'off';
     canvas.dataset.switchAngle = switchBody.getAngle().toFixed(4);
-    canvas.dataset.physics = 'planck-falling-ball+impact-zone+motor-latched-switch-v3';
+    canvas.dataset.switchJointAngle = switchJoint.getJointAngle().toFixed(4);
+    canvas.dataset.physics = 'planck-falling-ball+reliable-impact-zone+motor-latched-switch-v4';
 
     controls.update();
     renderer.render(scene, camera);
