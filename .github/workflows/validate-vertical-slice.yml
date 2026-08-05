@@ -1,0 +1,42 @@
+name: Validate vertical slice
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/verticalSliceStage.ts'
+      - 'e2e/vertical-slice-01.spec.ts'
+      - 'src/main.ts'
+      - 'package.json'
+      - '.github/workflows/validate-vertical-slice.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vertical-slice:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Verify full 3D physics stage only
+        run: npx playwright test e2e/vertical-slice-01.spec.ts --workers=1 --timeout=25000
