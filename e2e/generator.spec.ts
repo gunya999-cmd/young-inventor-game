@@ -16,10 +16,10 @@ test('generator converts belt rotation into electrical output', async ({ page })
   await page.goto('/?asset=generator');
   const canvas = page.locator('.generator-lab canvas');
 
-  await expect(canvas).toHaveAttribute('data-asset-version', 'generator-v1');
+  await expect(canvas).toHaveAttribute('data-asset-version', 'generator-v2');
   await expect(canvas).toHaveAttribute('data-generator-powered', 'false');
   await expect(canvas).toHaveAttribute('data-load-connected', 'true');
-  await expect(canvas).toHaveAttribute('data-physics', 'planck-finite-torque-driver+friction-belt+generator-load-v1');
+  await expect(canvas).toHaveAttribute('data-physics', 'planck-finite-torque-driver+stiff-friction-belt+generator-load-v2');
 
   await page.locator('[data-action="start"]').dispatchEvent('click');
   await expect(canvas).toHaveAttribute('data-drive-enabled', 'true');
@@ -33,7 +33,7 @@ test('generator converts belt rotation into electrical output', async ({ page })
   await expect.poll(async () => Number(await canvas.getAttribute('data-output-level')), {
     timeout: 5_000,
     message: 'rotor speed must produce measurable electrical output',
-  }).toBeGreaterThan(0.08);
+  }).toBeGreaterThan(0.25);
 
   await page.locator('[data-action="stop"]').dispatchEvent('click');
   await expect(canvas).toHaveAttribute('data-drive-enabled', 'false');
