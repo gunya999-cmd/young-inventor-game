@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-async function installSparseRaf(page: Parameters<typeof test>[0] extends never ? never : any): Promise<void> {
+async function installSparseRaf(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const nativeRaf = window.requestAnimationFrame.bind(window);
     let firstFrames = 2;
@@ -15,19 +15,20 @@ async function installSparseRaf(page: Parameters<typeof test>[0] extends never ?
   });
 }
 
-test('bright AAA-child workshop stage 02 completes its physical causal chain', async ({ page }) => {
+test('bright 2.75D workshop Stage 02 completes its physical causal chain', async ({ page }) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 720, height: 480 });
   await installSparseRaf(page);
 
   await page.goto('/?stage=workshop-02&qa=physics');
   const canvas = page.locator('.aaa-workshop canvas');
-  await expect(canvas).toHaveAttribute('data-stage-version', 'workshop-stage-02-v4-ipad-pointer', { timeout: 15_000 });
+  await expect(canvas).toHaveAttribute('data-stage-version', 'workshop-stage-02-v5-2_75d', { timeout: 15_000 });
   await expect(canvas).toHaveAttribute('data-stage-state', 'build');
-  await expect(canvas).toHaveAttribute('data-asset-pipeline', 'original-pbr-mesh-kit-v1');
-  await expect(canvas).toHaveAttribute('data-visual-target', 'bright-child-aaa-workshop-v1');
-  await expect(canvas).toHaveAttribute('data-physics', 'rapier3d-0.19.3-shared-stage02-physics-v1');
-  await expect(canvas).toHaveAttribute('data-input-system', 'unified-pointer-events-v1');
+  await expect(canvas).toHaveAttribute('data-gameplay-space', 'constrained-2.75d');
+  await expect(canvas).toHaveAttribute('data-active-axes', 'x-y');
+  await expect(canvas).toHaveAttribute('data-depth-layers', 'back-main-front');
+  await expect(canvas).toHaveAttribute('data-camera-mode', 'limited-perspective');
+  await expect(canvas).toHaveAttribute('data-rotation-axis', 'z');
   await expect(canvas).toHaveAttribute('data-touch-ready', 'true');
 
   await page.evaluate(() => {
@@ -55,22 +56,23 @@ test('bright AAA-child workshop stage 02 completes its physical causal chain', a
   await expect(page.locator('.aaa-win')).toBeVisible();
 });
 
-test('iPad-style touch can drag a part from inventory and move it again on the 3D scene', async ({ page }) => {
+test('iPad touch moves a part in XY while depth stays discrete', async ({ page }) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 1024, height: 768 });
   await installSparseRaf(page);
   await page.goto('/?stage=workshop-02&qa=physics');
 
   const canvas = page.locator('.aaa-workshop canvas');
-  await expect(canvas).toHaveAttribute('data-stage-version', 'workshop-stage-02-v4-ipad-pointer', { timeout: 15_000 });
-  await expect(canvas).toHaveAttribute('data-touch-ready', 'true');
+  await expect(canvas).toHaveAttribute('data-stage-version', 'workshop-stage-02-v5-2_75d', { timeout: 15_000 });
+  await expect(canvas).toHaveAttribute('data-input-system', 'unified-pointer-events-2_75d-v2');
+
   const button = page.locator('.aaa-part[data-part="ramp"]');
   const buttonBox = await button.boundingBox();
   const canvasBox = await canvas.boundingBox();
   if (!buttonBox || !canvasBox) throw new Error('Stage 02 touch test geometry unavailable');
 
   const start = { x: buttonBox.x + buttonBox.width / 2, y: buttonBox.y + buttonBox.height / 2 };
-  const drop = { x: canvasBox.x + canvasBox.width * 0.52, y: canvasBox.y + canvasBox.height * 0.58 };
+  const drop = { x: canvasBox.x + canvasBox.width * 0.46, y: canvasBox.y + canvasBox.height * 0.62 };
 
   await page.evaluate(({ start, drop }) => {
     const button = document.querySelector<HTMLButtonElement>('.aaa-part[data-part="ramp"]');
@@ -84,25 +86,46 @@ test('iPad-style touch can drag a part from inventory and move it again on the 3
   await expect(canvas).toHaveAttribute('data-last-drag-source', 'inventory-touch');
 
   const before = await page.evaluate(() => {
-    const canvas = document.querySelector<HTMLCanvasElement & { __partScreenPosition?: (type: 'ramp') => { x: number; y: number } | null }>('.aaa-workshop canvas');
-    return canvas?.__partScreenPosition?.('ramp') ?? null;
+    const canvas = document.querySelector<HTMLCanvasElement & {
+      __partScreenPosition?: (type: 'ramp') => { x: number; y: number } | null;
+      __partWorldPosition?: (type: 'ramp') => { x: number; y: number; z: number; layer: string } | null;
+    }>('.aaa-workshop canvas');
+    return { screen: canvas?.__partScreenPosition?.('ramp') ?? null, world: canvas?.__partWorldPosition?.('ramp') ?? null };
   });
-  if (!before) throw new Error('Ramp screen position unavailable');
-  const afterTarget = { x: before.x + 72, y: before.y + 24 };
+  if (!before.screen || !before.world) throw new Error('Ramp position unavailable');
+  expect(before.world.layer).toBe('main');
+  expect(Math.abs(before.world.z)).toBeLessThan(0.001);
 
-  await page.evaluate(({ before, afterTarget }) => {
+  const target = { x: before.screen.x + 56, y: before.screen.y - 82 };
+  await page.evaluate(({ before, target }) => {
     const canvas = document.querySelector<HTMLCanvasElement>('.aaa-workshop canvas');
-    if (!canvas) throw new Error('Canvas missing');
-    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 52, pointerType: 'touch', clientX: before.x, clientY: before.y, isPrimary: true, buttons: 1 }));
-    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, pointerId: 52, pointerType: 'touch', clientX: afterTarget.x, clientY: afterTarget.y, isPrimary: true, buttons: 1 }));
-    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 52, pointerType: 'touch', clientX: afterTarget.x, clientY: afterTarget.y, isPrimary: true, buttons: 0 }));
-  }, { before, afterTarget });
+    if (!canvas || !before.screen) throw new Error('Canvas missing');
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 52, pointerType: 'touch', clientX: before.screen.x, clientY: before.screen.y, isPrimary: true, buttons: 1 }));
+    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, pointerId: 52, pointerType: 'touch', clientX: target.x, clientY: target.y, isPrimary: true, buttons: 1 }));
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 52, pointerType: 'touch', clientX: target.x, clientY: target.y, isPrimary: true, buttons: 0 }));
+  }, { before, target });
 
   await expect(canvas).toHaveAttribute('data-last-drag-source', 'scene-touch');
-  const after = await page.evaluate(() => {
-    const canvas = document.querySelector<HTMLCanvasElement & { __partScreenPosition?: (type: 'ramp') => { x: number; y: number } | null }>('.aaa-workshop canvas');
-    return canvas?.__partScreenPosition?.('ramp') ?? null;
+  const moved = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement & { __partWorldPosition?: (type: 'ramp') => { x: number; y: number; z: number; layer: string } | null }>('.aaa-workshop canvas');
+    return canvas?.__partWorldPosition?.('ramp') ?? null;
   });
-  if (!after) throw new Error('Ramp final screen position unavailable');
-  expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeGreaterThan(8);
+  if (!moved) throw new Error('Ramp final position unavailable');
+  expect(Math.abs(moved.y - before.world.y)).toBeGreaterThan(0.12);
+  expect(Math.abs(moved.z)).toBeLessThan(0.001);
+  expect(moved.layer).toBe('main');
+
+  await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement & { __setPartLayer?: (type: 'ramp', layer: 'front') => void }>('.aaa-workshop canvas');
+    canvas?.__setPartLayer?.('ramp', 'front');
+  });
+  const front = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement & { __partWorldPosition?: (type: 'ramp') => { x: number; y: number; z: number; layer: string } | null }>('.aaa-workshop canvas');
+    return canvas?.__partWorldPosition?.('ramp') ?? null;
+  });
+  if (!front) throw new Error('Ramp front-layer position unavailable');
+  expect(front.layer).toBe('front');
+  expect(front.z).toBeCloseTo(0.52, 2);
+  await expect(canvas).toHaveAttribute('data-selected-layer', 'front');
+  await expect(canvas).toHaveAttribute('data-build-ready', 'false');
 });
