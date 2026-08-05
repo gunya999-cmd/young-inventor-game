@@ -5,7 +5,7 @@ test('full 3D vertical slice completes through the physical Rube Goldberg chain'
     let gameNow = performance.now();
     window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
       const timer = window.setTimeout(() => {
-        gameNow += 1000 / 30;
+        gameNow += 180;
         callback(gameNow);
       }, 16);
       return timer;
@@ -26,9 +26,9 @@ test('full 3D vertical slice completes through the physical Rube Goldberg chain'
   await canvas.evaluate((element: HTMLCanvasElement & { __startStage?: () => void }) => element.__startStage?.());
   await expect(canvas).toHaveAttribute('data-stage-state', /running|chain|won/);
 
-  await expect(canvas).toHaveAttribute('data-switch-triggered', 'true', { timeout: 10_000 });
-  await expect(canvas).toHaveAttribute('data-domino-started', 'true', { timeout: 10_000 });
-  await expect(canvas).toHaveAttribute('data-bell-rung', 'true', { timeout: 12_000 });
+  await expect(canvas).toHaveAttribute('data-switch-triggered', 'true', { timeout: 8_000 });
+  await expect(canvas).toHaveAttribute('data-domino-started', 'true', { timeout: 8_000 });
+  await expect(canvas).toHaveAttribute('data-bell-rung', 'true', { timeout: 10_000 });
   await expect(canvas).toHaveAttribute('data-stage-state', 'won');
   await expect(page.locator('.vs-win')).toBeVisible();
 });
