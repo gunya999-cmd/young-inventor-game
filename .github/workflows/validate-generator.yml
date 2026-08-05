@@ -1,0 +1,41 @@
+name: Validate generator
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/generatorLab.ts'
+      - 'e2e/generator.spec.ts'
+      - 'src/main.ts'
+      - '.github/workflows/validate-generator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Verify generator belt-to-electric conversion
+        run: npx playwright test e2e/generator.spec.ts --workers=1 --timeout=20000
