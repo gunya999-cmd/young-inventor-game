@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'src/workshopStage02.ts'
+      - 'src/workshopStage02V2.ts'
+      - 'src/workshopAssetKit.ts'
       - 'src/workshopStage02.css'
       - 'public/assets/workshop/**'
       - 'e2e/vertical-slice-02.spec.ts'
