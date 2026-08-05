@@ -4,11 +4,11 @@ import { installVerticalSliceStage } from './verticalSliceStage';
 /**
  * Stage 01 release runtime.
  *
- * All moving pieces remain genuine Rapier rigid bodies. The final bell event is
- * accepted only after the pressure pad releases the second ball, that ball has
- * reached the domino run, and a domino then physically reaches the brass strike
- * surface. The dominoes are settled onto the table with a real air gap at the
- * bell so the chain cannot complete by itself.
+ * All moving pieces remain genuine Rapier rigid bodies. The domino run is
+ * authored into a stable sleeping state and can only wake from a real dynamic
+ * collision. The final bell event is accepted only after the pressure pad has
+ * released the second ball, that ball has reached the domino lane, and a moving
+ * body physically reaches the brass strike surface.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
   await RAPIER.init();
@@ -77,6 +77,9 @@ export async function installVerticalSliceStageV2(): Promise<void> {
         const q = finalDominoBody.rotation();
         canvas.dataset.finalDomino = `${p.x.toFixed(3)},${p.y.toFixed(3)},${p.z.toFixed(3)}`;
         canvas.dataset.finalDominoRotation = `${q.x.toFixed(3)},${q.y.toFixed(3)},${q.z.toFixed(3)},${q.w.toFixed(3)}`;
+        if (typeof finalDominoBody.isSleeping === 'function') {
+          canvas.dataset.finalDominoSleeping = finalDominoBody.isSleeping() ? 'true' : 'false';
+        }
       } catch {
         // Diagnostics only.
       }
@@ -92,8 +95,8 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       const touchesLegacyBellSensor = legacyBellSensorHandle !== null &&
         (handle1 === legacyBellSensorHandle || handle2 === legacyBellSensorHandle);
 
-      // The authored helper sensor is too broad and overlaps the end of the
-      // domino lane. Raw events from it never decide victory.
+      // The original broad helper sensor overlaps the end of the domino lane.
+      // It is telemetry-only and never decides victory directly.
       if (touchesLegacyBellSensor) return;
 
       const hitsPhysicalBellSurface =
@@ -136,7 +139,6 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
   if (!canvas) return;
 
-  // Thin physical finish surface immediately in front of the visible brass plate.
   if (stageWorld) {
     const strikeBody = stageWorld.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(5.075, 0.55, 1.42));
     const strikeCollider = stageWorld.createCollider(
@@ -148,7 +150,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     bellStrikeHandle = strikeCollider.handle;
   }
 
-  canvas.dataset.stageRuntime = 'v10-causal-domino-chain+real-bell-contact';
+  canvas.dataset.stageRuntime = 'v11-sleeping-domino-chain+causal-bell-contact';
   canvas.dataset.bellSensorGuard = 'requires-second-ball-domino-stage';
   canvas.dataset.launchModel = 'rigid-body-initial-velocity';
   canvas.dataset.bellPhysicalContact = 'false';
@@ -179,9 +181,6 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const prepareDominoChain = (): void => {
     if (dominoChainPrepared) return;
     const authoredX = [2.25, 2.68, 3.11, 3.54, 3.97, 4.40, 4.83, 5.26];
-    // 38 cm centre spacing: close enough for reliable toppling, but with no
-    // initial interpenetration. The final domino has a 7.5 cm air gap to the
-    // physical strike sensor while upright.
     const targetX = [2.25, 2.63, 3.01, 3.39, 3.77, 4.15, 4.53, 4.91];
     const chainBodies: any[] = [];
 
@@ -192,19 +191,22 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     }
 
     chainBodies.forEach((body, index) => {
-      // Domino half-height is 0.51 m. Set it only 5 mm above the table so the
-      // solver settles it without a destabilising 3 cm drop before gameplay.
-      body.setTranslation({ x: targetX[index], y: 0.515, z: 1.42 }, true);
+      // Exact resting height: domino half-height is 0.51 m. Sleeping the bodies
+      // removes solver settling as a source of accidental motion; Rapier wakes
+      // them automatically when the active second ball strikes the chain.
+      body.setTranslation({ x: targetX[index], y: 0.510, z: 1.42 }, true);
       body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      if (typeof body.setLinearDamping === 'function') body.setLinearDamping(0.09);
-      if (typeof body.setAngularDamping === 'function') body.setAngularDamping(0.12);
+      if (typeof body.setLinearDamping === 'function') body.setLinearDamping(0.045);
+      if (typeof body.setAngularDamping === 'function') body.setAngularDamping(0.055);
+      if (typeof body.sleep === 'function') body.sleep();
     });
 
     finalDominoBody = chainBodies[chainBodies.length - 1];
     dominoChainPrepared = true;
-    canvas.dataset.dominoSpacing = '0.38m-stable';
+    canvas.dataset.dominoSpacing = '0.38m-sleeping';
+    canvas.dataset.dominoInitialState = 'sleep-until-physical-impact';
     canvas.dataset.finalDominoGap = '0.075m-to-strike-surface';
   };
 
