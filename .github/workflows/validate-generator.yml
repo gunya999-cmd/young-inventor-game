@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/generatorLab.ts'
+      - 'src/generatorLabV2.ts'
       - 'e2e/generator.spec.ts'
       - 'src/main.ts'
       - '.github/workflows/validate-generator.yml'
