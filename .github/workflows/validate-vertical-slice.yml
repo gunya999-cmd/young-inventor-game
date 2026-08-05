@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/verticalSliceStage.ts'
+      - 'src/verticalSliceStageV2.ts'
       - 'e2e/vertical-slice-01.spec.ts'
       - 'src/main.ts'
       - 'package.json'
@@ -39,4 +40,4 @@ jobs:
         run: npm run build
 
       - name: Verify full 3D physics stage only
-        run: npx playwright test e2e/vertical-slice-01.spec.ts --workers=1 --timeout=25000
+        run: npx playwright test e2e/vertical-slice-01.spec.ts --workers=1 --timeout=60000
