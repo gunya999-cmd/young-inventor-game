@@ -29,6 +29,7 @@ import { installScissors2DLab } from './scissors2dLab';
 import { installScissors3DLabV12 } from './scissors3dLabV12';
 import { installOutletSwitchLab } from './outletSwitchLab';
 import { installGeneratorLabV2 } from './generatorLabV2';
+import { installVerticalSliceStage } from './verticalSliceStage';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -51,9 +52,13 @@ function showFatalError(error: unknown): void {
 window.addEventListener('error', (event) => showFatalError(event.error ?? event.message));
 window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
-const assetPreview = new URLSearchParams(location.search).get('asset');
+const params = new URLSearchParams(location.search);
+const assetPreview = params.get('asset');
+const stagePreview = params.get('stage');
 
-if (assetPreview === 'bowling-ball') {
+if (stagePreview === 'vertical-slice-01' || stagePreview === 'workshop' || stagePreview === 'rube-lab') {
+  void installVerticalSliceStage().catch(showFatalError);
+} else if (assetPreview === 'bowling-ball') {
   installBowlingBallLab();
 } else if (assetPreview === 'basketball') {
   installBasketballLab();
