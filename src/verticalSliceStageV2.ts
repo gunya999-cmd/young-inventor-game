@@ -5,9 +5,10 @@ import { installVerticalSliceStage } from './verticalSliceStage';
  * Stage 01 release runtime.
  *
  * All moving pieces remain genuine Rapier rigid bodies. The final bell event is
- * forwarded only from a real contact with the brass strike surface, and the
- * base stage's original bell sensor is identified by its physical location —
- * never by creation-order indices.
+ * accepted only after the pressure pad releases the second ball, that ball has
+ * reached the domino run, and a domino then physically reaches the brass strike
+ * surface. The dominoes are settled onto the table with a real air gap at the
+ * bell so the chain cannot complete by itself.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
   await RAPIER.init();
@@ -56,7 +57,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
           if (typeof collider.setActiveEvents === 'function') collider.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
         }
       } catch {
-        // Removed body during reset.
+        // Removed body during a reset.
       }
     }
     return collider;
@@ -91,9 +92,8 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       const touchesLegacyBellSensor = legacyBellSensorHandle !== null &&
         (handle1 === legacyBellSensorHandle || handle2 === legacyBellSensorHandle);
 
-      // The original broad helper sensor overlaps the authored domino area.
-      // Raw events from it are ignored; only the real strike surface can forward
-      // a bell event back to the base stage.
+      // The authored helper sensor is too broad and overlaps the end of the
+      // domino lane. Raw events from it never decide victory.
       if (touchesLegacyBellSensor) return;
 
       const hitsPhysicalBellSurface =
@@ -106,9 +106,15 @@ export async function installVerticalSliceStageV2(): Promise<void> {
         const qualified =
           started &&
           canvas?.dataset.switchTriggered === 'true' &&
+          canvas?.dataset.dominoStarted === 'true' &&
           state !== 'build' &&
           state !== 'won';
-        if (!qualified || legacyBellSensorHandle === null) return;
+
+        if (!qualified) {
+          if (canvas && started) canvas.dataset.bellPrematureContact = 'true';
+          return;
+        }
+        if (legacyBellSensorHandle === null) return;
 
         if (canvas) {
           canvas.dataset.bellQualifiedContact = 'true';
@@ -130,6 +136,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
   if (!canvas) return;
 
+  // Thin physical finish surface immediately in front of the visible brass plate.
   if (stageWorld) {
     const strikeBody = stageWorld.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(5.075, 0.55, 1.42));
     const strikeCollider = stageWorld.createCollider(
@@ -141,10 +148,11 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     bellStrikeHandle = strikeCollider.handle;
   }
 
-  canvas.dataset.stageRuntime = 'v9-real-bell-handle+stable-domino-chain';
-  canvas.dataset.bellSensorGuard = 'real-strike-surface-collision-only';
+  canvas.dataset.stageRuntime = 'v10-causal-domino-chain+real-bell-contact';
+  canvas.dataset.bellSensorGuard = 'requires-second-ball-domino-stage';
   canvas.dataset.launchModel = 'rigid-body-initial-velocity';
   canvas.dataset.bellPhysicalContact = 'false';
+  canvas.dataset.bellPrematureContact = 'false';
   canvas.dataset.bellQualifiedContact = 'false';
   canvas.dataset.bellForwarded = 'false';
   canvas.dataset.legacyBellHandleFound = legacyBellSensorHandle === null ? 'false' : 'true';
@@ -171,7 +179,10 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const prepareDominoChain = (): void => {
     if (dominoChainPrepared) return;
     const authoredX = [2.25, 2.68, 3.11, 3.54, 3.97, 4.40, 4.83, 5.26];
-    const targetX = [2.35, 2.69, 3.03, 3.37, 3.71, 4.05, 4.39, 4.73];
+    // 38 cm centre spacing: close enough for reliable toppling, but with no
+    // initial interpenetration. The final domino has a 7.5 cm air gap to the
+    // physical strike sensor while upright.
+    const targetX = [2.25, 2.63, 3.01, 3.39, 3.77, 4.15, 4.53, 4.91];
     const chainBodies: any[] = [];
 
     for (let index = 0; index < authoredX.length; index += 1) {
@@ -181,16 +192,20 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     }
 
     chainBodies.forEach((body, index) => {
-      body.setTranslation({ x: targetX[index], y: 0.54, z: 1.42 }, true);
+      // Domino half-height is 0.51 m. Set it only 5 mm above the table so the
+      // solver settles it without a destabilising 3 cm drop before gameplay.
+      body.setTranslation({ x: targetX[index], y: 0.515, z: 1.42 }, true);
       body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      if (typeof body.setLinearDamping === 'function') body.setLinearDamping(0.09);
+      if (typeof body.setAngularDamping === 'function') body.setAngularDamping(0.12);
     });
 
     finalDominoBody = chainBodies[chainBodies.length - 1];
     dominoChainPrepared = true;
-    canvas.dataset.dominoSpacing = '0.34m-stable';
-    canvas.dataset.finalDominoGap = '0.305m-to-bell-plate';
+    canvas.dataset.dominoSpacing = '0.38m-stable';
+    canvas.dataset.finalDominoGap = '0.075m-to-strike-surface';
   };
 
   const boostStartBall = (): void => {
@@ -229,6 +244,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       dominoChainPrepared = false;
       finalDominoBody = null;
       canvas.dataset.bellPhysicalContact = 'false';
+      canvas.dataset.bellPrematureContact = 'false';
       canvas.dataset.bellQualifiedContact = 'false';
       canvas.dataset.bellForwarded = 'false';
       return;
