@@ -5,9 +5,8 @@ import { installVerticalSliceStage } from './verticalSliceStage';
  * Stage 01 release runtime.
  *
  * The build phase is frozen. Both balls are launched as real rigid bodies.
- * The final win event comes from an actual collision between the last domino
- * and the visible brass bell plate; the obsolete overlapping helper sensor is
- * ignored so it cannot create a false win.
+ * The last domino must physically enter a thin Rapier sensor attached to the
+ * visible brass strike plate before the base stage receives its bell event.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
   await RAPIER.init();
@@ -27,11 +26,14 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const originalDrainCollisionEvents = queueProto.drainCollisionEvents;
   const sensorHandles: number[] = [];
   const bodies: any[] = [];
+  let stageWorld: any | null = null;
   let bellPlateHandle: number | null = null;
+  let bellStrikeHandle: number | null = null;
 
   const near = (value: number, expected: number, tolerance = 0.025): boolean => Math.abs(value - expected) <= tolerance;
 
   worldProto.createRigidBody = function (...args: any[]): any {
+    stageWorld = this;
     const body = originalCreateRigidBody.apply(this, args);
     bodies.push(body);
     return body;
@@ -77,13 +79,14 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       const touchesObsoleteBellSensor = bellSensorHandle !== undefined &&
         (handle1 === bellSensorHandle || handle2 === bellSensorHandle);
 
-      // The original helper sensor overlaps a domino in the authored scene.
-      // Never use that overlap as a victory condition.
+      // The authored helper sensor intersects an upright domino. Ignore it.
       if (touchesObsoleteBellSensor) return;
 
-      const hitsVisibleBellPlate = bellPlateHandle !== null &&
-        (handle1 === bellPlateHandle || handle2 === bellPlateHandle);
-      if (hitsVisibleBellPlate) {
+      const hitsPhysicalBellSurface =
+        (bellStrikeHandle !== null && (handle1 === bellStrikeHandle || handle2 === bellStrikeHandle)) ||
+        (bellPlateHandle !== null && (handle1 === bellPlateHandle || handle2 === bellPlateHandle));
+
+      if (hitsPhysicalBellSurface) {
         const chainActuallyReachedDominoes =
           started &&
           canvas?.dataset.switchTriggered === 'true' &&
@@ -91,8 +94,8 @@ export async function installVerticalSliceStageV2(): Promise<void> {
           (canvas?.dataset.stageState === 'running' || canvas?.dataset.stageState === 'chain');
         if (!chainActuallyReachedDominoes || bellSensorHandle === undefined) return;
 
-        // Feed the real plate collision into the base stage's existing win path.
-        const otherHandle = handle1 === bellPlateHandle ? handle2 : handle1;
+        const hitHandle = handle1 === bellStrikeHandle || handle1 === bellPlateHandle ? handle1 : handle2;
+        const otherHandle = hitHandle === handle1 ? handle2 : handle1;
         callback(bellSensorHandle, otherHandle, true);
         return;
       }
@@ -107,18 +110,35 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
   if (!canvas) return;
 
-  canvas.dataset.stageRuntime = 'v5-build-freeze+physical-launch+bell-plate-finish';
-  canvas.dataset.bellSensorGuard = 'visible-bell-plate-collision-only';
+  // Add a 5 cm deep sensor exactly on the left face of the visible brass plate.
+  // It is not a shortcut: a rigid body must physically touch this surface for
+  // Rapier to emit the collision event that finishes the level.
+  if (stageWorld) {
+    const strikeBody = stageWorld.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed().setTranslation(5.075, 0.55, 1.42)
+    );
+    const strikeCollider = stageWorld.createCollider(
+      RAPIER.ColliderDesc.cuboid(0.025, 0.49, 0.39)
+        .setSensor(true)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
+      strikeBody
+    );
+    bellStrikeHandle = strikeCollider.handle;
+  }
+
+  canvas.dataset.stageRuntime = 'v6-build-freeze+physical-launch+physical-bell-surface';
+  canvas.dataset.bellSensorGuard = 'real-strike-surface-collision-only';
   canvas.dataset.launchModel = 'rigid-body-initial-velocity';
 
   let startBallBoosted = false;
   let secondBallBoosted = false;
   let finalDominoPrepared = false;
 
-  const findBodyNear = (x: number, y: number, z: number, tolerance = 0.45): any | null => {
+  const findDynamicBodyNear = (x: number, y: number, z: number, tolerance = 0.45): any | null => {
     for (let index = bodies.length - 1; index >= 0; index -= 1) {
       const body = bodies[index];
       if (!body || typeof body.translation !== 'function' || typeof body.setLinvel !== 'function') continue;
+      if (typeof body.isDynamic !== 'function' || !body.isDynamic()) continue;
       try {
         const p = body.translation();
         if (Math.abs(p.x - x) <= tolerance && Math.abs(p.y - y) <= tolerance && Math.abs(p.z - z) <= tolerance) {
@@ -133,12 +153,11 @@ export async function installVerticalSliceStageV2(): Promise<void> {
 
   const prepareFinalDomino = (): void => {
     if (finalDominoPrepared) return;
-    // The authored last domino starts intersecting the bell plate by ~6 cm.
-    // Move it 26 cm left so it begins with a real air gap and must be knocked
-    // into the plate by the preceding dominoes.
-    const body = findBodyNear(5.26, 0.54, 1.42, 0.12);
+    const body = findDynamicBodyNear(5.26, 0.54, 1.42, 0.12);
     if (!body) return;
-    body.setTranslation({ x: 5.00, y: 0.54, z: 1.42 }, true);
+    // Put the final domino just clear of both the previous domino and strike
+    // surface. It now has to be moved by the physical domino chain.
+    body.setTranslation({ x: 4.98, y: 0.54, z: 1.42 }, true);
     body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     body.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -148,7 +167,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
 
   const boostStartBall = (): void => {
     if (startBallBoosted) return;
-    const body = findBodyNear(-5.04, 3.06, -1.40);
+    const body = findDynamicBodyNear(-5.04, 3.06, -1.40);
     if (!body) return;
     body.setLinvel({ x: 4.10, y: 0, z: 0 }, true);
     startBallBoosted = true;
@@ -157,7 +176,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
 
   const boostSecondBall = (): void => {
     if (secondBallBoosted) return;
-    const body = findBodyNear(-0.42, 1.45, 1.42);
+    const body = findDynamicBodyNear(-0.42, 1.45, 1.42);
     if (!body) return;
     body.setLinvel({ x: 2.35, y: 0, z: 0 }, true);
     secondBallBoosted = true;
