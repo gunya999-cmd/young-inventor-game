@@ -3,6 +3,7 @@ import './gamefeel.css';
 import './level01Experience.css';
 import './bowlingBall3d.css';
 import './bowlingBallLab.css';
+import './workshopStage02.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -30,6 +31,7 @@ import { installScissors3DLabV12 } from './scissors3dLabV12';
 import { installOutletSwitchLab } from './outletSwitchLab';
 import { installGeneratorLabV2 } from './generatorLabV2';
 import { installVerticalSliceStageV2 } from './verticalSliceStageV2';
+import { installWorkshopStage02V2 } from './workshopStage02V2';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -56,7 +58,9 @@ const params = new URLSearchParams(location.search);
 const assetPreview = params.get('asset');
 const stagePreview = params.get('stage');
 
-if (stagePreview === 'vertical-slice-01' || stagePreview === 'workshop' || stagePreview === 'rube-lab') {
+if (stagePreview === 'workshop-02' || stagePreview === 'stage-02') {
+  void installWorkshopStage02V2().catch(showFatalError);
+} else if (stagePreview === 'vertical-slice-01' || stagePreview === 'workshop' || stagePreview === 'rube-lab') {
   void installVerticalSliceStageV2().catch(showFatalError);
 } else if (assetPreview === 'bowling-ball') {
   installBowlingBallLab();
