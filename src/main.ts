@@ -29,7 +29,7 @@ import { installScissors2DLab } from './scissors2dLab';
 import { installScissors3DLabV12 } from './scissors3dLabV12';
 import { installOutletSwitchLab } from './outletSwitchLab';
 import { installGeneratorLabV2 } from './generatorLabV2';
-import { installVerticalSliceStage } from './verticalSliceStage';
+import { installVerticalSliceStageV2 } from './verticalSliceStageV2';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -57,7 +57,7 @@ const assetPreview = params.get('asset');
 const stagePreview = params.get('stage');
 
 if (stagePreview === 'vertical-slice-01' || stagePreview === 'workshop' || stagePreview === 'rube-lab') {
-  void installVerticalSliceStage().catch(showFatalError);
+  void installVerticalSliceStageV2().catch(showFatalError);
 } else if (assetPreview === 'bowling-ball') {
   installBowlingBallLab();
 } else if (assetPreview === 'basketball') {
