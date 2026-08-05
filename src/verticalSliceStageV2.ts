@@ -7,6 +7,8 @@ import { installVerticalSliceStage } from './verticalSliceStage';
  * The build phase is frozen. Both balls are launched as real rigid bodies.
  * The last domino must physically enter a thin Rapier sensor attached to the
  * visible brass strike plate before the base stage receives its bell event.
+ * Once the pressure pad has fired, the first ball has completed its job and
+ * can no longer abort the still-running domino chain by leaving the table.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
   await RAPIER.init();
@@ -29,6 +31,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   let stageWorld: any | null = null;
   let bellPlateHandle: number | null = null;
   let bellStrikeHandle: number | null = null;
+  let finalDominoBody: any | null = null;
 
   const near = (value: number, expected: number, tolerance = 0.025): boolean => Math.abs(value - expected) <= tolerance;
 
@@ -66,8 +69,22 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   worldProto.step = function (...args: any[]): any {
     const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
     const state = canvas?.dataset.stageState;
-    if (state && state !== 'running' && state !== 'chain') return;
-    return originalStep.apply(this, args);
+    const chainHasStarted = canvas?.dataset.switchTriggered === 'true' && canvas?.dataset.dominoStarted === 'true';
+    const shouldSimulate = !state || state === 'running' || state === 'chain' || (state === 'failed' && chainHasStarted);
+    if (!shouldSimulate) return;
+
+    const result = originalStep.apply(this, args);
+    if (canvas && finalDominoBody) {
+      try {
+        const p = finalDominoBody.translation();
+        const q = finalDominoBody.rotation();
+        canvas.dataset.finalDomino = `${p.x.toFixed(3)},${p.y.toFixed(3)},${p.z.toFixed(3)}`;
+        canvas.dataset.finalDominoRotation = `${q.x.toFixed(3)},${q.y.toFixed(3)},${q.z.toFixed(3)},${q.w.toFixed(3)}`;
+      } catch {
+        // Diagnostics only.
+      }
+    }
+    return result;
   };
 
   queueProto.drainCollisionEvents = function (
@@ -87,11 +104,12 @@ export async function installVerticalSliceStageV2(): Promise<void> {
         (bellPlateHandle !== null && (handle1 === bellPlateHandle || handle2 === bellPlateHandle));
 
       if (hitsPhysicalBellSurface) {
+        const state = canvas?.dataset.stageState;
         const chainActuallyReachedDominoes =
           started &&
           canvas?.dataset.switchTriggered === 'true' &&
           canvas?.dataset.dominoStarted === 'true' &&
-          (canvas?.dataset.stageState === 'running' || canvas?.dataset.stageState === 'chain');
+          (state === 'running' || state === 'chain' || state === 'failed');
         if (!chainActuallyReachedDominoes || bellSensorHandle === undefined) return;
 
         const hitHandle = handle1 === bellStrikeHandle || handle1 === bellPlateHandle ? handle1 : handle2;
@@ -110,9 +128,8 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
   if (!canvas) return;
 
-  // Add a 5 cm deep sensor exactly on the left face of the visible brass plate.
-  // It is not a shortcut: a rigid body must physically touch this surface for
-  // Rapier to emit the collision event that finishes the level.
+  // Add a thin sensor exactly on the left face of the visible brass plate.
+  // A rigid body must physically touch this Rapier surface to finish the level.
   if (stageWorld) {
     const strikeBody = stageWorld.createRigidBody(
       RAPIER.RigidBodyDesc.fixed().setTranslation(5.075, 0.55, 1.42)
@@ -126,7 +143,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     bellStrikeHandle = strikeCollider.handle;
   }
 
-  canvas.dataset.stageRuntime = 'v6-build-freeze+physical-launch+physical-bell-surface';
+  canvas.dataset.stageRuntime = 'v7-chain-completes+physical-bell-surface';
   canvas.dataset.bellSensorGuard = 'real-strike-surface-collision-only';
   canvas.dataset.launchModel = 'rigid-body-initial-velocity';
 
@@ -155,12 +172,11 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     if (finalDominoPrepared) return;
     const body = findDynamicBodyNear(5.26, 0.54, 1.42, 0.12);
     if (!body) return;
-    // Put the final domino just clear of both the previous domino and strike
-    // surface. It now has to be moved by the physical domino chain.
     body.setTranslation({ x: 4.98, y: 0.54, z: 1.42 }, true);
     body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    finalDominoBody = body;
     finalDominoPrepared = true;
     canvas.dataset.finalDominoGap = 'physical';
   };
@@ -183,12 +199,23 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     canvas.dataset.secondImpulse = '2.35';
   };
 
+  const keepSuccessfulChainAlive = (): void => {
+    if (canvas.dataset.stageState !== 'failed' || canvas.dataset.switchTriggered !== 'true') return;
+    canvas.dataset.stageState = 'chain';
+    const runButton = document.querySelector<HTMLButtonElement>('.vs-stage [data-action="run"]');
+    if (runButton) {
+      runButton.disabled = true;
+      runButton.textContent = 'Цепочка работает…';
+    }
+  };
+
   const syncLaunches = (): void => {
     const state = canvas.dataset.stageState;
     if (state === 'build') {
       startBallBoosted = false;
       secondBallBoosted = false;
       finalDominoPrepared = false;
+      finalDominoBody = null;
       return;
     }
     if (state === 'running' || state === 'chain') {
@@ -196,12 +223,13 @@ export async function installVerticalSliceStageV2(): Promise<void> {
       boostStartBall();
     }
     if (canvas.dataset.switchTriggered === 'true') boostSecondBall();
+    keepSuccessfulChainAlive();
   };
 
   const observer = new MutationObserver(syncLaunches);
   observer.observe(canvas, {
     attributes: true,
-    attributeFilter: ['data-stage-state', 'data-switch-triggered'],
+    attributeFilter: ['data-stage-state', 'data-switch-triggered', 'data-domino-started'],
   });
   syncLaunches();
 }
