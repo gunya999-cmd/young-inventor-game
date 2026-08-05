@@ -1,6 +1,23 @@
 import { expect, test } from '@playwright/test';
 
 test('outlet switch reliably powers on when the falling ball reaches the rocker', async ({ page }) => {
+  // GitHub headless Chromium heavily throttles requestAnimationFrame. Keep the
+  // production code untouched, but feed callbacks normal 60 Hz game time so
+  // this focused test measures the actual physics instead of CI render speed.
+  await page.addInitScript(() => {
+    let gameNow = performance.now();
+    window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      const timer = window.setTimeout(() => {
+        gameNow += 1000 / 60;
+        callback(gameNow);
+      }, 1);
+      return timer;
+    }) as typeof window.requestAnimationFrame;
+    window.cancelAnimationFrame = ((handle: number) => {
+      window.clearTimeout(handle);
+    }) as typeof window.cancelAnimationFrame;
+  });
+
   await page.goto('/?asset=outlet-switch');
 
   const canvas = page.locator('.outlet-lab canvas');
@@ -11,11 +28,11 @@ test('outlet switch reliably powers on when the falling ball reaches the rocker'
 
   await page.locator('[data-action="drop"]').dispatchEvent('click');
   await expect(canvas).toHaveAttribute('data-ball-spawned', 'true', { timeout: 2_000 });
-  await expect(canvas).toHaveAttribute('data-powered', 'true', { timeout: 7_000 });
+  await expect(canvas).toHaveAttribute('data-powered', 'true', { timeout: 4_000 });
   await expect(canvas).toHaveAttribute('data-switch-latched', 'on');
 
   await expect.poll(async () => Number(await canvas.getAttribute('data-switch-angle')), {
-    timeout: 5_000,
+    timeout: 4_000,
     message: 'rocker must physically travel into the ON position',
   }).toBeGreaterThan(0.15);
 });
