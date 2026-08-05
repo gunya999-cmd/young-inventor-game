@@ -28,6 +28,7 @@ import { installRevolverLab } from './revolverLab';
 import { installScissors2DLab } from './scissors2dLab';
 import { installScissors3DLabV12 } from './scissors3dLabV12';
 import { installOutletSwitchLab } from './outletSwitchLab';
+import { installGeneratorLab } from './generatorLab';
 import { installCompletionGuard } from './gameFlowGuard';
 import { installEditorUiIntegration } from './editorUiIntegration';
 import { installBrowserSmokeBridge } from './e2eBridge';
@@ -78,6 +79,8 @@ if (assetPreview === 'bowling-ball') {
   installScissors3DLabV12();
 } else if (assetPreview === 'outlet-switch' || assetPreview === 'switch-outlet') {
   installOutletSwitchLab();
+} else if (assetPreview === 'generator') {
+  installGeneratorLab();
 } else if (isPart0408Asset(assetPreview)) {
   installPart0408Lab(assetPreview);
 } else if (isPart0913Asset(assetPreview)) {
