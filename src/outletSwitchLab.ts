@@ -119,10 +119,10 @@ export function installOutletSwitchLab(): void {
   root.innerHTML = `
     <header class="bowling-ball-lab__header">
       <div><small>CLASSIC PART 21 · RELIABLE WORKING PHYSICS</small><h1>Outlet with Switch / Розетка с выключателем</h1></div>
-      <div class="bowling-ball-lab__meta"><span>PBR</span><span>falling body</span><span>motor-latched rocker</span><span>power state</span><span>v4</span></div>
+      <div class="bowling-ball-lab__meta"><span>PBR</span><span>falling body</span><span>motor-latched rocker</span><span>power state</span><span>v5</span></div>
     </header>
     <div class="bowling-ball-lab__stage">
-      <canvas aria-label="Outlet with switch 3D preview" data-asset-version="outlet-switch-v4-reliable"></canvas>
+      <canvas aria-label="Outlet with switch 3D preview" data-asset-version="outlet-switch-v5-responsive"></canvas>
       <div class="outlet-controls"><button class="primary" data-action="drop">Уронить шар</button><button data-action="toggle">Переключить рукой</button><button data-action="reset">Сбросить</button></div>
       <div class="outlet-status">Питание выключено</div>
     </div>`;
@@ -263,7 +263,9 @@ export function installOutletSwitchLab(): void {
     if (ballBody) world.destroyBody(ballBody);
     if (ballMesh) assembly.remove(ballMesh);
 
-    ballBody = world.createBody({ type: 'dynamic', position: Vec2(-0.58, 2.25), linearDamping: 0.01 });
+    // Start close enough to the rocker that the user sees an immediate,
+    // unambiguous impact instead of waiting for a long decorative fall.
+    ballBody = world.createBody({ type: 'dynamic', position: Vec2(-0.58, 1.75), linearDamping: 0.01 });
     ballBody.createFixture({ shape: Circle(0.22), density: 4.0, restitution: 0.12, friction: 0.45 });
 
     ballMesh = new THREE.Mesh(
@@ -357,7 +359,7 @@ export function installOutletSwitchLab(): void {
     canvas.dataset.switchLatched = powered ? 'on' : 'off';
     canvas.dataset.switchAngle = switchBody.getAngle().toFixed(4);
     canvas.dataset.switchJointAngle = switchJoint.getJointAngle().toFixed(4);
-    canvas.dataset.physics = 'planck-falling-ball+reliable-impact-zone+motor-latched-switch-v4';
+    canvas.dataset.physics = 'planck-falling-ball+reliable-impact-zone+motor-latched-switch-v5';
 
     controls.update();
     renderer.render(scene, camera);
