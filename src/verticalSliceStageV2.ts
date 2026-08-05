@@ -5,8 +5,8 @@ import { installVerticalSliceStage } from './verticalSliceStage';
  * Stage 01 release runtime.
  *
  * Keeps the build phase static, arms the bell only after the real chain reaches
- * the dominoes, and gives both steel balls a small physical launch impulse.
- * After those impulses every result still comes from Rapier rigid-body motion,
+ * the dominoes, and gives both steel balls a physical launch velocity. After
+ * those launches every result still comes from Rapier rigid-body motion,
  * friction and collision events.
  */
 export async function installVerticalSliceStageV2(): Promise<void> {
@@ -42,8 +42,6 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     return collider;
   };
 
-  // During construction the machine must remain exactly where the player put it.
-  // Rapier starts stepping only after Run is pressed and continues through the chain.
   worldProto.step = function (...args: any[]): any {
     const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
     const state = canvas?.dataset.stageState;
@@ -78,9 +76,9 @@ export async function installVerticalSliceStageV2(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('.vs-stage canvas');
   if (!canvas) return;
 
-  canvas.dataset.stageRuntime = 'v3-build-freeze+armed-bell+physical-launch';
+  canvas.dataset.stageRuntime = 'v4-build-freeze+armed-bell+physical-launch';
   canvas.dataset.bellSensorGuard = 'requires-switch-and-domino-chain';
-  canvas.dataset.launchModel = 'rigid-body-initial-impulse';
+  canvas.dataset.launchModel = 'rigid-body-initial-velocity';
 
   let startBallBoosted = false;
   let secondBallBoosted = false;
@@ -95,7 +93,7 @@ export async function installVerticalSliceStageV2(): Promise<void> {
           return body;
         }
       } catch {
-        // Removed rigid bodies may remain in the tracking array after reset.
+        // Removed rigid bodies can remain in this tracking array after a reset.
       }
     }
     return null;
@@ -105,18 +103,18 @@ export async function installVerticalSliceStageV2(): Promise<void> {
     if (startBallBoosted) return;
     const body = findBodyNear(-5.04, 3.06, -1.40);
     if (!body) return;
-    body.setLinvel({ x: 1.45, y: 0, z: 0 }, true);
+    body.setLinvel({ x: 4.10, y: 0, z: 0 }, true);
     startBallBoosted = true;
-    canvas.dataset.startImpulse = '1.45';
+    canvas.dataset.startImpulse = '4.10';
   };
 
   const boostSecondBall = (): void => {
     if (secondBallBoosted) return;
     const body = findBodyNear(-0.42, 1.45, 1.42);
     if (!body) return;
-    body.setLinvel({ x: 1.20, y: 0, z: 0 }, true);
+    body.setLinvel({ x: 2.35, y: 0, z: 0 }, true);
     secondBallBoosted = true;
-    canvas.dataset.secondImpulse = '1.20';
+    canvas.dataset.secondImpulse = '2.35';
   };
 
   const syncLaunches = (): void => {
