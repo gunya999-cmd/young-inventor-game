@@ -3,8 +3,24 @@ import { expect, test } from '@playwright/test';
 test('bright AAA-child workshop stage 02 completes its physical causal chain', async ({ page }) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 720, height: 480 });
-  await page.goto('/?stage=workshop-02&qa=physics');
 
+  // QA mode advances the shared Rapier model explicitly, so frequent WebGL
+  // frames add no coverage and can starve headless Chromium. Keep a sparse
+  // render heartbeat without changing a single physics step.
+  await page.addInitScript(() => {
+    const nativeRaf = window.requestAnimationFrame.bind(window);
+    let firstFrames = 2;
+    window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      if (firstFrames > 0) {
+        firstFrames -= 1;
+        return nativeRaf(callback);
+      }
+      return window.setTimeout(() => callback(performance.now()), 750);
+    }) as typeof window.requestAnimationFrame;
+    window.cancelAnimationFrame = ((handle: number) => window.clearTimeout(handle)) as typeof window.cancelAnimationFrame;
+  });
+
+  await page.goto('/?stage=workshop-02&qa=physics');
   const canvas = page.locator('.aaa-workshop canvas');
   await expect(canvas).toHaveAttribute('data-stage-version', 'workshop-stage-02-v3', { timeout: 15_000 });
   await expect(canvas).toHaveAttribute('data-stage-state', 'build');
@@ -25,8 +41,6 @@ test('bright AAA-child workshop stage 02 completes its physical causal chain', a
   });
   await expect(canvas).toHaveAttribute('data-stage-state', 'running');
 
-  // Deterministically advance the exact Rapier model used by the real-time
-  // runtime. This bypasses headless WebGL frame throttling, not game physics.
   await page.evaluate(() => {
     const element = document.querySelector<HTMLCanvasElement & { __advanceSimulation?: (seconds: number) => void }>('.aaa-workshop canvas');
     element?.__advanceSimulation?.(12);
