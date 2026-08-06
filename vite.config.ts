@@ -7,7 +7,7 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 1800,
     rollupOptions: {
-      input: ['index.html', 'physics-bench.html']
+      input: 'index.html'
     }
   }
 });
