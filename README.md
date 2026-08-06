@@ -1,49 +1,94 @@
-# Юный изобретатель
+# Young Inventor / Юный изобретатель
 
-Браузерная инженерная головоломка — современный духовный наследник The Incredible Machine.
+Оригинальная браузерная физическая головоломка про машины Руба Голдберга. Проект изучает **общие системные принципы** классических machine-puzzle игр, но использует собственный код, графику, уровни, интерфейс и бренд.
 
-## Текущая вертикальная версия
+## Текущее направление
 
-Первый учебный квест **«Разбуди Луми»**:
+- full 3D PBR presentation;
+- touch-first **2.75D construction**: X/Y drag + BACK / MAIN / FRONT layers;
+- Rapier3D для новых полноценных уровней;
+- Three.js для визуального слоя;
+- фиксированный physics timestep;
+- отдельные visual meshes и physics colliders;
+- оригинальный AAA-child Inventor Workshop visual target;
+- реальные причинно-следственные цепочки без scripted success.
 
-- уютная домашняя легомастерская;
-- одна переносимая красная пластина;
-- перетаскивание мышью или пальцем;
-- вращение ручкой, колесом мыши либо клавишами `Q` / `E`;
-- мягкое притягивание детали к рабочей зоне;
-- реальная симуляция Matter Physics;
-- sensor-проверка попадания энергетического шара в приёмник;
-- запуск, подсказка и полный сброс без локальных `.bat`-файлов.
+## Clean-room foundation
 
-## Технологии
+Главные документы:
 
-- Phaser 3.90
-- Matter Physics, встроенный в Phaser
+- [`docs/TIM_CLEANROOM_SPEC.md`](docs/TIM_CLEANROOM_SPEC.md) — обязательные IP/architecture границы;
+- [`docs/TIM_MECHANICS_BIBLE.md`](docs/TIM_MECHANICS_BIBLE.md) — функциональные механические архетипы;
+- `src/mechanicsCatalog.ts` — типизированный runtime-каталог;
+- `src/machineGraph.ts` — reusable graph деталей и соединений.
+
+Никакие коммерческие sprites, модели, звуки, исходный код или оригинальные уровни TIM не являются shipping assets этого проекта.
+
+## Current playable reference
+
+Stage 02 — **Balance & Reaction** — используется как текущий reference runtime для:
+
+- iPad pointer input;
+- X/Y placement;
+- discrete depth layers;
+- Rapier3D causal chain;
+- bright workshop visual direction.
+
+Route:
+
+```text
+?stage=workshop-02
+```
+
+## Core machine architecture
+
+Каждая деталь описывается как generic contract:
+
+```text
+inputs -> physics -> outputs
+            +
+      compatible ports
+            +
+      runtime states
+```
+
+Базовые связи:
+
+- rope / pulley;
+- belt / shaft;
+- gear mesh;
+- electrical producer / switch / consumer;
+- physical contact / pressure / impulse.
+
+Уровни должны собирать эти механики через общий graph/ports API, а не через скрытый level-specific код.
+
+## Technology
+
 - TypeScript
 - Vite
+- Three.js
+- Rapier3D
+- legacy Planck modules for some earlier isolated part labs
+- Vitest
+- Playwright
+- Cloudflare Pages
 
-## Локальная разработка
+## Local development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Проверка production-сборки
+## Production verification
 
 ```bash
 npm run build
+npm run test:e2e
 ```
 
-Готовые статические файлы появятся в папке `dist`.
+`npm run build` запускает unit tests, TypeScript build и Vite production build.
 
-## Cloudflare Pages
+## Product rule
 
-При создании проекта Pages укажите:
-
-- **Production branch:** `main`
-- **Build command:** `npm run build`
-- **Build output directory:** `dist`
-- **Root directory:** `/`
-
-После подключения репозитория Cloudflare Pages автоматически пересобирает игру после каждого коммита в `main`.
+Young Inventor должен быть самостоятельной игрой: современная физика, лёгкое управление на iPad, оригинальные уровни и светлая реалистично-стилизованная 3D-мастерская. Системная свобода важнее копирования внешнего вида любой существующей игры.
