@@ -26,6 +26,7 @@ export type MechanicSignal =
   | 'gear_mesh'
   | 'airflow'
   | 'light_flux'
+  | 'focused_light'
   | 'heat'
   | 'electrical_power'
   | 'electrical_load'
@@ -153,8 +154,8 @@ export const MECHANICS_CATALOG: readonly MechanicDefinition[] = [
   },
   {
     id: 'light-generator', label: 'Photoelectric source', category: 'energy', priority: 'P1',
-    inputs: ['light_flux'], outputs: ['electrical_power'], connections: ['electrical'],
-    layerPolicy: 'same-layer', physicsSummary: 'Power derives from received light intensity with distance and occlusion.', states: ['dark', 'illuminated', 'powered'],
+    inputs: ['light_flux', 'focused_light'], outputs: ['electrical_power'], connections: ['electrical'],
+    layerPolicy: 'same-layer', physicsSummary: 'Power derives from received light intensity with distance, focus and occlusion.', states: ['dark', 'illuminated', 'powered'],
   },
   {
     id: 'motor', label: 'Electric motor', category: 'energy', priority: 'P0',
@@ -165,6 +166,21 @@ export const MECHANICS_CATALOG: readonly MechanicDefinition[] = [
     id: 'fan', label: 'Powered fan', category: 'environment', priority: 'P0',
     inputs: ['electrical_power'], outputs: ['airflow'], connections: ['electrical'],
     layerPolicy: 'same-layer', physicsSummary: 'Powered rotor emits directional airflow with finite range and falloff.', states: ['off', 'running'],
+  },
+  {
+    id: 'candle', label: 'Candle', category: 'energy', priority: 'P1',
+    inputs: ['heat', 'airflow', 'contact'], outputs: ['light_flux', 'heat'], connections: ['none'],
+    layerPolicy: 'same-layer', physicsSummary: 'Ignitable flame emits local light and heat; strong airflow can extinguish it.', states: ['unlit', 'lit', 'extinguished'],
+  },
+  {
+    id: 'flashlight', label: 'Flashlight', category: 'energy', priority: 'P1',
+    inputs: ['switch_state'], outputs: ['light_flux'], connections: ['none'],
+    layerPolicy: 'same-layer', physicsSummary: 'Self-contained battery light emits a directional beam gated by its physical switch.', states: ['off', 'on'],
+  },
+  {
+    id: 'magnifier', label: 'Magnifying lens', category: 'environment', priority: 'P1',
+    inputs: ['light_flux'], outputs: ['focused_light', 'heat'], connections: ['none'],
+    layerPolicy: 'same-layer', physicsSummary: 'Convex lens redirects incident light toward a focal region, increasing local irradiance and heat.', states: ['idle', 'illuminated', 'focused'],
   },
   {
     id: 'pressure-trigger', label: 'Pressure trigger', category: 'trigger', priority: 'P0',
