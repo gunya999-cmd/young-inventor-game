@@ -1,55 +1,143 @@
-# TIM clean-room gameplay specification
+# Young Inventor — clean-room gameplay specification
 
-This project does not contain or depend on the proprietary source code, artwork, audio, text, or level data from *The Incredible Machine*.
+This project is an **original physics construction game**. It may study generic observable mechanics from historical machine-puzzle games, including *The Incredible Machine*, but it must not copy proprietary source code, artwork, audio, text, characters, UI, branding, or level layouts.
 
-The gameplay contract is reconstructed from publicly documented level/resource formats, observable behavior of legally obtained releases, and independently written open-source implementations.
+The authoritative mechanics inventory is:
 
-## Reference material
+- [`TIM_MECHANICS_BIBLE.md`](./TIM_MECHANICS_BIBLE.md)
+- typed runtime catalog: `src/mechanicsCatalog.ts`
 
-- ModdingWiki: The Incredible Machine level format
-  - https://moddingwiki.shikadi.net/wiki/The_Incredible_Machine_Level_Format
-- ModdingWiki: The Incredible Machine resource format
-  - https://moddingwiki.shikadi.net/wiki/TIM_Resource_Format
-- The Butterfly Effect, an independent GPL-2.0 machine-puzzle implementation
-  - https://github.com/the-butterfly-effect/tbe
+## Clean-room rule
 
-No source code is copied from these projects. They are used to identify public gameplay concepts and engineering risks.
+Research answers only the question:
+
+> What generic physical input/output behavior makes this kind of mechanism useful in a machine puzzle?
+
+Implementation then starts from real-world physics and the Young Inventor architecture.
+
+Examples:
+
+- rotational input -> electrical output becomes our own generator model;
+- contact -> bistable electrical state becomes our own switch model;
+- rope tension routed around a wheel becomes our own pulley/rope system.
+
+The historical shape, art, text, animation, level placement and naming are not implementation references.
+
+## Product architecture
+
+Young Inventor uses:
+
+- **Three.js** for full 3D presentation;
+- **Rapier3D** as the authoritative new-level physics solver;
+- fixed-step simulation independent of display refresh;
+- **2.75D construction**: pointer drag changes X/Y; depth is discrete BACK / MAIN / FRONT;
+- visual meshes and physics colliders kept independent;
+- original PBR assets and environments;
+- touch-first controls for iPad.
 
 ## Required player loop
 
-1. Load a level containing fixed objects, movable objects and a parts bin.
-2. In build mode the player may place, move, rotate, flip, fix and delete allowed parts at arbitrary valid coordinates.
-3. Connections are created explicitly between compatible anchors. A rope may be routed through pulley anchors.
-4. Starting the simulation captures an immutable construction snapshot.
-5. Build controls are locked while running.
-6. Pause preserves the current simulation state.
-7. Stop restores every part and connection exactly to the captured construction snapshot.
-8. Victory is evaluated from physical state and contacts, never from a scripted animation timeline.
+1. Load an original level containing fixed objects and a limited parts bin.
+2. In BUILD mode the player creates, moves and rotates allowed parts on X/Y.
+3. A selected part may move between explicit depth layers when the part supports it.
+4. Compatible anchors create rope, belt, gear or electrical connections.
+5. Starting simulation captures an immutable construction snapshot.
+6. Build editing is locked during RUN.
+7. PAUSE preserves exact simulation state.
+8. RESET restores the captured build snapshot.
+9. Victory is evaluated from physical state/contact/sustained signals, never a scripted animation timeline.
+
+## Universal part contract
+
+Every gameplay object must resolve to a registered `MechanicDefinition` or an explicitly reviewed extension.
+
+Required fields:
+
+- stable generic ID;
+- category;
+- inputs;
+- outputs;
+- connection kinds;
+- layer policy;
+- physics description;
+- runtime states;
+- production priority.
+
+Level code must compose these contracts rather than implement unique hidden behavior for each puzzle.
 
 ## Determinism requirements
 
-- Simulation uses a fixed step; render frame rate must not alter results.
-- Browser stalls are clamped and cannot produce unbounded catch-up steps.
-- IDs are stable and unique.
-- Snapshots are deep copies.
-- Removing a part removes all connections that depend on it, including pulley routes.
-- Connections are accepted only when both endpoint anchors and all route anchors are compatible.
+- physics advances at fixed timestep;
+- rendering frequency cannot change simulation results;
+- browser stalls have bounded catch-up;
+- object and connection IDs are stable;
+- build snapshots are deep immutable copies;
+- removing an object removes dependent connections;
+- connections require compatible endpoint types;
+- FRONT/BACK objects cannot accidentally collide with MAIN because of visual perspective;
+- cross-layer connections require explicit layer-compatible ports.
 
-## Architecture
+## Core connection contracts
 
-- `MachineModel`: authoritative editable machine graph and build/run lifecycle.
-- `FixedStepClock`: deterministic simulation clock, independent of display refresh rate.
-- `PartDefinition`: reusable behavior and anchor schema.
-- `PartInstance`: level-specific transform, fixed state and metadata.
-- `Connection`: rope, belt, hinge or rigid relationship between anchors.
-- Physics adapter: a later layer that maps the machine graph into the selected solver.
-- Renderer: a later layer; visual assets never define collision geometry.
+### Rope
 
-## Acceptance gates before graphics work
+- anchor-to-anchor;
+- optional ordered pulley route;
+- finite length;
+- tension-only behavior;
+- slack supported;
+- physical cutters may split it.
 
-- Free placement does not snap to a scripted solution.
-- Run/stop round-trip restores an identical snapshot.
-- 30 Hz, 60 Hz and 120 Hz rendering produce the same physics steps.
-- Rope, pulley, belt, hinge and gear tests pass independently.
-- Every part has deterministic regression scenarios.
-- A representative level passes repeated headless runs before it is exposed in the UI.
+### Belt
+
+- compatible shaft endpoints only;
+- finite length;
+- finite traction and slip;
+- transfers torque instead of assigning angular velocity.
+
+### Gear
+
+- explicit mesh compatibility;
+- pitch ratio determines angular-speed relationship;
+- finite torque/inertia.
+
+### Electrical
+
+- explicit producer/switch/consumer graph;
+- power source has finite capability where relevant;
+- consumers create load;
+- electrical load may feed back into mechanical generators and motors.
+
+## Visual/IP boundary
+
+Final assets must be original Young Inventor work or properly licensed third-party material documented in `THIRD_PARTY_ASSETS.md`.
+
+Do not import or recreate one-for-one:
+
+- commercial-game sprites/models/textures;
+- sound/music;
+- characters;
+- logos/title treatment;
+- distinctive UI layouts;
+- original puzzle maps;
+- original tutorial wording;
+- extracted resource or save/level files as shipping content.
+
+## Acceptance gates
+
+Before a new mechanic is accepted:
+
+1. It has a clean-room contract in `mechanicsCatalog.ts`.
+2. It has no level-specific success hack.
+3. Visual geometry is independent of collision geometry.
+4. Physics regression is deterministic.
+5. iPad input is covered where editing is involved.
+6. Run/reset round-trip restores the construction.
+7. A focused browser test verifies a real cause-and-effect path.
+8. Final art passes the AAA-child visual standard separately from CI.
+
+## Current implementation direction
+
+The current Stage 02 is the reference touch/editor experiment for the 2.75D model. The next engineering focus is to move from stage-specific snap assumptions to reusable P0 ports and connection tools from the Mechanics Bible.
+
+This specification is an engineering discipline, not legal advice. A commercial release should receive an IP review covering art, branding, UI, characters, marketing and level content.

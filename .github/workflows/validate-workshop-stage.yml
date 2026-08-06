@@ -1,0 +1,44 @@
+name: Validate AAA workshop stage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/workshopStage02.ts'
+      - 'src/workshopStage02V2.ts'
+      - 'src/workshopStage02V3.ts'
+      - 'src/workshopStage02V4.ts'
+      - 'src/workshopStage02V5.ts'
+      - 'src/workshopStage02Physics.ts'
+      - 'src/workshopStage02Physics.test.ts'
+      - 'src/workshopAssetKit.ts'
+      - 'src/workshopStage02.css'
+      - 'e2e/vertical-slice-02.spec.ts'
+      - 'src/main.ts'
+      - '.github/workflows/validate-workshop-stage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workshop-stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build production bundle
+        run: npm run build
+      - name: Verify 2.75D workshop physics and iPad XY/layer controls
+        run: npx playwright test e2e/vertical-slice-02.spec.ts --workers=1 --timeout=45000

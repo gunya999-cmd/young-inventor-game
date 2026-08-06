@@ -1,0 +1,336 @@
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import type { ReviewAssetModel0913 } from './parts0913Models';
+import { createBoxingGloveModelV16 } from './boxingGloveV16';
+import { createTrampolineModelV3 } from './trampolineV3';
+import { createFanBeltModelV3 } from './fanBeltV3';
+import { createGearModelV3 } from './gearV3';
+import { createConveyorBeltModelV3 } from './conveyorBeltV3';
+
+type AssetKey0913 = 'boxing-glove' | 'trampoline' | 'fan-belt' | 'gear' | 'conveyor-belt';
+
+type ReviewCanvas = HTMLCanvasElement & {
+  __pressBoxingGlove?: () => void;
+  __dropTrampolineProbe?: () => void;
+  __kickFanBelt?: () => void;
+  __kickGear?: () => void;
+  __startConveyor?: () => void;
+};
+
+interface AssetConfig0913 {
+  key: AssetKey0913;
+  part: string;
+  title: string;
+  version: string;
+  sourceLicense: string;
+  sourceKey: string;
+  radius: number;
+  initialRotation: [number, number, number];
+  create: () => ReviewAssetModel0913;
+}
+
+const CONFIGS: Record<AssetKey0913, AssetConfig0913> = {
+  'boxing-glove': {
+    key: 'boxing-glove', part: '09', title: 'Boxing Glove', version: 'boxing-glove-v16',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-incg5764-boxing-glove-cc-by', radius: 1.76,
+    initialRotation: [-0.045, -0.39, 0.01], create: createBoxingGloveModelV16
+  },
+  trampoline: {
+    key: 'trampoline', part: '10', title: 'Trampoline', version: 'trampoline-v3',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-simon-laisne-trampoline-cc-by', radius: 2.68,
+    initialRotation: [-0.36, -0.50, 0.025], create: createTrampolineModelV3
+  },
+  'fan-belt': {
+    key: 'fan-belt', part: '11', title: 'Fan Belt', version: 'fan-belt-v3',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-v-belt-c-type-cc-by', radius: 2.06,
+    initialRotation: [-0.18, -0.36, 0.07], create: createFanBeltModelV3
+  },
+  gear: {
+    key: 'gear', part: '12', title: 'Gear', version: 'gear-v3',
+    sourceLicense: 'CC0', sourceKey: 'sketchfab-plaggy-cc0-gear', radius: 1.58,
+    initialRotation: [-0.15, -0.42, 0.12], create: createGearModelV3
+  },
+  'conveyor-belt': {
+    key: 'conveyor-belt', part: '13', title: 'Conveyor Belt', version: 'conveyor-belt-v3',
+    sourceLicense: 'CC-BY', sourceKey: 'sketchfab-jason-kan-conveyor-cc-by', radius: 3.05,
+    initialRotation: [-0.30, -0.50, 0.015], create: createConveyorBeltModelV3
+  }
+};
+
+export function isPart0913Asset(value: string | null): value is AssetKey0913 {
+  return value !== null && value in CONFIGS;
+}
+
+export function installPart0913Lab(key: AssetKey0913): void {
+  const config = CONFIGS[key];
+  document.documentElement.classList.add('bowling-ball-lab-mode');
+  document.body.classList.add('bowling-ball-lab-mode', 'parts-0913-lab-mode');
+
+  const versionLabel = config.version.split('-').at(-1) ?? config.version;
+  const instruction = config.key === 'boxing-glove'
+    ? 'Нажми красную кнопку сзади — импульс выбросит перчатку, затем она свободно колеблется на пружине под действием гравитации'
+    : config.key === 'trampoline'
+      ? 'Нажми на чёрное полотно — тестовый мяч упадёт на него, продавит пружины и отскочит по реальной физике'
+      : config.key === 'fan-belt'
+        ? 'Нажми на левый шкив — он получит импульс, а ремень через трение и проскальзывание передаст момент правому шкиву'
+        : config.key === 'gear'
+          ? 'Нажми на шестерню — реальный угловой импульс раскрутит её, затем подшипниковое сопротивление постепенно погасит вращение'
+          : 'Нажми на ленту или мотор — привод раскрутит барабаны, а трение движущейся ленты перевезёт тестовый ящик';
+  const motion = config.key === 'boxing-glove'
+    ? 'impulse-spring-gravity'
+    : config.key === 'trampoline'
+      ? 'contact-spring-bounce'
+      : config.key === 'fan-belt'
+        ? 'physical-belt-traction-slip-transfer'
+        : config.key === 'gear'
+          ? 'angular-impulse-inertia-bearing-drag'
+          : 'motor-drum-belt-friction-transport';
+  const root = document.createElement('section');
+  root.className = `bowling-ball-lab parts-0913-lab ${config.key}-lab`;
+  root.innerHTML = `
+    <header class="bowling-ball-lab__header">
+      <div><small>PART ${config.part} · 3D ASSET REVIEW</small><h1>${config.title}</h1></div>
+      <div class="bowling-ball-lab__meta"><span>Three.js</span><span>PBR</span><span>${config.sourceLicense}</span><span>${versionLabel}</span></div>
+    </header>
+    <div class="bowling-ball-lab__stage">
+      <canvas aria-label="${config.title} 3D preview"
+        data-asset-version="${config.version}"
+        data-source-license="${config.sourceLicense}"
+        data-source-key="${config.sourceKey}"
+        data-studio-lighting="pmrem-soft"
+        data-motion="${motion}"></canvas>
+      <p>${instruction}</p>
+    </div>
+  `;
+  document.body.appendChild(root);
+
+  const canvas = root.querySelector<ReviewCanvas>('canvas')!;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.02;
+  renderer.setClearColor(0xedf1f4, 1);
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.045).texture;
+
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 120);
+  scene.add(new THREE.HemisphereLight(0xfafcff, 0x737b82, 0.82));
+
+  const keyLight = new THREE.DirectionalLight(0xfffbf5, 1.16);
+  keyLight.position.set(-4.6, 5.8, 7.2);
+  scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0xdce7ef, 0.30);
+  fillLight.position.set(4.2, 0.6, 5.3);
+  scene.add(fillLight);
+  const rimLight = new THREE.DirectionalLight(0xffffff, 0.17);
+  rimLight.position.set(3.1, 4.8, -4.3);
+  scene.add(rimLight);
+
+  const model = config.create();
+  const object = model.group;
+  object.rotation.set(...config.initialRotation);
+  scene.add(object);
+
+  if (config.key === 'boxing-glove' && typeof object.userData.setTriggerPressed === 'function') {
+    canvas.__pressBoxingGlove = (): void => {
+      object.userData.setTriggerPressed(true);
+      window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
+    };
+  }
+  if (config.key === 'trampoline' && typeof object.userData.dropProbe === 'function') {
+    canvas.__dropTrampolineProbe = (): void => object.userData.dropProbe();
+  }
+  if (config.key === 'fan-belt' && typeof object.userData.kickDriver === 'function') {
+    canvas.__kickFanBelt = (): void => object.userData.kickDriver();
+  }
+  if (config.key === 'gear' && typeof object.userData.kickGear === 'function') {
+    canvas.__kickGear = (): void => object.userData.kickGear();
+  }
+  if (config.key === 'conveyor-belt' && typeof object.userData.startConveyor === 'function') {
+    canvas.__startConveyor = (): void => object.userData.startConveyor();
+  }
+
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(1, 72),
+    new THREE.MeshBasicMaterial({ color: 0x59616a, transparent: true, opacity: 0.052, depthWrite: false })
+  );
+  shadow.scale.set(config.radius * 0.76, config.radius * 0.14, 1);
+  shadow.position.set(-0.30, -config.radius * 0.54, -config.radius * 0.32);
+  scene.add(shadow);
+
+  const raycaster = new THREE.Raycaster();
+  const pointerNdc = new THREE.Vector2();
+  let pointerId: number | null = null;
+  let lastX = 0;
+  let lastY = 0;
+  let dragDistance = 0;
+  let velocityX = 0;
+  let velocityY = 0;
+
+  canvas.addEventListener('pointerdown', (event) => {
+    pointerId = event.pointerId;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    dragDistance = 0;
+    velocityX = 0;
+    velocityY = 0;
+    canvas.setPointerCapture(event.pointerId);
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    if (pointerId !== event.pointerId) return;
+    const dx = event.clientX - lastX;
+    const dy = event.clientY - lastY;
+    dragDistance += Math.hypot(dx, dy);
+    lastX = event.clientX;
+    lastY = event.clientY;
+    velocityX = dx * 0.007;
+    velocityY = dy * 0.007;
+    object.rotation.y += velocityX;
+    object.rotation.x += velocityY;
+  });
+  const release = (event: PointerEvent): void => {
+    if (pointerId !== event.pointerId) return;
+    pointerId = null;
+    if (dragDistance >= 8) return;
+
+    const rect = canvas.getBoundingClientRect();
+    pointerNdc.set(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    raycaster.setFromCamera(pointerNdc, camera);
+    const hits = raycaster.intersectObject(object, true);
+
+    if (config.key === 'boxing-glove' && typeof object.userData.setTriggerPressed === 'function') {
+      const triggerHit = hits.find((hit) => hit.object.userData.isBoxingGloveTrigger === true);
+      if (!triggerHit) return;
+      object.userData.setTriggerPressed(true);
+      window.setTimeout(() => object.userData.setTriggerPressed(false), 80);
+      return;
+    }
+
+    if (config.key === 'trampoline' && typeof object.userData.dropProbe === 'function') {
+      const matHit = hits.find((hit) => hit.object.userData.isTrampolineSurface === true);
+      if (matHit) object.userData.dropProbe();
+      return;
+    }
+
+    if (config.key === 'fan-belt' && typeof object.userData.kickDriver === 'function') {
+      const driverHit = hits.find((hit) => {
+        let current: THREE.Object3D | null = hit.object;
+        while (current) {
+          if (current.userData.isFanBeltDriver === true) return true;
+          current = current.parent;
+        }
+        return false;
+      });
+      if (driverHit) object.userData.kickDriver();
+      return;
+    }
+
+    if (config.key === 'gear' && typeof object.userData.kickGear === 'function') {
+      const gearHit = hits.find((hit) => hit.object.userData.isGearSpinTarget === true);
+      if (gearHit) object.userData.kickGear();
+      return;
+    }
+
+    if (config.key === 'conveyor-belt' && typeof object.userData.startConveyor === 'function') {
+      const controlHit = hits.find((hit) => {
+        let current: THREE.Object3D | null = hit.object;
+        while (current) {
+          if (current.userData.isConveyorControl === true) return true;
+          current = current.parent;
+        }
+        return false;
+      });
+      if (controlHit) object.userData.startConveyor();
+    }
+  };
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+
+  const fitCamera = (width: number, height: number): void => {
+    const aspect = width / Math.max(1, height);
+    const verticalTan = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+    const horizontalTan = verticalTan * aspect;
+    const limitingTan = Math.max(0.01, Math.min(verticalTan, horizontalTan));
+    const distance = (config.radius / limitingTan) * 1.18;
+    camera.position.set(0, 0.04, distance);
+    const targetX = config.key === 'boxing-glove' ? -0.42 : -0.18;
+    const targetY = config.key === 'boxing-glove' ? -0.34 : config.key === 'trampoline' ? 0.52 : config.key === 'conveyor-belt' ? 0.16 : 0;
+    camera.lookAt(targetX, targetY, 0);
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+    canvas.dataset.cameraDistance = distance.toFixed(3);
+  };
+
+  const resize = (): void => {
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(1, rect.width);
+    const height = Math.max(1, rect.height);
+    renderer.setPixelRatio(Math.min(1.7, window.devicePixelRatio || 1));
+    renderer.setSize(width, height, false);
+    fitCamera(width, height);
+  };
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+
+  let previous = performance.now();
+  const animate = (now: number): void => {
+    const wallDt = Math.min(0.5, Math.max(0, (now - previous) / 1000));
+    const renderDt = Math.min(0.032, wallDt);
+    previous = now;
+    if (typeof object.userData.update === 'function') {
+      object.userData.update(object.userData.physicsEngine === 'planck' ? wallDt : renderDt);
+    }
+    if (pointerId === null) {
+      const damping = Math.pow(0.025, renderDt);
+      velocityX *= damping;
+      velocityY *= damping;
+      object.rotation.y += velocityX;
+      object.rotation.x += velocityY;
+    }
+    canvas.dataset.motionState = typeof object.userData.state === 'string' ? object.userData.state : '';
+    canvas.dataset.extension = typeof object.userData.extension === 'number' ? object.userData.extension.toFixed(3) : '0';
+    canvas.dataset.centerY = typeof object.userData.centerY === 'number' ? object.userData.centerY.toFixed(3) : '0';
+    canvas.dataset.speed = typeof object.userData.speed === 'number' ? object.userData.speed.toFixed(3) : '0';
+    canvas.dataset.oscillationTurns = typeof object.userData.oscillationTurns === 'number' ? String(object.userData.oscillationTurns) : '0';
+    canvas.dataset.physicsEngine = typeof object.userData.physicsEngine === 'string' ? object.userData.physicsEngine : '';
+    canvas.dataset.triggerPressed = object.userData.triggerPressed === true ? 'true' : 'false';
+    canvas.dataset.compression = typeof object.userData.compression === 'number' ? object.userData.compression.toFixed(3) : '0';
+    canvas.dataset.maxCompression = typeof object.userData.maxCompression === 'number' ? object.userData.maxCompression.toFixed(3) : '0';
+    canvas.dataset.probeX = typeof object.userData.probeX === 'number' ? object.userData.probeX.toFixed(3) : '0';
+    canvas.dataset.probeY = typeof object.userData.probeY === 'number' ? object.userData.probeY.toFixed(3) : '0';
+    canvas.dataset.probeVx = typeof object.userData.probeVx === 'number' ? object.userData.probeVx.toFixed(3) : '0';
+    canvas.dataset.probeVy = typeof object.userData.probeVy === 'number' ? object.userData.probeVy.toFixed(3) : '0';
+    canvas.dataset.impactSpeed = typeof object.userData.impactSpeed === 'number' ? object.userData.impactSpeed.toFixed(3) : '0';
+    canvas.dataset.bounceCount = typeof object.userData.bounceCount === 'number' ? String(object.userData.bounceCount) : '0';
+    canvas.dataset.peakAfterBounce = typeof object.userData.peakAfterBounce === 'number' ? object.userData.peakAfterBounce.toFixed(3) : '0';
+    canvas.dataset.horizontalRetention = typeof object.userData.horizontalRetention === 'number' ? object.userData.horizontalRetention.toFixed(3) : '0';
+    canvas.dataset.probeActive = object.userData.probeActive === true ? 'true' : 'false';
+    canvas.dataset.leftOmega = typeof object.userData.leftOmega === 'number' ? object.userData.leftOmega.toFixed(3) : '0';
+    canvas.dataset.rightOmega = typeof object.userData.rightOmega === 'number' ? object.userData.rightOmega.toFixed(3) : '0';
+    canvas.dataset.speedRatio = typeof object.userData.speedRatio === 'number' ? object.userData.speedRatio.toFixed(3) : '0';
+    canvas.dataset.beltSlip = typeof object.userData.slip === 'number' ? object.userData.slip.toFixed(3) : '0';
+    canvas.dataset.beltSpeed = typeof object.userData.beltSpeed === 'number' ? object.userData.beltSpeed.toFixed(3) : '0';
+    canvas.dataset.beltTravel = typeof object.userData.beltTravel === 'number' ? object.userData.beltTravel.toFixed(3) : '0';
+    canvas.dataset.peakFollowerSpeed = typeof object.userData.peakFollowerSpeed === 'number' ? object.userData.peakFollowerSpeed.toFixed(3) : '0';
+    canvas.dataset.kickCount = typeof object.userData.kickCount === 'number' ? String(object.userData.kickCount) : '0';
+    canvas.dataset.gearOmega = typeof object.userData.omega === 'number' ? object.userData.omega.toFixed(3) : '0';
+    canvas.dataset.gearTotalAngle = typeof object.userData.totalAngle === 'number' ? object.userData.totalAngle.toFixed(3) : '0';
+    canvas.dataset.gearPeakOmega = typeof object.userData.peakOmega === 'number' ? object.userData.peakOmega.toFixed(3) : '0';
+    canvas.dataset.gearSpinCount = typeof object.userData.spinCount === 'number' ? String(object.userData.spinCount) : '0';
+    canvas.dataset.conveyorRunning = object.userData.running === true ? 'true' : 'false';
+    canvas.dataset.crateX = typeof object.userData.crateX === 'number' ? object.userData.crateX.toFixed(3) : '0';
+    canvas.dataset.crateY = typeof object.userData.crateY === 'number' ? object.userData.crateY.toFixed(3) : '0';
+    canvas.dataset.crateVx = typeof object.userData.crateVx === 'number' ? object.userData.crateVx.toFixed(3) : '0';
+    canvas.dataset.maxCrateX = typeof object.userData.maxCrateX === 'number' ? object.userData.maxCrateX.toFixed(3) : '0';
+    canvas.dataset.peakBeltSpeed = typeof object.userData.peakBeltSpeed === 'number' ? object.userData.peakBeltSpeed.toFixed(3) : '0';
+    canvas.dataset.delivered = object.userData.delivered === true ? 'true' : 'false';
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  };
+  requestAnimationFrame(animate);
+}

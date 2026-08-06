@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -41,6 +41,41 @@ jobs:
 
       - name: Run browser smoke test
         run: npm run test:e2e
+
+      - name: Upload Boxing Glove previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boxing-glove-v16-preview
+          path: |
+            test-results/boxing-glove-v16-armed.png
+            test-results/boxing-glove-v16-impulse.png
+            test-results/boxing-glove-v16-settled.png
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Upload Trampoline previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trampoline-v3-preview
+          path: |
+            test-results/trampoline-v3-ready.png
+            test-results/trampoline-v3-compressed.png
+            test-results/trampoline-v3-bounced.png
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Upload original Jack WebGL previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jack-in-the-box-v5-original-preview
+          path: |
+            test-results/jack-in-the-box-v5-original-ready.png
+            test-results/jack-in-the-box-v5-original-released.png
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Upload build log
         if: always()

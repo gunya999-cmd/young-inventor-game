@@ -1,0 +1,73 @@
+name: Validate original Windmill visual
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/generate-windmill-v1-textures.py
+      - tools/build-windmill-v1.py
+      - .github/workflows/validate-windmill-v1.yml
+
+permissions:
+  contents: read
+
+jobs:
+  visual-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Blender and texture dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender python3-numpy libegl1 libgl1 libglx-mesa0 libopengl0 >/dev/null
+          python -m pip install --disable-pip-version-check --quiet pillow numpy trimesh
+          blender --version | head -n 2
+
+      - name: Generate Windmill PBR maps
+        run: python tools/generate-windmill-v1-textures.py
+
+      - name: Build original Windmill GLB and studio preview
+        env:
+          WINDMILL_OUT: test-results/windmill-v1.glb
+          WINDMILL_PREVIEW: test-results/windmill-v1-blender.png
+        run: |
+          mkdir -p test-results
+          blender -b --python tools/build-windmill-v1.py
+          test -s test-results/windmill-v1.glb
+          test -s test-results/windmill-v1-blender.png
+
+      - name: Validate articulated geometry
+        run: |
+          python - <<'PY'
+          import json, os, trimesh
+          path='test-results/windmill-v1.glb'
+          scene=trimesh.load(path, force='scene')
+          faces=sum(len(g.faces) for g in scene.geometry.values() if hasattr(g,'faces'))
+          nodes=set(scene.graph.nodes)
+          required={'WM_Frame','WM_Rotor','WM_Blades','WM_Shaft','WM_OutputPulley'}
+          report={
+            'bytes':os.path.getsize(path),
+            'triangles':faces,
+            'geometries':len(scene.geometry),
+            'nodes':sorted(n for n in nodes if n.startswith('WM_')),
+            'missing':sorted(required-nodes),
+          }
+          print(json.dumps(report,indent=2))
+          assert 12000 <= faces <= 120000, report
+          assert not report['missing'], report
+          with open('test-results/windmill-v1-report.json','w') as f: json.dump(report,f,indent=2)
+          PY
+
+      - name: Upload Windmill visual gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windmill-v1-visual-gate
+          path: |
+            test-results/windmill-v1-blender.png
+            test-results/windmill-v1-report.json
+            test-results/windmill-v1.glb
+          if-no-files-found: warn
+          retention-days: 3
