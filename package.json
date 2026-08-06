@@ -1,19 +1,18 @@
 {
-  "name": "young-inventor-game",
+  "name": "young-inventor-reboot",
   "private": true,
-  "version": "0.6.0",
+  "version": "1.0.0-reboot.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
     "build": "npm run test && tsc -b && vite build",
-    "test": "vitest run src/*.test.ts",
-    "test:watch": "vitest src/*.test.ts",
-    "test:e2e": "playwright test"
+    "test": "vitest run src/reboot/*.test.ts",
+    "test:watch": "vitest src/reboot/*.test.ts",
+    "test:e2e": "playwright test e2e/reboot-stage-01.spec.ts"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.19.3",
-    "planck": "1.5.0",
     "three": "0.185.1"
   },
   "devDependencies": {
