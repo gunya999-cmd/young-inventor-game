@@ -39,4 +39,19 @@ describe('clean-room mechanics catalog', () => {
     expect(categories.has('energy')).toBe(true);
     expect(categories.has('goal')).toBe(true);
   });
+
+  it('registers the light and heat puzzle family', () => {
+    const candle = requireMechanic('candle');
+    const flashlight = requireMechanic('flashlight');
+    const magnifier = requireMechanic('magnifier');
+
+    expect(candle.outputs).toContain('light_flux');
+    expect(candle.outputs).toContain('heat');
+    expect(candle.inputs).toContain('airflow');
+    expect(flashlight.outputs).toContain('light_flux');
+    expect(flashlight.inputs).toContain('switch_state');
+    expect(magnifier.inputs).toContain('light_flux');
+    expect(magnifier.outputs).toContain('focused_light');
+    expect(magnifier.outputs).toContain('heat');
+  });
 });
