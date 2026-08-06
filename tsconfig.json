@@ -12,15 +12,18 @@
     "esModuleInterop": true,
     "noEmit": true,
     "strict": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vitest/globals"]
   },
   "include": [
     "src/main.ts",
+    "src/reboot/**/*.ts"
+  ],
+  "exclude": [
+    "src/engine/**",
+    "src/physics.ts",
     "src/app.ts",
     "src/model.ts",
-    "src/physics.ts",
-    "src/renderer.ts",
-    "src/model.test.ts",
-    "src/physics.test.ts"
+    "src/renderer.ts"
   ]
 }
