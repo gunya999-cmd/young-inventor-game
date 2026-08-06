@@ -40,9 +40,9 @@ export type RebootPhysics = {
 };
 
 const DT = 1 / 120;
-const CONVEYOR_TARGET_SPEED = 3.6;
-const CONVEYOR_MAX_ACCEL = 5.5;
-const CONVEYOR_RESPONSE = 3.0;
+const CONVEYOR_TARGET_SPEED = 2.2;
+const CONVEYOR_MAX_ACCEL = 3.5;
+const CONVEYOR_RESPONSE = 2.5;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -70,9 +70,9 @@ export function canonicalRebootSolution(): { parts: RebootPart[]; belts: BeltCon
       { id: 'wheel-a', type: 'drive-wheel', x: -4.35, y: -0.05, direction: 1 },
       { id: 'wheel-b', type: 'drive-wheel', x: -0.55, y: 1.02, direction: 1 },
       { id: 'wheel-c', type: 'drive-wheel', x: 3.20, y: 2.18, direction: 1 },
-      { id: 'ramp-a', type: 'ramp', x: -2.25, y: 1.26, rotationZ: 0.39 },
+      { id: 'ramp-a', type: 'ramp', x: -2.65, y: 1.36, rotationZ: 0.39 },
       { id: 'ramp-b', type: 'ramp', x: 1.62, y: 2.47, rotationZ: 0.39 },
-      { id: 'ramp-c', type: 'ramp', x: 5.08, y: 3.52, rotationZ: 0.14 },
+      { id: 'ramp-c', type: 'ramp', x: 5.12, y: 3.10, rotationZ: 0.00 },
     ],
     belts: [
       { id: 'belt-a', wheelId: 'wheel-a', conveyorId: 'conveyor-a' },
