@@ -39,20 +39,24 @@ export function createCampaignStage01Physics(placements: readonly Stage01Placeme
   const events = new RAPIER.EventQueue(true);
   const state: Stage01PhysicsState = { won: false, goalContact: false, ballOut: false, leverMoved: false };
 
-  // Floor and two invisible depth rails keep the physical puzzle in MAIN layer
-  // while the renderer remains fully 3D.
+  // MAIN-layer physics corridor. Visuals remain full 3D, but accidental depth
+  // drift cannot make a valid-looking construction miss its collider.
   world.createCollider(RAPIER.ColliderDesc.cuboid(6.3, 0.08, 1.0).setTranslation(0, -0.08, 0).setFriction(0.72));
   world.createCollider(RAPIER.ColliderDesc.cuboid(6.3, 3.5, 0.04).setTranslation(0, 2.3, -0.52));
   world.createCollider(RAPIER.ColliderDesc.cuboid(6.3, 3.5, 0.04).setTranslation(0, 2.3, 0.52));
 
-  // Fixed starting shelf. The ball starts slightly above its right half and is
-  // released by gravity when the simulation begins.
-  const startShelf = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(-4.75, 2.74, 0));
-  world.createCollider(RAPIER.ColliderDesc.cuboid(0.92, 0.08, 0.44).setFriction(0.46), startShelf);
+  // Slightly tilted start shelf releases the ball through gravity alone.
+  const shelfAngle = -0.10;
+  const startShelf = world.createRigidBody(
+    RAPIER.RigidBodyDesc.fixed()
+      .setTranslation(-4.75, 2.72, 0)
+      .setRotation(quatZ(shelfAngle))
+  );
+  world.createCollider(RAPIER.ColliderDesc.cuboid(0.92, 0.08, 0.44).setFriction(0.48), startShelf);
 
   const ballBody = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(-5.18, 3.16, 0)
+      .setTranslation(-5.18, 3.14, 0)
       .setCcdEnabled(true)
       .setLinearDamping(0.006)
       .setAngularDamping(0.006)
@@ -62,15 +66,14 @@ export function createCampaignStage01Physics(placements: readonly Stage01Placeme
     ballBody
   );
 
-  // Goal is a physical catch pocket plus a narrow collision sensor. Entering
-  // the sensor after a real trajectory is the only win condition.
+  // Open-sided catch tray: the player can roll the ball into it horizontally
+  // or drop it from above. A real collision sensor inside is the only win path.
   const goalBase = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(4.55, 0.62, 0));
-  world.createCollider(RAPIER.ColliderDesc.cuboid(0.62, 0.10, 0.48).setTranslation(0, -0.42, 0).setFriction(0.60), goalBase);
-  world.createCollider(RAPIER.ColliderDesc.cuboid(0.09, 0.55, 0.48).setTranslation(-0.60, 0, 0), goalBase);
-  world.createCollider(RAPIER.ColliderDesc.cuboid(0.09, 0.55, 0.48).setTranslation(0.60, 0, 0), goalBase);
+  world.createCollider(RAPIER.ColliderDesc.cuboid(0.72, 0.10, 0.48).setTranslation(0, -0.42, 0).setFriction(0.64), goalBase);
+  world.createCollider(RAPIER.ColliderDesc.cuboid(0.09, 0.55, 0.48).setTranslation(0.70, 0, 0), goalBase);
   const goalSensor = world.createCollider(
-    RAPIER.ColliderDesc.cuboid(0.42, 0.30, 0.42)
-      .setTranslation(0, -0.08, 0)
+    RAPIER.ColliderDesc.cuboid(0.54, 0.30, 0.42)
+      .setTranslation(-0.06, -0.08, 0)
       .setSensor(true)
       .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     goalBase
@@ -120,7 +123,7 @@ export function createCampaignStage01Physics(placements: readonly Stage01Placeme
         lever,
         true
       ) as any;
-      joint.setLimits(part.rotationZ - 0.72, part.rotationZ + 0.72);
+      joint.setLimits(-0.72, 0.72);
       leverBodies.set(part.id, lever);
     }
   }
