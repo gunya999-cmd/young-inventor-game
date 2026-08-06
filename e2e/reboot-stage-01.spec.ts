@@ -1,14 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-test('clean reboot Level 1 completes the original benchmark route', async ({ page }) => {
+test('clean reboot Level 1 completes the original mechanics benchmark', async ({ page }) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 1180, height: 760 });
   await page.goto('/');
   const canvas = page.locator('.rb-canvas');
-  await expect(canvas).toHaveAttribute('data-version', 'reboot-level-01-v1', { timeout: 15_000 });
+  await expect(canvas).toHaveAttribute('data-version', 'reboot-level-01-v2-physics-synced', { timeout: 15_000 });
   await expect(canvas).toHaveAttribute('data-state', 'build');
   await expect(canvas).toHaveAttribute('data-physics', 'rapier3d-cleanroom-reboot-v1');
   await expect(canvas).toHaveAttribute('data-layout', 'original-benchmark-not-tim-level-data');
+  await expect(canvas).toHaveAttribute('data-geometry-sync', 'visual-collider-v1');
 
   await page.evaluate(() => {
     const c = document.querySelector<HTMLCanvasElement & { __applyCanonicalSolution?: () => void }>('.rb-canvas');
