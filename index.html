@@ -2,77 +2,13 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#eee8db" />
-    <meta name="description" content="Инженерная физическая головоломка: импульс, момент силы, натяжение и упругость." />
-    <title>Машина изобретателя · Импульс и момент</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#d8ccb5" />
+    <meta name="description" content="Young Inventor — clean-room physics machine reboot" />
+    <title>Young Inventor · Reboot Level 1</title>
   </head>
   <body>
-    <main id="app" class="desktop-app">
-      <header class="top-toolbar">
-        <section class="mission-summary" aria-label="Задача уровня">
-          <span class="level-number">07</span>
-          <div>
-            <p class="eyebrow">ЛАБОРАТОРИЯ МЕХАНИКИ</p>
-            <h1>Импульс и момент</h1>
-            <p class="mission-copy">Подними контрольный шар выше центральной перегородки и доставь его в приёмник.</p>
-          </div>
-        </section>
-        <section class="run-state" aria-label="Состояние симуляции"><span id="mode-label" class="mode-chip">СБОРКА</span><b id="run-timer">0.0с</b></section>
-        <nav class="simulation-controls" aria-label="Управление симуляцией">
-          <button id="undo-button" class="tool-button icon-only" type="button" title="Отменить (Ctrl+Z)">↶</button><button id="redo-button" class="tool-button icon-only" type="button" title="Повторить (Ctrl+Y)">↷</button><button id="camera-button" class="tool-button" type="button" title="Показать всё поле">⌖ Поле</button><span class="toolbar-divider"></span><button id="pause-button" class="tool-button icon-only" type="button" disabled title="Пауза (P)">Ⅱ</button><button id="stop-button" class="tool-button icon-only" type="button" disabled title="Стоп (Space)">■</button><button id="run-button" class="run-button" type="button">▶ Запустить</button>
-        </nav>
-      </header>
-
-      <aside class="library-panel side-panel" aria-label="Доступные детали">
-        <header class="panel-heading compact-heading"><div><p class="eyebrow">ДОСТУПНО</p><h2>Детали</h2></div><span class="panel-badge">DRAG</span></header>
-        <div class="parts-list">
-          <p class="inventory-section-label">Цель уровня</p>
-          <button class="palette-part" data-kind="ball" type="button" title="Контрольный стальной шар"><span class="palette-icon ball-icon"></span><span class="part-copy"><b>Шар</b></span><em data-count>×0</em></button>
-
-          <p class="inventory-section-label">Конструкция</p>
-          <button class="palette-part" data-kind="plank" type="button" title="Направляющая"><span class="palette-icon plank-icon"></span><span class="part-copy"><b>Рельс</b></span><em data-count>×3</em></button>
-          <button class="palette-part" data-kind="lever" type="button" title="Рычаг"><span class="palette-icon lever-icon"></span><span class="part-copy"><b>Рычаг</b></span><em data-count>×1</em></button>
-          <button class="palette-part" data-kind="domino" type="button" title="Домино"><span class="palette-icon extended-icon domino-icon">••</span><span class="part-copy"><b>Домино</b></span><em data-count>×6</em></button>
-
-          <p class="inventory-section-label">Передача энергии</p>
-          <button class="palette-part" data-kind="sheave" type="button" title="Шкив"><span class="palette-icon extended-icon sheave-icon"></span><span class="part-copy"><b>Шкив</b></span><em data-count>×2</em></button>
-          <button class="palette-part" data-kind="spring" type="button" title="Пружина"><span class="palette-icon extended-icon spring-icon">≋</span><span class="part-copy"><b>Пружина</b></span><em data-count>×1</em></button>
-        </div>
-        <section class="connections-card"><p class="eyebrow">СОЕДИНЕНИЯ</p><button id="rope-button" class="connection-button" type="button">〰 Верёвка <span>×3</span></button><button id="hinge-button" class="connection-button" type="button">⊙ Ось <span>×2</span></button></section>
-      </aside>
-
-      <section class="workspace-panel" aria-label="Рабочее поле">
-        <div class="workspace-header"><div><p class="eyebrow">РАБОЧАЯ ПОВЕРХНОСТЬ</p><strong>1600 × 900 · g = 9.81 м/с²</strong></div><div class="workspace-tools"><label class="toggle-control"><input id="snap-toggle" type="checkbox" checked /><span>Шаг 10 px</span></label><span class="zoom-hint">Ctrl + колесо — масштаб</span></div></div>
-        <div class="canvas-frame">
-          <canvas id="game-canvas" aria-label="Игровое поле"></canvas>
-          <div class="objective-strip" aria-hidden="true"><span class="objective-start"><i></i>СТАРТ</span><span class="objective-line"></span><span class="objective-finish"><i></i>ПРИЁМНИК</span></div>
-          <div class="build-prompt"><strong>ИНЖЕНЕРНАЯ ЗАДАЧА</strong><span>Прямой проход закрыт перегородкой. Используй энергию механизма, чтобы поднять шар.</span></div>
-          <div class="state-legend"><span><i class="legend-level"></i>дано</span><span><i class="legend-fixed"></i>закреплено</span><span><i class="legend-free"></i>подвижно</span></div><div class="canvas-corner-label">BOX2D · 120 Hz</div>
-        </div>
-      </section>
-
-      <aside id="inspector" class="properties-panel side-panel" aria-label="Задача и свойства">
-        <section class="task-card">
-          <p class="eyebrow">ЗАДАЧА</p><h2>Проведи шар над перегородкой</h2>
-          <p>На поле уже есть груз на защёлке и нажимная кнопка. Они связаны: физическое нажатие кнопки освобождает груз. Как использовать его энергию — решаешь ты.</p>
-          <div class="principles-row"><span>импульс</span><span>момент</span><span>натяжение</span><span>упругость</span></div>
-        </section>
-        <header class="panel-heading inspector-heading"><div><p class="eyebrow">ВЫБРАНО</p><h2 id="selection-name">Ничего</h2></div><span id="selection-status" class="state-badge">—</span></header>
-        <p id="selection-help" class="panel-description">Объекты с меткой «ДАНО» использовать можно, перемещать — нельзя.</p>
-        <div class="property-content">
-          <section class="property-group"><h3>Положение</h3><div class="numeric-grid"><label>X <input id="position-x" type="number" step="1" disabled /></label><label>Y <input id="position-y" type="number" step="1" disabled /></label></div></section>
-          <section class="property-group"><div class="group-title-row"><h3>Поворот</h3><span id="selection-angle">—</span></div><div class="angle-controls"><button id="rotate-left" class="tool-button icon-only" type="button" title="Повернуть влево (Q)">↶</button><label><input id="angle-input" type="number" min="-180" max="180" step="1" disabled /><span>°</span></label><button id="rotate-right" class="tool-button icon-only" type="button" title="Повернуть вправо (E)">↷</button></div></section>
-          <section class="property-group"><h3>Крепление</h3><button id="fix-button" class="wide-action" type="button">Закрепить</button><button id="remove-hinge-button" class="wide-action secondary" type="button" disabled>Удалить ось</button></section>
-          <section class="property-group"><h3>Действия</h3><div class="action-grid"><button id="duplicate-button" type="button">⧉ Копия</button><button id="delete-button" class="danger-button" type="button">⌫ Удалить</button></div></section>
-        </div>
-        <section class="project-actions"><h3>Конструкция</h3><div class="action-grid"><button id="save-button" type="button">Сохранить</button><button id="load-button" type="button" disabled>Загрузить</button><button id="clear-button" type="button">Очистить</button><button id="reset-button" type="button">Сбросить</button></div></section>
-      </aside>
-
-      <footer class="status-bar"><span class="status-light"></span><span id="status-message" aria-live="polite">Изучи данную конфигурацию и собери механизм, который поднимет шар выше перегородки.</span><span class="status-shortcuts">Alt + ЛКМ — камера · Q/E — поворот · Space — пуск</span></footer>
-      <section id="result-card" class="result-card" aria-live="polite"><span class="result-icon">✓</span><p class="eyebrow">ИСПЫТАНИЕ ПРОЙДЕНО</p><h2>Механизм сработал</h2><p>Контрольный шар оказался в приёмнике.</p><b id="result-time">0.0 сек.</b><button id="result-again" type="button">Вернуться к конструкции</button></section>
-      <div id="fatal-error" class="fatal-error" hidden></div>
-    </main>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
