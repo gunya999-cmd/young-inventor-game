@@ -15,10 +15,13 @@ export type ConveyorDefinition = {
   direction: DriveDirection;
 };
 
+export const BALL_START = { x: -5.10, y: 4.08 } as const;
+export const GOAL_POSITION = { x: 5.25, y: 1.20 } as const;
+
 export const CONVEYORS: readonly ConveyorDefinition[] = [
-  { id: 'conveyor-a', x: -4.10, y: 0.72, width: 2.40, direction: 1 },
-  { id: 'conveyor-b', x: -0.25, y: 1.92, width: 2.45, direction: 1 },
-  { id: 'conveyor-c', x: 3.45, y: 3.06, width: 2.35, direction: 1 },
+  { id: 'conveyor-a', x: -4.60, y: 3.70, width: 1.60, direction: 1 },
+  { id: 'conveyor-b', x: -0.80, y: 2.75, width: 1.60, direction: 1 },
+  { id: 'conveyor-c', x: 2.90, y: 1.80, width: 1.60, direction: 1 },
 ] as const;
 
 export type RebootPhysicsState = {
@@ -40,9 +43,9 @@ export type RebootPhysics = {
 };
 
 const DT = 1 / 120;
-const CONVEYOR_TARGET_SPEED = 2.2;
-const CONVEYOR_MAX_ACCEL = 3.5;
-const CONVEYOR_RESPONSE = 2.5;
+const CONVEYOR_TARGET_SPEED = 1.8;
+const CONVEYOR_MAX_ACCEL = 2.8;
+const CONVEYOR_RESPONSE = 2.2;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -67,12 +70,12 @@ function poweredConveyors(parts: readonly RebootPart[], belts: readonly BeltConn
 export function canonicalRebootSolution(): { parts: RebootPart[]; belts: BeltConnection[] } {
   return {
     parts: [
-      { id: 'wheel-a', type: 'drive-wheel', x: -4.35, y: -0.05, direction: 1 },
-      { id: 'wheel-b', type: 'drive-wheel', x: -0.55, y: 1.02, direction: 1 },
-      { id: 'wheel-c', type: 'drive-wheel', x: 3.20, y: 2.18, direction: 1 },
-      { id: 'ramp-a', type: 'ramp', x: -2.65, y: 1.36, rotationZ: 0.39 },
-      { id: 'ramp-b', type: 'ramp', x: 1.62, y: 2.47, rotationZ: 0.39 },
-      { id: 'ramp-c', type: 'ramp', x: 5.12, y: 3.10, rotationZ: 0.00 },
+      { id: 'wheel-a', type: 'drive-wheel', x: -4.60, y: 2.95, direction: 1 },
+      { id: 'wheel-b', type: 'drive-wheel', x: -0.80, y: 2.00, direction: 1 },
+      { id: 'wheel-c', type: 'drive-wheel', x: 2.90, y: 1.00, direction: 1 },
+      { id: 'ramp-a', type: 'ramp', x: -2.70, y: 3.238, rotationZ: -0.341 },
+      { id: 'ramp-b', type: 'ramp', x: 1.05, y: 2.288, rotationZ: -0.341 },
+      { id: 'ramp-c', type: 'ramp', x: 4.55, y: 1.323, rotationZ: -0.352 },
     ],
     belts: [
       { id: 'belt-a', wheelId: 'wheel-a', conveyorId: 'conveyor-a' },
@@ -102,7 +105,7 @@ export function createRebootPhysics(parts: readonly RebootPart[], belts: readonl
   for (const c of CONVEYORS) {
     const body = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(c.x, c.y, 0));
     const collider = world.createCollider(
-      RAPIER.ColliderDesc.cuboid(c.width / 2, 0.10, 0.46).setFriction(0.92).setRestitution(0.01),
+      RAPIER.ColliderDesc.cuboid(c.width / 2, 0.10, 0.46).setFriction(0.90).setRestitution(0.00),
       body
     );
     conveyorColliders.set(c.id, collider);
@@ -113,7 +116,7 @@ export function createRebootPhysics(parts: readonly RebootPart[], belts: readonl
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.fixed().setTranslation(part.x, part.y, 0).setRotation(quatZ(part.rotationZ))
     );
-    world.createCollider(RAPIER.ColliderDesc.cuboid(1.42, 0.095, 0.46).setFriction(0.42).setRestitution(0.01), body);
+    world.createCollider(RAPIER.ColliderDesc.cuboid(1.42, 0.095, 0.46).setFriction(0.38).setRestitution(0.00), body);
   }
 
   const wheelBodies = new Map<string, any>();
@@ -122,25 +125,25 @@ export function createRebootPhysics(parts: readonly RebootPart[], belts: readonl
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.kinematicVelocityBased()
         .setTranslation(part.x, part.y, 0)
-        .setAngvel({ x: 0, y: 0, z: -part.direction * 4.2 })
+        .setAngvel({ x: 0, y: 0, z: -part.direction * 3.0 })
     );
-    world.createCollider(RAPIER.ColliderDesc.ball(0.42).setFriction(0.85), body);
+    world.createCollider(RAPIER.ColliderDesc.ball(0.42).setFriction(0.80), body);
     wheelBodies.set(part.id, body);
   }
 
   const ballBody = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(-5.15, 1.12, 0)
+      .setTranslation(BALL_START.x, BALL_START.y, 0)
       .setCcdEnabled(true)
-      .setLinearDamping(0.012)
-      .setAngularDamping(0.016)
+      .setLinearDamping(0.018)
+      .setAngularDamping(0.018)
   );
   const ballCollider = world.createCollider(
-    RAPIER.ColliderDesc.ball(0.28).setDensity(1.2).setFriction(0.52).setRestitution(0.04),
+    RAPIER.ColliderDesc.ball(0.28).setDensity(4.0).setFriction(0.48).setRestitution(0.00),
     ballBody
   );
 
-  const goalBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(5.72, 3.58, 0));
+  const goalBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(GOAL_POSITION.x, GOAL_POSITION.y, 0));
   world.createCollider(RAPIER.ColliderDesc.cuboid(0.50, 0.07, 0.46).setTranslation(0, -0.43, 0).setFriction(0.52), goalBody);
   world.createCollider(RAPIER.ColliderDesc.cuboid(0.06, 0.48, 0.46).setTranslation(-0.48, -0.03, 0), goalBody);
   world.createCollider(RAPIER.ColliderDesc.cuboid(0.06, 0.48, 0.46).setTranslation(0.48, -0.03, 0), goalBody);
@@ -163,7 +166,7 @@ export function createRebootPhysics(parts: readonly RebootPart[], belts: readonl
         const v = ballBody.linvel();
         const target = CONVEYOR_TARGET_SPEED * direction;
         const desiredAcceleration = clamp((target - v.x) * CONVEYOR_RESPONSE, -CONVEYOR_MAX_ACCEL, CONVEYOR_MAX_ACCEL);
-        const mass = Math.max(0.001, Number(ballBody.mass?.() ?? 0.11));
+        const mass = Math.max(0.001, Number(ballBody.mass?.() ?? 0.37));
         ballBody.addForce({ x: desiredAcceleration * mass, y: 0, z: 0 }, true);
       }
     }
