@@ -40,6 +40,13 @@ export type RebootPhysics = {
 };
 
 const DT = 1 / 120;
+const CONVEYOR_TARGET_SPEED = 3.6;
+const CONVEYOR_MAX_ACCEL = 5.5;
+const CONVEYOR_RESPONSE = 3.0;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
 function quatZ(angle: number): { x: number; y: number; z: number; w: number } {
   const half = angle * 0.5;
@@ -154,9 +161,10 @@ export function createRebootPhysics(parts: readonly RebootPart[], belts: readonl
       if (collider) world.contactPair(ballCollider, collider, () => { touching = true; });
       if (touching) {
         const v = ballBody.linvel();
-        const target = 3.6 * direction;
-        const delta = target - v.x;
-        ballBody.addForce({ x: delta * 5.2, y: 0.55, z: 0 }, true);
+        const target = CONVEYOR_TARGET_SPEED * direction;
+        const desiredAcceleration = clamp((target - v.x) * CONVEYOR_RESPONSE, -CONVEYOR_MAX_ACCEL, CONVEYOR_MAX_ACCEL);
+        const mass = Math.max(0.001, Number(ballBody.mass?.() ?? 0.11));
+        ballBody.addForce({ x: desiredAcceleration * mass, y: 0, z: 0 }, true);
       }
     }
 
