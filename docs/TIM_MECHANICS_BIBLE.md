@@ -83,9 +83,10 @@ regression scenarios[]
 - shaft_rotation
 - gear_mesh
 
-**Environmental**
+**Environmental / optical / thermal**
 - airflow
 - light_flux
+- focused_light
 - heat
 - gravity
 
@@ -125,12 +126,15 @@ The project deliberately uses generic archetypes rather than copying a historica
 | cutter | Closing cutter | force/contact | jointed blades + edge intersection | sever rope / puncture soft body | P1 |
 | toggle-switch | Mechanical electrical switch | contact/force | articulated latch | switch_state | P0 |
 | generator | Mechanical generator | shaft_rotation | inertia + electrical load torque | electrical_power | P0 |
-| light-generator | Photoelectric source | light_flux | intensity/distance/occlusion | electrical_power | P1 |
+| light-generator | Photoelectric source | light_flux/focused_light | intensity/focus/distance/occlusion | electrical_power | P1 |
 | motor | Electric motor | electrical_power/load | finite torque motor + inertia | shaft_rotation | P0 |
 | fan | Powered airflow source | electrical_power | motor + airflow field | airflow | P0 |
+| candle | Candle | heat/airflow/contact | ignitable flame + airflow extinction | light_flux + heat | P1 |
+| flashlight | Flashlight | switch_state | self-contained battery + directional beam | light_flux | P1 |
+| magnifier | Magnifying lens | light_flux | convex optical focusing + focal heating | focused_light + heat | P1 |
 | lamp-push | Push-activated lamp | contact | physical switch/latch | light_flux | P1 |
 | lamp-pull | Pull-cord lamp | rope_tension | pull latch | light_flux | P1 |
-| optical-lens | Light focusing element | light_flux | ray direction/occlusion/focus | concentrated light/heat | P2 |
+| optical-lens | Generic light focusing element | light_flux | ray direction/occlusion/focus | concentrated light/heat | P2 |
 | fuse-device | Fuse-triggered actuator | heat/light | ignition delay/state | launch/explosion/heat | P2 |
 | pressure-trigger | Pressed button/plunger | contact/force | travel + spring + threshold | logic/electrical state | P0 |
 | falling-weight | Hanging mass | rope/gravity | rigid body + tension | force/energy storage | P0 |
@@ -148,6 +152,41 @@ Priority meanings:
 - **P1**: classic chain-reaction richness.
 - **P2**: advanced energy/heat/destruction systems.
 - **P3**: character/agent layer after core physics is mature.
+
+### Light / heat family added to the production catalog
+
+These are not decorative props. They are intended to form real puzzle chains:
+
+```text
+CANDLE
+  heat input -> ignition
+  flame -> local light_flux + heat
+  strong airflow -> extinguish
+
+FLASHLIGHT
+  physical/self-contained switch -> on/off
+  directional beam -> light_flux
+  beam can be blocked by scene geometry
+
+MAGNIFIER
+  receives light_flux
+  orientation + source/target geometry define a focal region
+  focal region -> focused_light + local heat
+```
+
+Example original Young Inventor chain:
+
+```text
+flashlight -> magnifier -> focused heat -> candle/fuse target
+```
+
+or:
+
+```text
+candle -> light generator -> electrical power -> motor
+```
+
+The exact levels, visuals, dimensions and solutions must be original.
 
 ## 5. Connection rules
 
@@ -184,6 +223,24 @@ Priority meanings:
 - generators/motors react physically to load;
 - switch state gates the graph;
 - visual wires may be abstracted, but power state must be deterministic.
+
+### Light / optics
+
+- light travels through world space, not through a logical wire;
+- sources expose direction, cone/spread, intensity and range;
+- geometry can occlude the beam;
+- the magnifier requires the source, lens and focal target to be geometrically aligned;
+- focused energy must fall off outside the focal region;
+- heat accumulation uses time and intensity, never an instant scripted trigger;
+- FRONT/MAIN/BACK separation applies to optical interaction unless a part explicitly bridges depth.
+
+### Candle / heat
+
+- ignition requires a heat threshold sustained for a minimum time;
+- flame emits both light and heat;
+- airflow can deform/reduce/extinguish the flame according to strength and direction;
+- extinguished candles do not emit useful heat/light until re-ignited;
+- no simple proximity-based `if near candle then lit` shortcut.
 
 ## 6. 2.75D interaction standard
 
@@ -259,6 +316,12 @@ Every campaign level must have:
 - pressure trigger;
 - goal sensors.
 
+### Registered for implementation next
+
+- candle;
+- flashlight;
+- magnifier / focused-light optical interaction.
+
 ### Current Stage 02
 
 Stage 02 exercises the P0 chain:
@@ -284,7 +347,7 @@ The stage is also the current reference implementation for touch-first 2.75D edi
 4. Validate rope + pulley + belt + gear connection editing.
 5. Create three original benchmark levels using only P0 parts.
 6. Move all final P0 objects to approved AAA-child PBR assets.
-7. Add P1 systems.
+7. Add P1 systems, including candle + flashlight + magnifier optics/heat.
 8. Only then scale campaign content.
 
 ## 10. Legal/product review gate
