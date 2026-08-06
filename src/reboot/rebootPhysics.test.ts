@@ -15,7 +15,14 @@ describe('clean reboot Level 1', () => {
   it('canonical benchmark solution reaches the goal through Rapier physics', () => {
     const solution = canonicalRebootSolution();
     const sim = createRebootPhysics(solution.parts, solution.belts);
-    sim.advance(12);
+    const trace: Array<{ second: number; x: number; y: number; vx: number; vy: number; won: boolean; out: boolean }> = [];
+    for (let second = 1; second <= 12 && !sim.state.won && !sim.state.ballOut; second += 1) {
+      sim.advance(1);
+      const p = sim.ballBody.translation();
+      const v = sim.ballBody.linvel();
+      trace.push({ second, x: Number(p.x.toFixed(3)), y: Number(p.y.toFixed(3)), vx: Number(v.x.toFixed(3)), vy: Number(v.y.toFixed(3)), won: sim.state.won, out: sim.state.ballOut });
+    }
+    console.log('REBOOT_LEVEL_1_TRACE', JSON.stringify(trace));
     expect(sim.state.poweredConveyors.size).toBe(3);
     expect(sim.state.won).toBe(true);
     expect(sim.state.goalContact).toBe(true);
