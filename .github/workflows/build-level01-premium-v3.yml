@@ -1,0 +1,59 @@
+name: Build Level01 premium v3 assets
+
+on:
+  push:
+    branches:
+      - level01-premium-asset-kit-v3
+    paths:
+      - 'tools/blender/level01_premium_assets_v3.py'
+      - '.github/workflows/build-level01-premium-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: level01-premium-asset-kit-v3
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender xvfb
+          blender --version
+
+      - name: Generate GLB assets and review renders
+        run: |
+          xvfb-run -a blender --background --factory-startup --python tools/blender/level01_premium_assets_v3.py
+          ls -lh generated-assets/level01-v3
+          test -f generated-assets/level01-v3/ball-premium-v3.glb
+          test -f generated-assets/level01-v3/ramp-premium-v3.glb
+          test -f generated-assets/level01-v3/pulley-premium-v3.glb
+          test -f generated-assets/level01-v3/fan-premium-v3.glb
+
+      - name: Upload review renders
+        uses: actions/upload-artifact@v4
+        with:
+          name: level01-premium-v3-review
+          path: generated-assets/level01-v3/*.png
+          retention-days: 14
+
+      - name: Publish GLB files to branch
+        run: |
+          mkdir -p public/assets/level01-v3
+          cp generated-assets/level01-v3/*.glb public/assets/level01-v3/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/level01-v3/*.glb
+          if git diff --cached --quiet; then
+            echo 'No asset changes to commit.'
+          else
+            git commit -m 'Materialize Level 01 premium v3 GLB assets'
+            git push origin HEAD:level01-premium-asset-kit-v3
+          fi
