@@ -3,6 +3,7 @@ import './gamefeel.css';
 import './level01Experience.css';
 import './bowlingBall3d.css';
 import './bowlingBallLab.css';
+import './cleanMinimalLevel01.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -39,18 +40,26 @@ function showFatalError(error: unknown): void {
 window.addEventListener('error', (event) => showFatalError(event.error ?? event.message));
 window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
-const assetPreview = new URLSearchParams(location.search).get('asset');
+const params = new URLSearchParams(location.search);
+const assetPreview = params.get('asset');
+const levelPreview = params.get('level');
 
-if (assetPreview === 'bowling-ball') {
-  installBowlingBallLab();
-} else if (assetPreview === 'basketball') {
-  installBasketballLab();
-} else if (assetPreview === 'cannonball') {
-  installCannonballLab();
-} else if (isPart0408Asset(assetPreview)) {
-  installPart0408Lab(assetPreview);
-} else {
-  try {
+async function boot(): Promise<void> {
+  if (levelPreview === 'clean01') {
+    const { installCleanMinimalLevel01 } = await import('./cleanMinimalLevel01');
+    installCleanMinimalLevel01();
+    return;
+  }
+
+  if (assetPreview === 'bowling-ball') {
+    installBowlingBallLab();
+  } else if (assetPreview === 'basketball') {
+    installBasketballLab();
+  } else if (assetPreview === 'cannonball') {
+    installCannonballLab();
+  } else if (isPart0408Asset(assetPreview)) {
+    installPart0408Lab(assetPreview);
+  } else {
     installExtendedParts();
     installPulleySystem();
     installSpringSystem();
@@ -71,7 +80,7 @@ if (assetPreview === 'bowling-ball') {
     installLevelEditor(app);
     installCompletionGuard();
     installBrowserSmokeBridge(app);
-  } catch (error) {
-    showFatalError(error);
   }
 }
+
+boot().catch(showFatalError);
