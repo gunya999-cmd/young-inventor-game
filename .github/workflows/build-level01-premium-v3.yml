@@ -22,11 +22,12 @@ jobs:
         with:
           ref: level01-premium-asset-kit-v3
 
-      - name: Install Blender
+      - name: Install Blender and GLB exporter dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender xvfb
+          sudo apt-get install -y blender xvfb python3-numpy
           blender --version
+          blender --background --factory-startup --python-expr "import numpy; print('BLENDER_NUMPY_OK', numpy.__version__)"
 
       - name: Generate GLB assets and review renders
         run: |
