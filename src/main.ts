@@ -5,6 +5,7 @@ import './bowlingBall3d.css';
 import './bowlingBallLab.css';
 import './cleanMinimalLevel01.css';
 import './cleanMinimalLevel01v2.css';
+import './cleanMinimalLevel01v3.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -46,6 +47,11 @@ const assetPreview = params.get('asset');
 const levelPreview = params.get('level');
 
 async function boot(): Promise<void> {
+  if (levelPreview === 'clean01v3') {
+    const { installCleanMinimalLevel01V3 } = await import('./cleanMinimalLevel01v3');
+    await installCleanMinimalLevel01V3();
+    return;
+  }
   if (levelPreview === 'clean01') {
     const { installCleanMinimalLevel01V2 } = await import('./cleanMinimalLevel01v2');
     installCleanMinimalLevel01V2();
