@@ -6,7 +6,6 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
-    "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
@@ -14,7 +13,10 @@
     "jsx": "react-jsx",
     "noEmit": true,
     "strict": true,
-    "noFallthroughCasesInSwitch": true
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/main.ts", "src/MachineGame.tsx", "src/timLevel.ts"]
+  "include": ["src/main.tsx", "src/components/tim/MachineGame.tsx", "src/lib/tim/level.ts"]
 }
