@@ -41,11 +41,11 @@ export function installEngineeredLevel01Rigid():void{
 
     stopper=world.createDynamicBody({position:Vec2(2.67,1.02),fixedRotation:true});
     stopper.createFixture(Box(.025,.15),{density:15,friction:.5});
-    world.createJoint(PrismaticJoint({enableLimit:true,lowerTranslation:0,upperTranslation:.30,localAxisA:Vec2(0,1)},ground,stopper,Vec2(2.67,.87),Vec2(2.67,.87)));
+    world.createJoint(PrismaticJoint({enableLimit:true,lowerTranslation:0,upperTranslation:.30},ground,stopper,Vec2(2.67,.87),Vec2(0,1)));
 
     const follower=world.createDynamicBody({position:Vec2(1.94,.98),fixedRotation:true});
     follower.createFixture(Box(.055,.10),{density:3,friction:.4});
-    world.createJoint(PrismaticJoint({enableLimit:true,lowerTranslation:0,upperTranslation:.34,localAxisA:Vec2(0,1)},ground,follower,Vec2(1.94,.88),Vec2(1.94,.88)));
+    world.createJoint(PrismaticJoint({enableLimit:true,lowerTranslation:0,upperTranslation:.34},ground,follower,Vec2(1.94,.88),Vec2(0,1)));
 
     const link=world.createDynamicBody({position:Vec2(2.30,1.15)});
     link.createFixture(Box(.33,.022),{density:1.2,friction:.45});
