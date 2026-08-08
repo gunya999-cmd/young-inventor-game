@@ -7,6 +7,7 @@ import './cleanMinimalLevel01.css';
 import './cleanMinimalLevel01v2.css';
 import './cleanMinimalLevel01v3.css';
 import './verticalLevel01.css';
+import './engineeredLevel01.css';
 import { GameApp } from './app';
 import { installExtendedParts } from './extendedParts';
 import { installPulleySystem } from './pulleySystem';
@@ -48,6 +49,11 @@ const assetPreview = params.get('asset');
 const levelPreview = params.get('level');
 
 async function boot(): Promise<void> {
+  if (levelPreview === 'engineered01') {
+    const { installEngineeredLevel01 } = await import('./engineeredLevel01');
+    installEngineeredLevel01();
+    return;
+  }
   if (levelPreview === 'vertical01') {
     const { installVerticalLevel01 } = await import('./verticalLevel01');
     await installVerticalLevel01();
