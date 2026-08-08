@@ -16,5 +16,5 @@
     "strict": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/main.ts", "src/MachineGame.tsx", "src/timLevel.ts"]
 }
