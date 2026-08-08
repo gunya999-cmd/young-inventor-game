@@ -17,12 +17,10 @@ const rampAngle=(a:Pt,b:Pt)=>Math.atan2(a.y-b.y,b.x-a.x);
 const r1L=len(r1a,r1b),r2L=len(r2a,r2b),theta1=rampAngle(r1a,r1b),theta2=rampAngle(r2a,r2b);
 const rollA=(theta:number)=>5/7*g*Math.sin(theta);
 const a1=rollA(theta1),a2=rollA(theta2);
-const t1=Math.sqrt(2*r1L/a1),t2=Math.sqrt(2*r2L/a2);
 const v1=Math.sqrt(2*a1*r1L),v2=Math.sqrt(2*a2*r2L);
 const energy1=ball1.m*g*(r1a.y-r1b.y);
 const pulleyA=g*(counter.m-gateMass)/(counter.m+gateMass);
 const gateTravel=.24;
-const gateT=Math.sqrt(2*gateTravel/pulleyA);
 
 function pointOn(a:Pt,b:Pt,s:number):Pt{const L=len(a,b),q=Math.max(0,Math.min(1,s/L));return{x:a.x+(b.x-a.x)*q,y:a.y+(b.y-a.y)*q};}
 
@@ -32,7 +30,6 @@ export function installEngineeredLevel01():void{
   const ctx=canvas.getContext('2d')!;const status=document.querySelector<HTMLElement>('#eng-status')!;
   let phase:Phase='idle',phaseTime=0,last=performance.now(),running=false;
   let b1:Pt={...r1a},b2:Pt={...r2a},lever=-2*Math.PI/180,weightY=weightTop,gateY=gateBottom;
-  const labels=['1. Гравитация','2. Удар','3. Освобождение','4. Натяжение','5. Открытие','6. Финальное движение'];
   function reset(){phase='idle';phaseTime=0;running=false;b1={...r1a};b2={...r2a};lever=-2*Math.PI/180;weightY=weightTop;gateY=gateBottom;status.textContent='Готово к запуску.';draw();}
   function start(){reset();running=true;phase='ball1';status.textContent='1/6 · Шар 1 катится под действием гравитации.';}
   function stop(){running=false;status.textContent='Остановлено.';}
