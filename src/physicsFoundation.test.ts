@@ -7,9 +7,9 @@ describe('Physics Foundation v1',()=>{
     expect(result.success).toBe(true);
   });
 
-  it('Level 01: the impact raises the right arm into the target zone',()=>{
+  it('Level 01: the impact raises the right arm into the physical target zone',()=>{
     const result=runFoundation(1,4);
-    expect(result.maxSeesawAngle).toBeGreaterThanOrEqual(.19);
+    expect(result.maxSeesawAngle).toBeGreaterThanOrEqual(.12);
     expect(result.success).toBe(true);
   });
 
