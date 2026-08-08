@@ -1,16 +1,8 @@
-import { installPhysicsFoundation } from './physicsFoundationView';
+import { createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import { MachineGame } from './MachineGame';
 
-function showFatalError(error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
-  document.body.innerHTML = `<main style="font-family:system-ui;padding:32px"><h1>ИГРОВОЙ ДВИЖОК НЕ ЗАПУСТИЛСЯ</h1><p>${message}</p></main>`;
-  console.error(error);
-}
+const root = document.querySelector<HTMLElement>('#root');
+if (!root) throw new Error('Root container not found');
 
-window.addEventListener('error', (event) => showFatalError(event.error ?? event.message));
-window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
-
-try {
-  installPhysicsFoundation();
-} catch (error) {
-  showFatalError(error);
-}
+createRoot(root).render(createElement(MachineGame));
