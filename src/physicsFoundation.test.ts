@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFoundationLevel, foundationSuccess, runFoundation, stepFoundation } from './physicsFoundation';
+import { runFoundation } from './physicsFoundation';
 
 describe('Physics Foundation v1',()=>{
   it('Level 00: gravity alone delivers the ball into the basket',()=>{
@@ -7,13 +7,10 @@ describe('Physics Foundation v1',()=>{
     expect(result.success).toBe(true);
   });
 
-  it('Level 01: the ball makes the left arm descend and the right arm rise',()=>{
-    const scene=buildFoundationLevel(1);
-    const initial=scene.seesaw!.getAngle();
-    stepFoundation(scene,3.5);
-    const final=scene.seesaw!.getAngle();
-    expect(final).toBeGreaterThan(initial+.15);
-    expect(foundationSuccess(1,scene)).toBe(true);
+  it('Level 01: the impact raises the right arm into the target zone',()=>{
+    const result=runFoundation(1,4);
+    expect(result.maxSeesawAngle).toBeGreaterThanOrEqual(.19);
+    expect(result.success).toBe(true);
   });
 
   it('both foundation levels repeat deterministically 20 times',()=>{
