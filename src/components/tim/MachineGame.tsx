@@ -56,7 +56,6 @@ export function MachineGame() {
   const remaining = (kind: PartKind) =>
     (INVENTORY.find((i) => i.kind === kind)?.count ?? 0) - (used[kind] ?? 0);
 
-  /* ---------- engine setup ---------- */
   useEffect(() => {
     const engine = Matter.Engine.create({ gravity: { x: 0, y: 1, scale: 0.0016 } });
     engine.gravity.x = 0;
@@ -136,10 +135,8 @@ export function MachineGame() {
       cancelAnimationFrame(raf);
       Matter.Engine.clear(engine);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ---------- rendering ---------- */
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const engine = engineRef.current;
@@ -157,7 +154,6 @@ export function MachineGame() {
     ctx.fillStyle = paper;
     ctx.fillRect(0, 0, WORLD.w, WORLD.h);
 
-    // blueprint grid
     ctx.strokeStyle = line;
     ctx.globalAlpha = 0.25;
     ctx.lineWidth = 1;
@@ -202,7 +198,6 @@ export function MachineGame() {
       ctx.stroke();
     }
 
-    // basket goal marker
     ctx.setLineDash([6, 6]);
     ctx.strokeStyle = brass;
     ctx.lineWidth = 2;
@@ -212,27 +207,94 @@ export function MachineGame() {
     ctx.font = "16px monospace";
     ctx.fillText("ЦЕЛЬ", BASKET.x - 24, BASKET.y - BASKET.h / 2 - 10);
 
-    // ball
     const b = ballRef.current;
     if (b) {
+      const x = b.position.x;
+      const y = b.position.y;
+      const r = BALL_START.r;
+
+      ctx.save();
+
       ctx.beginPath();
-      ctx.arc(b.position.x, b.position.y, BALL_START.r, 0, Math.PI * 2);
-      ctx.fillStyle = "#e0e4ea";
+      ctx.ellipse(x + r * 0.18, y + r * 0.78, r * 0.82, r * 0.28, 0, 0, Math.PI * 2);
+      const shadow = ctx.createRadialGradient(x + r * 0.18, y + r * 0.78, 0, x + r * 0.18, y + r * 0.78, r * 0.92);
+      shadow.addColorStop(0, "rgba(20, 28, 35, 0.28)");
+      shadow.addColorStop(0.62, "rgba(20, 28, 35, 0.11)");
+      shadow.addColorStop(1, "rgba(20, 28, 35, 0)");
+      ctx.fillStyle = shadow;
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = ink;
+
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      const steel = ctx.createRadialGradient(
+        x - r * 0.42,
+        y - r * 0.48,
+        r * 0.08,
+        x + r * 0.2,
+        y + r * 0.22,
+        r * 1.26,
+      );
+      steel.addColorStop(0, "#ffffff");
+      steel.addColorStop(0.09, "#eef5f8");
+      steel.addColorStop(0.24, "#cdd7dc");
+      steel.addColorStop(0.46, "#8f9da5");
+      steel.addColorStop(0.68, "#64727a");
+      steel.addColorStop(0.84, "#39464e");
+      steel.addColorStop(1, "#172128");
+      ctx.fillStyle = steel;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x, y, r - 0.55, 0, Math.PI * 2);
+      const rim = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+      rim.addColorStop(0, "rgba(235, 248, 255, 0.92)");
+      rim.addColorStop(0.4, "rgba(152, 174, 186, 0.48)");
+      rim.addColorStop(0.72, "rgba(64, 78, 87, 0.72)");
+      rim.addColorStop(1, "rgba(13, 19, 23, 0.96)");
+      ctx.lineWidth = 1.15;
+      ctx.strokeStyle = rim;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(x - r * 0.34, y - r * 0.42, r * 0.28, r * 0.16, -0.65, 0, Math.PI * 2);
+      const highlight = ctx.createRadialGradient(
+        x - r * 0.39,
+        y - r * 0.47,
+        0,
+        x - r * 0.34,
+        y - r * 0.42,
+        r * 0.34,
+      );
+      highlight.addColorStop(0, "rgba(255,255,255,0.96)");
+      highlight.addColorStop(0.38, "rgba(255,255,255,0.52)");
+      highlight.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = highlight;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x - r * 0.42, y - r * 0.5, r * 0.075, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.94)";
+      ctx.fill();
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(b.angle);
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.58, -0.7, 0.7);
+      ctx.lineWidth = Math.max(1, r * 0.08);
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(31, 44, 52, 0.48)";
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(b.position.x, b.position.y);
-      ctx.lineTo(
-        b.position.x + Math.cos(b.angle) * BALL_START.r,
-        b.position.y + Math.sin(b.angle) * BALL_START.r,
-      );
-      ctx.stroke();
+      ctx.arc(r * 0.42, 0, r * 0.09, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(226, 239, 244, 0.72)";
+      ctx.fill();
+      ctx.restore();
+
+      ctx.restore();
     }
   }, [selectedId]);
 
-  /* ---------- pointer handling ---------- */
   const toWorld = (e: React.PointerEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
@@ -296,7 +358,6 @@ export function MachineGame() {
 
   const start = () => {
     const engine = engineRef.current!;
-    // snapshot for reset
     snapshotRef.current = placedRef.current.map((p) => ({
       id: p.id,
       kind: p.kind,
