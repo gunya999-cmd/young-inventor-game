@@ -6,6 +6,7 @@ export type FoundationScene = {
   ball: Body;
   seesaw?: Body;
   target?: Body;
+  targetHit?: boolean;
   basket?: { x1:number; x2:number; yTop:number };
 };
 
@@ -36,16 +37,22 @@ export function buildFoundationLevel(level:FoundationLevel):FoundationScene {
   makeBar(world,.32,1.70,1.08,1.16,.04);
   const pivot=Vec2(1.48,.88);
   const seesaw=world.createDynamicBody({position:pivot,angle:0,angularDamping:.12});
-  seesaw.createFixture(Box(.62,.04),{density:3.2,friction:.62,restitution:.01});
+  const seesawFixture=seesaw.createFixture(Box(.62,.04),{density:3.2,friction:.62,restitution:.01});
   const ground=world.createBody();
   world.createJoint(RevoluteJoint({enableLimit:true,lowerAngle:-.10,upperAngle:.30},ground,seesaw,pivot));
   const ball=makeBall(world,.44,1.82,.07,33.5);
 
-  // Measured peak travel is ~0.134 rad. Target is deliberately placed lower so
-  // the mechanism has real geometric margin instead of requiring a near-limit hit.
-  const target=world.createBody({position:Vec2(2.04,1.03)});
-  target.createFixture(Circle(.055),{friction:.2,restitution:.01});
-  return {world,ball,seesaw,target};
+  // The target is a Planck SENSOR: it records a real overlap but contributes
+  // zero collision impulse, so it cannot slow or redirect the lever.
+  const target=world.createBody({position:Vec2(2.04,1.015)});
+  const targetFixture=target.createFixture(Circle(.065),{isSensor:true});
+  const scene:FoundationScene={world,ball,seesaw,target,targetHit:false};
+  world.on('begin-contact',(contact)=>{
+    const a=contact.getFixtureA();
+    const b=contact.getFixtureB();
+    if((a===seesawFixture&&b===targetFixture)||(a===targetFixture&&b===seesawFixture)) scene.targetHit=true;
+  });
+  return scene;
 }
 
 export function stepFoundation(scene:FoundationScene,seconds:number,dt=1/120):void{
@@ -59,8 +66,7 @@ export function foundationSuccess(level:FoundationLevel,scene:FoundationScene):b
     const b=scene.basket!;
     return p.x>b.x1 && p.x<b.x2 && p.y<b.yTop && p.y>.12;
   }
-  // ~5.2 degrees: comfortably below the measured 7.67 degree peak.
-  return scene.seesaw!.getAngle()>=.09;
+  return scene.targetHit===true;
 }
 
 export type FoundationRun = {
