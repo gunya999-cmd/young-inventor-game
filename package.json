@@ -9,7 +9,7 @@
     "build": "npm run test && tsc -b && vite build",
     "test": "vitest run src/*.test.ts",
     "test:watch": "vitest src/*.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test e2e/machine-game.spec.ts"
   },
   "dependencies": {
     "matter-js": "0.20.0",
