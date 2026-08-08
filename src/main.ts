@@ -49,6 +49,11 @@ const assetPreview = params.get('asset');
 const levelPreview = params.get('level');
 
 async function boot(): Promise<void> {
+  if (levelPreview === 'foundation') {
+    const { installPhysicsFoundation } = await import('./physicsFoundationView');
+    installPhysicsFoundation();
+    return;
+  }
   if (levelPreview === 'engineered01') {
     const { installEngineeredLevel01Rigid } = await import('./engineeredLevel01Rigid');
     installEngineeredLevel01Rigid();
