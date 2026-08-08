@@ -33,8 +33,6 @@ export function buildFoundationLevel(level:FoundationLevel):FoundationScene {
     return {world,ball,basket:{x1:2.52,x2:3.38,yTop:.62}};
   }
 
-  // Level 01: the ball arrives from the left and presses the LEFT arm.
-  // Only gravity, collision and a revolute joint can move the mechanism.
   makeBar(world,.32,1.70,1.08,1.16,.04);
   const pivot=Vec2(1.48,.88);
   const seesaw=world.createDynamicBody({position:pivot,angle:0,angularDamping:.12});
@@ -43,7 +41,6 @@ export function buildFoundationLevel(level:FoundationLevel):FoundationScene {
   world.createJoint(RevoluteJoint({enableLimit:true,lowerAngle:-.10,upperAngle:.30},ground,seesaw,pivot));
   const ball=makeBall(world,.44,1.82,.07,33.5);
 
-  // Physical target: right tip of the lever must rise into this pad.
   const target=world.createBody({position:Vec2(2.04,1.055)});
   target.createFixture(Circle(.055),{friction:.2,restitution:.01});
   return {world,ball,seesaw,target};
@@ -60,14 +57,27 @@ export function foundationSuccess(level:FoundationLevel,scene:FoundationScene):b
     const b=scene.basket!;
     return p.x>b.x1 && p.x<b.x2 && p.y<b.yTop && p.y>.12;
   }
-  const angle=scene.seesaw!.getAngle();
-  // At 0.20 rad the right tip rises ~123 mm and physically overlaps the target pad.
-  return angle>=.19;
+  return scene.seesaw!.getAngle()>=.19;
 }
 
-export function runFoundation(level:FoundationLevel,seconds=8):{success:boolean; ball:{x:number;y:number}; seesawAngle:number}{
+export type FoundationRun = {
+  success:boolean;
+  ball:{x:number;y:number};
+  seesawAngle:number;
+  maxSeesawAngle:number;
+};
+
+export function runFoundation(level:FoundationLevel,seconds=8,dt=1/120):FoundationRun{
   const scene=buildFoundationLevel(level);
-  stepFoundation(scene,seconds);
+  const count=Math.ceil(seconds/dt);
+  let success=false;
+  let maxSeesawAngle=scene.seesaw?.getAngle()??0;
+  for(let i=0;i<count;i++){
+    scene.world.step(dt);
+    const angle=scene.seesaw?.getAngle()??0;
+    if(angle>maxSeesawAngle) maxSeesawAngle=angle;
+    if(foundationSuccess(level,scene)) success=true;
+  }
   const p=scene.ball.getPosition();
-  return {success:foundationSuccess(level,scene),ball:{x:p.x,y:p.y},seesawAngle:scene.seesaw?.getAngle()??0};
+  return {success,ball:{x:p.x,y:p.y},seesawAngle:scene.seesaw?.getAngle()??0,maxSeesawAngle};
 }
