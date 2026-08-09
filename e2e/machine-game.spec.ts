@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('game loads steel ball and render-matched physical basketball goal, places a part and runs', async ({ page }) => {
+test('game loads steel ball and refined physical basketball goal, places a part and runs', async ({ page }) => {
   const ballAsset = await page.request.get('/assets/tim-ball-master.svg');
   expect(ballAsset.ok()).toBeTruthy();
   expect(ballAsset.headers()['content-type']).toContain('image/svg+xml');
@@ -15,7 +15,7 @@ test('game loads steel ball and render-matched physical basketball goal, places 
 
   const canvas = page.locator('canvas.tim-canvas');
   await expect(canvas).toBeVisible();
-  await expect(canvas).toHaveAttribute('data-goal', 'basketball-hoop-render');
+  await expect(canvas).toHaveAttribute('data-goal', 'basketball-hoop-render-v2');
 
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
