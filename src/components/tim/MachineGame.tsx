@@ -16,11 +16,31 @@ type Placed = {
   body: Matter.Body;
 };
 
+type NetRig = {
+  nodes: Matter.Body[];
+  constraints: Matter.Constraint[];
+  startPositions: { x: number; y: number }[];
+};
+
 const PART_SIZE: Record<PartKind, { w: number; h: number }> = {
   plank: { w: 150, h: 12 },
   trampoline: { w: 100, h: 14 },
   domino: { w: 16, h: 70 },
   weight: { w: 46, h: 46 },
+};
+
+const HOOP = {
+  x: BASKET.x,
+  rimY: BASKET.y - BASKET.h / 2,
+  rimWidth: 94,
+  rimRadius: 6,
+  backboardX: BASKET.x + 66,
+  backboardY: BASKET.y - BASKET.h / 2 - 56,
+  backboardW: 12,
+  backboardH: 126,
+  netRows: 5,
+  netCols: 6,
+  netRowGap: 16,
 };
 
 function makePart(kind: PartKind, x: number, y: number, angle: number): Matter.Body {
@@ -35,6 +55,116 @@ function makePart(kind: PartKind, x: number, y: number, angle: number): Matter.B
   return Matter.Bodies.rectangle(x, y, w, h, { ...common, density: 0.02, friction: 0.5 });
 }
 
+function buildBasketballGoal(): {
+  rigid: Matter.Body[];
+  sensor: Matter.Body;
+  net: NetRig;
+} {
+  const leftRim = Matter.Bodies.circle(HOOP.x - HOOP.rimWidth / 2, HOOP.rimY, HOOP.rimRadius, {
+    isStatic: true,
+    label: "hoop-rim",
+    friction: 0.18,
+    restitution: 0.48,
+  });
+  const rightRim = Matter.Bodies.circle(HOOP.x + HOOP.rimWidth / 2, HOOP.rimY, HOOP.rimRadius, {
+    isStatic: true,
+    label: "hoop-rim",
+    friction: 0.18,
+    restitution: 0.48,
+  });
+  const backboard = Matter.Bodies.rectangle(
+    HOOP.backboardX,
+    HOOP.backboardY,
+    HOOP.backboardW,
+    HOOP.backboardH,
+    { isStatic: true, label: "hoop-backboard", friction: 0.12, restitution: 0.35 },
+  );
+  const bracket = Matter.Bodies.rectangle(
+    HOOP.x + HOOP.rimWidth / 2 + 10,
+    HOOP.rimY + 3,
+    24,
+    8,
+    { isStatic: true, label: "hoop-bracket", friction: 0.18, restitution: 0.32 },
+  );
+  const sensor = Matter.Bodies.rectangle(HOOP.x, HOOP.rimY + 30, HOOP.rimWidth - 22, 18, {
+    isStatic: true,
+    isSensor: true,
+    label: "hoop-score-sensor",
+  });
+
+  const nodes: Matter.Body[] = [];
+  const constraints: Matter.Constraint[] = [];
+  const startPositions: { x: number; y: number }[] = [];
+  const group = Matter.Body.nextGroup(true);
+
+  const nodeAt = (row: number, col: number) => nodes[row * HOOP.netCols + col]!;
+
+  for (let row = 0; row < HOOP.netRows; row++) {
+    const t = row / (HOOP.netRows - 1);
+    const width = HOOP.rimWidth * (0.88 - t * 0.40);
+    const y = HOOP.rimY + 11 + row * HOOP.netRowGap;
+    for (let col = 0; col < HOOP.netCols; col++) {
+      const u = col / (HOOP.netCols - 1);
+      const x = HOOP.x - width / 2 + width * u;
+      const node = Matter.Bodies.circle(x, y, 2.7, {
+        label: "net-node",
+        density: 0.00045,
+        friction: 0.12,
+        frictionAir: 0.075,
+        restitution: 0.08,
+        collisionFilter: { group },
+      });
+      nodes.push(node);
+      startPositions.push({ x, y });
+    }
+  }
+
+  const addLink = (a: Matter.Body, b: Matter.Body, stiffness = 0.58) => {
+    constraints.push(
+      Matter.Constraint.create({
+        bodyA: a,
+        bodyB: b,
+        stiffness,
+        damping: 0.10,
+        label: "net-link",
+      }),
+    );
+  };
+
+  for (let col = 0; col < HOOP.netCols; col++) {
+    const top = nodeAt(0, col);
+    const u = col / (HOOP.netCols - 1);
+    const anchorX = HOOP.x - (HOOP.rimWidth * 0.88) / 2 + HOOP.rimWidth * 0.88 * u;
+    constraints.push(
+      Matter.Constraint.create({
+        pointA: { x: anchorX, y: HOOP.rimY + 2 },
+        bodyB: top,
+        length: 9,
+        stiffness: 0.72,
+        damping: 0.12,
+        label: "net-anchor",
+      }),
+    );
+  }
+
+  for (let row = 0; row < HOOP.netRows; row++) {
+    for (let col = 0; col < HOOP.netCols; col++) {
+      if (col < HOOP.netCols - 1) addLink(nodeAt(row, col), nodeAt(row, col + 1), 0.52);
+      if (row < HOOP.netRows - 1) addLink(nodeAt(row, col), nodeAt(row + 1, col), 0.60);
+      if (row < HOOP.netRows - 1 && col < HOOP.netCols - 1) {
+        addLink(nodeAt(row, col), nodeAt(row + 1, col + 1), 0.38);
+        addLink(nodeAt(row, col + 1), nodeAt(row + 1, col), 0.38);
+      }
+    }
+  }
+
+  return {
+    rigid: [leftRim, rightRim, backboard, bracket],
+    sensor,
+    net: { nodes, constraints, startPositions },
+  };
+}
+
 type Status = "build" | "running" | "won" | "failed";
 
 export function MachineGame() {
@@ -42,8 +172,10 @@ export function MachineGame() {
   const engineRef = useRef<Matter.Engine | null>(null);
   const ballRef = useRef<Matter.Body | null>(null);
   const ballSpriteRef = useRef<HTMLImageElement | null>(null);
+  const netRigRef = useRef<NetRig | null>(null);
   const placedRef = useRef<Placed[]>([]);
   const runningRef = useRef(false);
+  const previousBallYRef = useRef(BALL_START.y);
   const dragRef = useRef<{ id: number; dx: number; dy: number } | null>(null);
   const idRef = useRef(1);
   const drawRef = useRef<() => void>(() => {});
@@ -77,16 +209,18 @@ export function MachineGame() {
       Matter.Bodies.rectangle(WORLD.w + 20, WORLD.h / 2, 40, WORLD.h, { isStatic: true, label: "ground" }),
     ];
     const scenery = SCENERY.map((s) =>
-      Matter.Bodies.rectangle(s.x, s.y, s.w, s.h, { isStatic: true, angle: s.a, label: "scenery", friction: 0.02, restitution: 0.1 }),
-    );
-    const basket = [
-      Matter.Bodies.rectangle(BASKET.x, BASKET.y + BASKET.h / 2, BASKET.w, 12, { isStatic: true, label: "basket" }),
-      Matter.Bodies.rectangle(BASKET.x - BASKET.w / 2, BASKET.y + BASKET.h / 4, 12, BASKET.h / 2, {
+      Matter.Bodies.rectangle(s.x, s.y, s.w, s.h, {
         isStatic: true,
-        label: "basket",
+        angle: s.a,
+        label: "scenery",
+        friction: 0.02,
+        restitution: 0.1,
       }),
-      Matter.Bodies.rectangle(BASKET.x + BASKET.w / 2, BASKET.y, 12, BASKET.h, { isStatic: true, label: "basket" }),
-    ];
+    );
+
+    const hoop = buildBasketballGoal();
+    netRigRef.current = hoop.net;
+
     const ball = Matter.Bodies.circle(BALL_START.x, BALL_START.y, BALL_START.r, {
       label: "ball",
       restitution: 0.42,
@@ -96,7 +230,17 @@ export function MachineGame() {
       frictionStatic: 0.05,
     });
     ballRef.current = ball;
-    Matter.Composite.add(engine.world, [...walls, ...scenery, ...basket, ball]);
+    previousBallYRef.current = ball.position.y;
+
+    Matter.Composite.add(engine.world, [
+      ...walls,
+      ...scenery,
+      ...hoop.rigid,
+      hoop.sensor,
+      ...hoop.net.nodes,
+      ...hoop.net.constraints,
+      ball,
+    ]);
 
     let raf = 0;
     let last = performance.now();
@@ -114,11 +258,16 @@ export function MachineGame() {
           steps++;
         }
         const b = ballRef.current!;
-        const inBasket =
-          Math.abs(b.position.x - BASKET.x) < BASKET.w / 2 &&
-          Math.abs(b.position.y - BASKET.y) < BASKET.h / 2;
+        const openingHalf = HOOP.rimWidth / 2 - HOOP.rimRadius - BALL_START.r * 0.15;
+        const crossedHoop =
+          previousBallYRef.current < HOOP.rimY - BALL_START.r * 0.15 &&
+          b.position.y >= HOOP.rimY + BALL_START.r * 0.15 &&
+          Math.abs(b.position.x - HOOP.x) < openingHalf &&
+          b.velocity.y > 0;
+        previousBallYRef.current = b.position.y;
+
         const slow = Matter.Vector.magnitude(b.velocity) < 0.35;
-        if (inBasket && Matter.Vector.magnitude(b.velocity) < 1.5) {
+        if (crossedHoop) {
           runningRef.current = false;
           setStatus("won");
         } else if (slow) {
@@ -183,11 +332,15 @@ export function MachineGame() {
     const selBody = placedRef.current.find((p) => p.id === selectedId)?.body;
 
     for (const body of bodies) {
-      if (body.label === "ball") continue;
+      if (
+        body.label === "ball" ||
+        body.label.startsWith("hoop-") ||
+        body.label === "net-node"
+      )
+        continue;
       const kind = body.label.startsWith("part:") ? body.label.slice(5) : body.label;
       let fill = ink;
       if (kind === "scenery") fill = ink;
-      if (kind === "basket") fill = brass;
       if (kind === "plank") fill = wood;
       if (kind === "trampoline") fill = "#2f7d5b";
       if (kind === "domino") fill = "#b4453c";
@@ -206,14 +359,86 @@ export function MachineGame() {
       ctx.stroke();
     }
 
-    ctx.setLineDash([6, 6]);
-    ctx.strokeStyle = brass;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(BASKET.x - BASKET.w / 2, BASKET.y - BASKET.h / 2, BASKET.w, BASKET.h);
-    ctx.setLineDash([]);
-    ctx.fillStyle = brass;
-    ctx.font = "16px monospace";
-    ctx.fillText("ЦЕЛЬ", BASKET.x - 24, BASKET.y - BASKET.h / 2 - 10);
+    // Basketball backboard: static physical body, polished game rendering.
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.18)";
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 5;
+    ctx.fillStyle = "rgba(238,240,239,0.90)";
+    ctx.fillRect(
+      HOOP.backboardX - HOOP.backboardW / 2 - 5,
+      HOOP.backboardY - HOOP.backboardH / 2,
+      HOOP.backboardW + 10,
+      HOOP.backboardH,
+    );
+    ctx.shadowColor = "transparent";
+    ctx.strokeStyle = "#7e8587";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(
+      HOOP.backboardX - 31,
+      HOOP.backboardY - HOOP.backboardH / 2 + 18,
+      62,
+      74,
+    );
+    ctx.strokeStyle = "#b24b27";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(HOOP.backboardX - 23, HOOP.rimY - 35, 42, 30);
+    ctx.restore();
+
+    // Flexible net: every line follows the live Matter.js constraint endpoints.
+    const net = netRigRef.current;
+    if (net) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(225,222,210,0.96)";
+      ctx.lineWidth = 1.65;
+      ctx.shadowColor = "rgba(0,0,0,0.22)";
+      ctx.shadowBlur = 2;
+      for (const c of net.constraints) {
+        const a = c.bodyA
+          ? Matter.Vector.add(c.bodyA.position, c.pointA)
+          : c.pointA;
+        const b = c.bodyB
+          ? Matter.Vector.add(c.bodyB.position, c.pointB)
+          : c.pointB;
+        if (!a || !b) continue;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Orange steel rim and mount.
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.22)";
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
+    const rimGradient = ctx.createLinearGradient(
+      HOOP.x - HOOP.rimWidth / 2,
+      HOOP.rimY - 6,
+      HOOP.x + HOOP.rimWidth / 2,
+      HOOP.rimY + 6,
+    );
+    rimGradient.addColorStop(0, "#7d2715");
+    rimGradient.addColorStop(0.28, "#d6602b");
+    rimGradient.addColorStop(0.55, "#f08a3f");
+    rimGradient.addColorStop(1, "#8a2b16");
+    ctx.strokeStyle = rimGradient;
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(HOOP.x - HOOP.rimWidth / 2, HOOP.rimY);
+    ctx.lineTo(HOOP.x + HOOP.rimWidth / 2, HOOP.rimY);
+    ctx.stroke();
+    ctx.fillStyle = "#9b341b";
+    ctx.fillRect(HOOP.x + HOOP.rimWidth / 2 - 2, HOOP.rimY - 5, 22, 10);
+    ctx.restore();
+
+    ctx.fillStyle = "#b24b27";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText("ЦЕЛЬ", HOOP.x - 22, HOOP.rimY - 22);
 
     const b = ballRef.current;
     if (b) {
@@ -308,7 +533,6 @@ export function MachineGame() {
   };
 
   const start = () => {
-    const engine = engineRef.current!;
     snapshotRef.current = placedRef.current.map((p) => ({
       id: p.id,
       kind: p.kind,
@@ -317,13 +541,24 @@ export function MachineGame() {
       a: p.body.angle,
     }));
     Matter.Body.setVelocity(ballRef.current!, { x: 0, y: 0 });
-    void engine;
+    previousBallYRef.current = ballRef.current!.position.y;
     setSelectedId(null);
     setStatus("running");
     runningRef.current = true;
   };
 
   const snapshotRef = useRef<{ id: number; kind: PartKind; x: number; y: number; a: number }[]>([]);
+
+  const resetNet = () => {
+    const net = netRigRef.current;
+    if (!net) return;
+    net.nodes.forEach((node, i) => {
+      Matter.Body.setPosition(node, net.startPositions[i]!);
+      Matter.Body.setVelocity(node, { x: 0, y: 0 });
+      Matter.Body.setAngularVelocity(node, 0);
+      Matter.Body.setAngle(node, 0);
+    });
+  };
 
   const reset = () => {
     const engine = engineRef.current!;
@@ -339,6 +574,8 @@ export function MachineGame() {
     Matter.Body.setAngularVelocity(ball, 0);
     Matter.Body.setVelocity(ball, { x: 0, y: 0 });
     Matter.Body.setPosition(ball, { x: BALL_START.x, y: BALL_START.y });
+    previousBallYRef.current = BALL_START.y;
+    resetNet();
     setStatus("build");
   };
 
@@ -357,8 +594,8 @@ export function MachineGame() {
           Невероятная машина
         </h1>
         <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-          Соберите цепочку: шар должен сам докатиться до корзины «ЦЕЛЬ». Ставьте детали, крутите
-          доски, затем запускайте механизм.
+          Соберите цепочку: шар должен сам попасть в баскетбольную корзину «ЦЕЛЬ». Ставьте детали,
+          крутите доски, затем запускайте механизм.
         </p>
       </header>
 
@@ -371,6 +608,7 @@ export function MachineGame() {
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            data-goal="basketball-hoop"
             className="tim-canvas w-full touch-none rounded-lg"
             style={{ aspectRatio: `${WORLD.w} / ${WORLD.h}` }}
           />
@@ -469,13 +707,13 @@ export function MachineGame() {
             <div className="rounded-xl border-2 border-brass bg-brass/15 p-4 text-center">
               <p className="font-display text-xl text-foreground">Машина работает!</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Шар в корзине. Уровень пройден.
+                Шар прошёл через кольцо. Уровень пройден.
               </p>
             </div>
           )}
           {status === "failed" && (
             <div className="rounded-xl border-2 border-danger/50 bg-danger/10 p-4 text-center">
-              <p className="font-display text-lg text-foreground">Шар не добрался до цели</p>
+              <p className="font-display text-lg text-foreground">Шар не попал в корзину</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Нажмите «Сброс» и переставьте детали.
               </p>
