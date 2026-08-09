@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('game loads steel ball and physical basketball goal, places a part and runs', async ({ page }) => {
+test('game loads steel ball and render-matched physical basketball goal, places a part and runs', async ({ page }) => {
   const ballAsset = await page.request.get('/assets/tim-ball-master.svg');
   expect(ballAsset.ok()).toBeTruthy();
   expect(ballAsset.headers()['content-type']).toContain('image/svg+xml');
@@ -9,14 +9,13 @@ test('game loads steel ball and physical basketball goal, places a part and runs
   expect(ballSvg).not.toContain('data:image');
 
   await page.goto('/');
-
   await expect(page.getByRole('heading', { name: 'Невероятная машина' })).toBeVisible();
   await expect(page.getByText('Уровень 1')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Детали' })).toBeVisible();
 
   const canvas = page.locator('canvas.tim-canvas');
   await expect(canvas).toBeVisible();
-  await expect(canvas).toHaveAttribute('data-goal', 'basketball-hoop');
+  await expect(canvas).toHaveAttribute('data-goal', 'basketball-hoop-render');
 
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
@@ -24,10 +23,8 @@ test('game loads steel ball and physical basketball goal, places a part and runs
 
   await canvas.click({ position: { x: box.width * 0.52, y: box.height * 0.42 } });
   await expect(page.getByText('Доска — тяните мышью, чтобы переместить')).toBeVisible();
-
   await page.getByRole('button', { name: 'Запустить' }).click();
   await expect(page.getByText('механизм работает…')).toBeVisible();
-
   await page.getByRole('button', { name: 'Сброс' }).click();
   await expect(page.getByRole('button', { name: 'Запустить' })).toBeEnabled();
 });
