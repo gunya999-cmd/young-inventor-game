@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-test('Lovable gimtim clone loads, places a part and runs', async ({ page }) => {
+test('Lovable gimtim clone loads, renders steel ball asset, places a part and runs', async ({ page }) => {
+  const ballAsset = await page.request.get('/assets/tim-ball-master.svg');
+  expect(ballAsset.ok()).toBeTruthy();
+  expect(ballAsset.headers()['content-type']).toContain('image/svg+xml');
+  const ballSvg = await ballAsset.text();
+  expect(ballSvg).toContain('id="steel"');
+  expect(ballSvg).not.toContain('data:image');
+
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: 'Невероятная машина' })).toBeVisible();
